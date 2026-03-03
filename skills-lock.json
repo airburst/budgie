@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "electron-pro": {
+      "source": "404kidwiz/claude-supercode-skills",
+      "sourceType": "github",
+      "computedHash": "b0bda72c70997b4b55db7d07e7297b806000e2527d40b80588c5f0a4774373b8"
+    },
+    "shadcn-ui": {
+      "source": "giuseppe-trisciuoglio/developer-kit",
+      "sourceType": "github",
+      "computedHash": "6ac4f3b3f702e7d81edf883bea1f330bfd6b1b721e876c81642a96edf4c54d75"
+    }
+  }
+}

@@ -5,7 +5,7 @@
   "main": "public/electron.js",
   "homepage": "./",
   "scripts": {
-    "start": "concurrently \"vite build --watch\" \"bun run electron-start\"",
+    "start": "concurrently \"vite\" \"bun run electron-start\"",
     "build": "vite build && bun run electron-build",
     "electron-start": "wait-on http://localhost:3000 && electron .",
     "electron-build": "electron-builder",
