@@ -16,39 +16,38 @@ shadcn/ui is different from traditional component libraries:
 ### 2. Core Concepts to Master
 
 #### Class Variance Authority (CVA)
+
 Most components use CVA for variant management:
 
 ```tsx
-const buttonVariants = cva(
-  "base-classes",
-  {
-    variants: {
-      variant: {
-        default: "variant-classes",
-        destructive: "destructive-classes",
-      },
-      size: {
-        default: "size-classes",
-        sm: "small-classes",
-      },
+const buttonVariants = cva("base-classes", {
+  variants: {
+    variant: {
+      default: "variant-classes",
+      destructive: "destructive-classes",
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
+    size: {
+      default: "size-classes",
+      sm: "small-classes",
     },
-  }
-)
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "default",
+  },
+});
 ```
 
 #### cn Utility Function
+
 The `cn` function combines classes and resolves conflicts:
 
 ```tsx
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
@@ -73,6 +72,7 @@ export function cn(...inputs: ClassValue[]) {
 ### 5. Common Patterns
 
 #### Form Pattern
+
 Every form follows this structure:
 
 ```tsx
@@ -84,6 +84,7 @@ Every form follows this structure:
 ```
 
 #### Component Customization Pattern
+
 To customize a component:
 
 1. Copy component to your project
@@ -110,12 +111,14 @@ To customize a component:
 ## Practice Exercises
 
 ### Exercise 1: Basic Setup
+
 1. Create a new Next.js project
 2. Set up shadcn/ui
 3. Install and customize a Button component
 4. Add a new variant "gradient"
 
 ### Exercise 2: Form Building
+
 1. Create a contact form with:
    - Name input (required)
    - Email input (email validation)
@@ -123,6 +126,7 @@ To customize a component:
    - Submit button with loading state
 
 ### Exercise 3: Component Combination
+
 1. Build a settings page using:
    - Card for layout
    - Sheet for mobile menu
@@ -131,6 +135,7 @@ To customize a component:
    - Toast for notifications
 
 ### Exercise 4: Custom Component
+
 1. Create a custom Badge component
 2. Support variants: default, secondary, destructive, outline
 3. Support sizes: sm, default, lg

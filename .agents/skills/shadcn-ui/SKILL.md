@@ -60,40 +60,52 @@ Expert guide for building accessible, customizable UI components with shadcn/ui,
 ### Complete Form with Validation
 
 ```tsx
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-})
+});
 
 export function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
-  })
+  });
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(console.log)} className="space-y-4">
-        <FormField name="email" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl><Input type="email" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
+        <FormField
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit">Login</Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
@@ -153,6 +165,7 @@ npx shadcn@latest init
 ```
 
 During setup, you'll configure:
+
 - TypeScript or JavaScript
 - Style (Default, New York, etc.)
 - Base color theme
@@ -252,10 +265,10 @@ npm install @radix-ui/react-slot
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
   ],
   prefix: "",
   theme: {
@@ -324,7 +337,7 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
 ```
 
 ### CSS Variables (globals.css)
@@ -505,7 +518,9 @@ export function InputWithButton() {
   return (
     <div className="flex w-full max-w-sm items-center gap-2">
       <Input type="email" placeholder="Email" />
-      <Button type="submit" variant="outline">Subscribe</Button>
+      <Button type="submit" variant="outline">
+        Subscribe
+      </Button>
     </div>
   );
 }
@@ -524,13 +539,13 @@ This installs React Hook Form, Zod, and form components.
 Complete form example:
 
 ```tsx
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -539,9 +554,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
   username: z.string().min(2, {
@@ -550,7 +565,7 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-})
+});
 
 export function ProfileForm() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -559,7 +574,7 @@ export function ProfileForm() {
       username: "",
       email: "",
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     toast({
@@ -569,7 +584,7 @@ export function ProfileForm() {
           <code className="text-white">{JSON.stringify(values, null, 2)}</code>
         </pre>
       ),
-    })
+    });
   }
 
   return (
@@ -591,7 +606,7 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="email"
@@ -605,11 +620,11 @@ export function ProfileForm() {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit">Submit</Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
@@ -631,7 +646,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 
 export function CardDemo() {
   return (
@@ -647,14 +662,14 @@ export function CardDemo() {
         <p>Card Footer</p>
       </CardFooter>
     </Card>
-  )
+  );
 }
 ```
 
 Card with form:
 
 ```tsx
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -662,9 +677,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function CardWithForm() {
   return (
@@ -688,7 +703,7 @@ export function CardWithForm() {
         <Button>Deploy</Button>
       </CardFooter>
     </Card>
-  )
+  );
 }
 ```
 
@@ -703,7 +718,7 @@ npx shadcn@latest add dialog
 Basic dialog:
 
 ```tsx
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -712,7 +727,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 export function DialogDemo() {
   return (
@@ -740,7 +755,7 @@ export function DialogDemo() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 ```
 
@@ -755,7 +770,7 @@ npx shadcn@latest add sheet
 Basic sheet:
 
 ```tsx
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -763,7 +778,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
 export function SheetDemo() {
   return (
@@ -794,7 +809,7 @@ export function SheetDemo() {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }
 ```
 
@@ -841,7 +856,7 @@ import {
   MenubarSubContent,
   MenubarSubTrigger,
   MenubarTrigger,
-} from "@/components/ui/menubar"
+} from "@/components/ui/menubar";
 
 export function MenubarDemo() {
   return (
@@ -883,7 +898,7 @@ export function MenubarDemo() {
         </MenubarContent>
       </MenubarMenu>
     </Menubar>
-  )
+  );
 }
 ```
 
@@ -904,7 +919,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 export function SelectDemo() {
   return (
@@ -918,7 +933,7 @@ export function SelectDemo() {
         <SelectItem value="orange">Orange</SelectItem>
       </SelectContent>
     </Select>
-  )
+  );
 }
 ```
 
@@ -960,7 +975,7 @@ npx shadcn@latest add toast
 Setup toast provider in root layout:
 
 ```tsx
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({ children }) {
   return (
@@ -970,18 +985,18 @@ export default function RootLayout({ children }) {
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
 Using toast:
 
 ```tsx
-import { useToast } from "@/components/ui/use-toast"
-import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
 
 export function ToastDemo() {
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   return (
     <Button
@@ -989,12 +1004,12 @@ export function ToastDemo() {
         toast({
           title: "Scheduled: Catch up",
           description: "Friday, February 10, 2023 at 5:57 PM",
-        })
+        });
       }}
     >
       Show Toast
     </Button>
-  )
+  );
 }
 ```
 
@@ -1005,21 +1020,21 @@ Toast variants:
 toast({
   title: "Success",
   description: "Your changes have been saved.",
-})
+});
 
 // Error
 toast({
   variant: "destructive",
   title: "Error",
   description: "Something went wrong.",
-})
+});
 
 // With action
 toast({
   title: "Uh oh! Something went wrong.",
   description: "There was a problem with your request.",
   action: <ToastAction altText="Try again">Try again</ToastAction>,
-})
+});
 ```
 
 ### Table Component
@@ -1041,12 +1056,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
 const invoices = [
-  { invoice: "INV001", status: "Paid", method: "Credit Card", amount: "$250.00" },
+  {
+    invoice: "INV001",
+    status: "Paid",
+    method: "Credit Card",
+    amount: "$250.00",
+  },
   { invoice: "INV002", status: "Pending", method: "PayPal", amount: "$150.00" },
-]
+];
 
 export function TableDemo() {
   return (
@@ -1071,7 +1091,7 @@ export function TableDemo() {
         ))}
       </TableBody>
     </Table>
-  )
+  );
 }
 ```
 
@@ -1090,8 +1110,8 @@ The charts component in shadcn/ui is built on **Recharts** - providing direct ac
 The `ChartContainer` wraps your Recharts component and accepts a `config` prop for theming:
 
 ```tsx
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 const chartConfig = {
   desktop: {
@@ -1102,13 +1122,13 @@ const chartConfig = {
     label: "Mobile",
     color: "var(--chart-2)",
   },
-} satisfies import("@/components/ui/chart").ChartConfig
+} satisfies import("@/components/ui/chart").ChartConfig;
 
 const chartData = [
   { month: "January", desktop: 186, mobile: 80 },
   { month: "February", desktop: 305, mobile: 200 },
   { month: "March", desktop: 237, mobile: 120 },
-]
+];
 
 export function BarChartDemo() {
   return (
@@ -1121,20 +1141,12 @@ export function BarChartDemo() {
           axisLine={false}
           tickFormatter={(value) => value.slice(0, 3)}
         />
-        <Bar
-          dataKey="desktop"
-          fill="var(--color-desktop)"
-          radius={4}
-        />
-        <Bar
-          dataKey="mobile"
-          fill="var(--color-mobile)"
-          radius={4}
-        />
+        <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
+        <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
         <ChartTooltip content={<ChartTooltipContent />} />
       </BarChart>
     </ChartContainer>
-  )
+  );
 }
 ```
 
@@ -1160,7 +1172,7 @@ const chartConfig = {
       dark: "oklch(0.696 0.182 281.41)",
     },
   },
-} satisfies import("@/components/ui/chart").ChartConfig
+} satisfies import("@/components/ui/chart").ChartConfig;
 ```
 
 #### CSS Variables for Charts
@@ -1191,15 +1203,15 @@ Add chart color variables to your `globals.css`:
 #### Line Chart Example
 
 ```tsx
-import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart"
+import { Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 const chartConfig = {
   price: {
     label: "Price",
     color: "var(--chart-1)",
   },
-} satisfies import("@/components/ui/chart").ChartConfig
+} satisfies import("@/components/ui/chart").ChartConfig;
 
 const chartData = [
   { month: "January", price: 186 },
@@ -1207,7 +1219,7 @@ const chartData = [
   { month: "March", price: 237 },
   { month: "April", price: 203 },
   { month: "May", price: 276 },
-]
+];
 
 export function LineChartDemo() {
   return (
@@ -1215,7 +1227,11 @@ export function LineChartDemo() {
       <LineChart data={chartData}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="month" tickLine={false} axisLine={false} />
-        <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(value) => `$${value}`}
+        />
         <Line
           dataKey="price"
           stroke="var(--color-price)"
@@ -1225,20 +1241,25 @@ export function LineChartDemo() {
         <ChartTooltip content={<ChartTooltipContent />} />
       </LineChart>
     </ChartContainer>
-  )
+  );
 }
 ```
 
 #### Area Chart Example
 
 ```tsx
-import { Area, AreaChart, XAxis, YAxis } from "recharts"
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltipContent } from "@/components/ui/chart"
+import { Area, AreaChart, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 const chartConfig = {
   desktop: { label: "Desktop", color: "var(--chart-1)" },
   mobile: { label: "Mobile", color: "var(--chart-2)" },
-} satisfies import("@/components/ui/chart").ChartConfig
+} satisfies import("@/components/ui/chart").ChartConfig;
 
 export function AreaChartDemo() {
   return (
@@ -1262,27 +1283,32 @@ export function AreaChartDemo() {
         <ChartLegend content={<ChartLegendContent />} />
       </AreaChart>
     </ChartContainer>
-  )
+  );
 }
 ```
 
 #### Pie Chart Example
 
 ```tsx
-import { Pie, PieChart } from "recharts"
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltipContent } from "@/components/ui/chart"
+import { Pie, PieChart } from "recharts";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 const chartConfig = {
   chrome: { label: "Chrome", color: "var(--chart-1)" },
   safari: { label: "Safari", color: "var(--chart-2)" },
   firefox: { label: "Firefox", color: "var(--chart-3)" },
-} satisfies import("@/components/ui/chart").ChartConfig
+} satisfies import("@/components/ui/chart").ChartConfig;
 
 const pieData = [
   { browser: "Chrome", visitors: 275, fill: "var(--color-chrome)" },
   { browser: "Safari", visitors: 200, fill: "var(--color-safari)" },
   { browser: "Firefox", visitors: 187, fill: "var(--color-firefox)" },
-]
+];
 
 export function PieChartDemo() {
   return (
@@ -1300,29 +1326,32 @@ export function PieChartDemo() {
         <ChartLegend content={<ChartLegendContent />} />
       </PieChart>
     </ChartContainer>
-  )
+  );
 }
 ```
 
 #### ChartTooltipContent Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `labelKey` | string | "label" | Key for tooltip label |
-| `nameKey` | string | "name" | Key for tooltip name |
-| `indicator` | "dot" \| "line" \| "dashed" | "dot" | Indicator style |
-| `hideLabel` | boolean | false | Hide label |
-| `hideIndicator` | boolean | false | Hide indicator |
+| Prop            | Type                        | Default | Description           |
+| --------------- | --------------------------- | ------- | --------------------- |
+| `labelKey`      | string                      | "label" | Key for tooltip label |
+| `nameKey`       | string                      | "name"  | Key for tooltip name  |
+| `indicator`     | "dot" \| "line" \| "dashed" | "dot"   | Indicator style       |
+| `hideLabel`     | boolean                     | false   | Hide label            |
+| `hideIndicator` | boolean                     | false   | Hide indicator        |
 
 #### Accessibility
 
 Enable keyboard navigation and screen reader support:
 
 ```tsx
-<BarChart accessibilityLayer data={chartData}>...</BarChart>
+<BarChart accessibilityLayer data={chartData}>
+  ...
+</BarChart>
 ```
 
 This adds:
+
 - Keyboard arrow key navigation
 - ARIA labels for chart elements
 - Screen reader announcements for data values
@@ -1370,10 +1399,10 @@ Since you own the code, customize directly:
 
 ```tsx
 // components/ui/button.tsx
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
@@ -1381,7 +1410,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-background hover:bg-accent",
         // Add custom variant
         custom: "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
@@ -1398,30 +1428,31 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+    const Comp = asChild ? Slot : "button";
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />
-    )
-  }
-)
-Button.displayName = "Button"
+    );
+  },
+);
+Button.displayName = "Button";
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
 ```
 
 ## Next.js Integration
@@ -1432,12 +1463,12 @@ For Next.js 13+ with App Router, ensure components use `"use client"` directive:
 
 ```tsx
 // src/components/ui/button.tsx
-"use client"
+"use client";
 
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
 // ... rest of component
 ```
@@ -1448,13 +1479,13 @@ Add the Toaster to your root layout:
 
 ```tsx
 // app/layout.tsx
-import { Toaster } from "@/components/ui/toaster"
-import "./globals.css"
+import { Toaster } from "@/components/ui/toaster";
+import "./globals.css";
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -1463,7 +1494,7 @@ export default function RootLayout({
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -1473,8 +1504,8 @@ When using shadcn/ui components in Server Components, wrap them in a Client Comp
 
 ```tsx
 // app/dashboard/page.tsx
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ButtonClient } from "@/components/ui/button-client"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ButtonClient } from "@/components/ui/button-client";
 
 export default function DashboardPage() {
   return (
@@ -1488,18 +1519,18 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 ```
 
 ```tsx
 // src/components/ui/button-client.tsx
-"use client"
+"use client";
 
-import { Button } from "./button"
+import { Button } from "./button";
 
 export function ButtonClient(props: React.ComponentProps<typeof Button>) {
-  return <Button {...props} />
+  return <Button {...props} />;
 }
 ```
 
@@ -1509,36 +1540,33 @@ Create API routes for form submissions:
 
 ```tsx
 // app/api/contact/route.ts
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const contactSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   message: z.string().min(10),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const validated = contactSchema.parse(body)
+    const body = await request.json();
+    const validated = contactSchema.parse(body);
 
     // Process form data
-    console.log("Form submission:", validated)
+    console.log("Form submission:", validated);
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { errors: error.errors },
-        { status: 400 }
-      )
+      return NextResponse.json({ errors: error.errors }, { status: 400 });
     }
 
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1549,12 +1577,12 @@ Using Next.js 14+ Server Actions:
 
 ```tsx
 // app/contact/page.tsx
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -1562,16 +1590,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/components/ui/use-toast"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   message: z.string().min(10),
-})
+});
 
 async function onSubmit(values: z.infer<typeof formSchema>) {
   try {
@@ -1579,27 +1607,27 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
-    })
+    });
 
-    if (!response.ok) throw new Error("Failed to submit")
+    if (!response.ok) throw new Error("Failed to submit");
 
     toast({
       title: "Success!",
       description: "Your message has been sent.",
-    })
+    });
   } catch (error) {
     toast({
       variant: "destructive",
       title: "Error",
       description: "Failed to send message. Please try again.",
-    })
+    });
   }
 }
 
 export default function ContactPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-  })
+  });
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
@@ -1657,7 +1685,7 @@ export default function ContactPage() {
         </form>
       </Form>
     </div>
-  )
+  );
 }
 ```
 
@@ -1667,7 +1695,7 @@ Using shadcn/ui components in metadata:
 
 ```tsx
 // app/layout.tsx
-import { Metadata } from "next"
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
@@ -1675,16 +1703,16 @@ export const metadata: Metadata = {
     template: "%s | My App",
   },
   description: "Built with shadcn/ui and Next.js",
-}
+};
 
 // app/about/page.tsx
-import { Metadata } from "next"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Metadata } from "next";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "About Us",
   description: "Learn more about our company",
-}
+};
 
 export default function AboutPage() {
   return (
@@ -1698,7 +1726,7 @@ export default function AboutPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 ```
 
@@ -1708,26 +1736,31 @@ Optimize fonts with next/font:
 
 ```tsx
 // app/layout.tsx
-import { Inter } from "next/font/google"
-import { Toaster } from "@/components/ui/toaster"
-import { cn } from "@/lib/utils"
-import "./globals.css"
+import { Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/toaster";
+import { cn } from "@/lib/utils";
+import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", inter.className)}>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          inter.className,
+        )}
+      >
         {children}
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -1742,7 +1775,7 @@ const formSchema = z.object({
   bio: z.string().max(160).min(4),
   role: z.enum(["admin", "user", "guest"]),
   notifications: z.boolean().default(false),
-})
+});
 
 export function AdvancedForm() {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -1754,10 +1787,10 @@ export function AdvancedForm() {
       role: "user",
       notifications: false,
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+    console.log(values);
   }
 
   return (
@@ -1861,7 +1894,7 @@ export function AdvancedForm() {
         <Button type="submit">Submit</Button>
       </form>
     </Form>
-  )
+  );
 }
 ```
 
@@ -1915,7 +1948,9 @@ export function AdvancedForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Login</Button>
+        <Button type="submit" className="w-full">
+          Login
+        </Button>
       </form>
     </Form>
   </CardContent>

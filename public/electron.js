@@ -1,6 +1,6 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const isDev = require('electron-is-dev');
+const { app, BrowserWindow } = require("electron");
+const path = require("path");
+const isDev = require("electron-is-dev");
 
 let mainWindow;
 
@@ -18,8 +18,8 @@ function createWindow() {
   // Load the index.html from the app or from local dev server in development mode
   mainWindow.loadURL(
     isDev
-      ? 'http://localhost:3000'
-      : `file://${path.join(__dirname, '../dist/index.html')}`
+      ? "http://localhost:3000"
+      : `file://${path.join(__dirname, "../dist/index.html")}`,
   );
 
   // Open the DevTools in development mode
@@ -28,7 +28,7 @@ function createWindow() {
   }
 
   // Emitted when the window is closed.
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
@@ -37,14 +37,14 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 // Quit when all windows are closed except on macOS
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
 // On macOS re-create window when dock icon is clicked
-app.on('activate', () => {
+app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
   }
