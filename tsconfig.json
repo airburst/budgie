@@ -1,0 +1,39 @@
+{
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "vite.config.ts"],
+  "compilerOptions": {
+    "target": "esnext",
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "incremental": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@utils/*": ["./src/utils/*"],
+      "*": ["./*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    ".output",
+    ".vinxi",
+    "electrobun.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}
