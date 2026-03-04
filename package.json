@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "main": "public/electron.js",
+  "description": "A simple home finance app built with Electron and React.",
+  "author": "Mark Fairhurst",
   "homepage": "./",
   "scripts": {
     "start": "concurrently \"vite\" \"bun run electron-start\"",
@@ -65,8 +67,9 @@
     "wait-on": "^9.0.4"
   },
   "build": {
-    "appId": "com.electron.${name}",
-    "productName": "Electron React App",
+    "appId": "com.markfairhurst.budgie",
+    "productName": "Budgie",
+    "icon": "public/assets/icon.icns",
     "files": [
       "build/**/*",
       "public/electron.js",
