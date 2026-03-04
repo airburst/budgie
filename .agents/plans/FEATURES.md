@@ -1,6 +1,6 @@
 # Budgeting app
 
-## Core feaures
+## Core features
 
 ### Account management
 
@@ -18,33 +18,25 @@
 
 - Hierarchical Categories: users can create broad categories (like "Utilities") and nest subcategories (like "Electric" or "Water") for granular tracking.
 
-- Monthly Budget Planner: A dedicated interface where you could set spending limits for each category. It provided a side-by-side view of Budgeted vs. Actual spending.
-
-- QuickFill: A smart data-entry feature that memorized payees. As you type, it will auto-fill the category and the last amount spent to save time.
+- QuickFill: A smart data-entry feature in the Register. The Payee field is a Combobox with autocomplete over previously used payees. When a pre-existing payee is selected, the Category and Amount fields are automatically populated with the values from the last transaction for that payee.
 
 ### File management
 
-- Local SQLite database with sidecar file.
+- Local SQLite database stored as a single file. The folder location defaults to a standard user data directory and can be changed in Settings.
 
-- Backup files on daily basis / defined schedule / on closing app
+- **TODO:** Backup files on daily basis / defined schedule / on closing app
 
-- Ability to import file and "roll back"
+- **TODO:** Ability to import a file and "roll back" to a previous state
 
-- import downloaded transactions in QIF or CSV format and present a matching view before importing, and reconciling
-
-### Reports
-
-- Net worth
-
-- Budget breakdown by category (pie chart)
+- **TODO:** Import downloaded transactions in QIF or CSV format and present a matching view before importing and reconciling
 
 ## UX and layout
 
 ### Global layout
 
-- Left sidebar with collapsible sections: **Favorites** (starred items) and **Accounts** (grouped by type, e.g. Bank Accounts), each showing name and current balance.
+- Left sidebar with collapsible section: **Accounts** (grouped by type, e.g. Bank Accounts), each showing name and current balance.
 - Top toolbar with icons for: save, open file, tools, settings, and help.
-- Top navigation tabs across the main panel: **Overview**, **Accounts**, **Reminders**, **Budget**, **Reports**.
+- Top navigation tabs across the main panel: **Overview**, **Accounts**, **Scheduled Payments**, **Budget**, **Reports**.
 - Active tab is highlighted with a filled button style; others are plain text.
 
 ### Overview tab
@@ -70,31 +62,36 @@ Opens as a modal dialog with the following fields:
 - **Account name** — text field, focused by default.
 - **Account number** — text field.
 - **Account type** — dropdown (e.g. Bank).
-- **Currency** — dropdown (e.g. British Pound (GBP)).
 - **Initial balance** — numeric field, defaults to 0.00.
-- **Parent account** — dropdown, defaults to None; allows nesting accounts under a parent.
 - **Website** — text field.
 - **Notes** — multiline text area.
 - **Cancel** and **Save** buttons at the bottom right; a **?** help button at the bottom left.
 
-### Reminders tab
+### Scheduled Payments tab
 
-- Split layout: monthly **calendar view** on the left showing reminder names on their due dates, and a **list view** on the right.
+- Split layout: monthly **calendar view** on the left showing scheduled payment names on their due dates, and a **list view** on the right.
 - Calendar has previous/next month navigation arrows and shows the month/year as a heading.
 - List view columns: Date, Description, Amount. Rows with a green check circle are confirmed/recorded; unconfirmed rows have no icon.
 - List extends across months, showing upcoming items beyond the current calendar view.
-- Top-right **Search** bar to filter reminders by name.
+- Top-right **Search** bar to filter scheduled payments by name.
 - Action toolbar: **Record** (mark as done), **Add**, **Edit**, **Delete**.
 
-### Register (account transaction view)
+> **TODO:** Define Add/Edit Scheduled Payment dialog fields (to be specified via database schema and mocked before implementation).
+
+### Register
 
 Opened by clicking an account in the sidebar. Displays the full transaction list for that account.
 
 - Action toolbar: **Add**, **Edit** (dropdown), **Reconcile**, **Forecast**, **Import** (dropdown), **Advanced Find…**
-- Transaction table columns: Date, # (cheque/reference number), Payee, Withdrawal, Deposit, Category, Tags, Memo, Balance, **C** (cleared checkbox).
+- Transaction table columns: Date, # (cheque/reference number), Payee, Withdrawal, Deposit, Category, Memo, Balance, **C** (cleared checkbox).
 - Withdrawals shown in red; deposits and running balance in green.
 - Selected row highlighted in blue.
 - The **C** column has a checkbox per row to mark individual transactions as cleared during reconciliation.
+- **QuickFill:** The Payee field uses a Combobox autocomplete. Selecting an existing payee auto-fills Category and Amount from the last recorded transaction for that payee.
+
+> **TODO:** Define Add/Edit Transaction dialog fields (to be specified via database schema and mocked before implementation).
+
+> **TODO:** Define Category management UI (create, edit, delete categories and subcategories).
 
 #### Reconcile panel
 
@@ -122,5 +119,5 @@ Opens as a separate window after confirming the future date.
   - Green line showing projected running balance.
   - Red horizontal line at zero for quick visual reference of negative balance risk.
 - **Transaction list** below the chart with columns: Date, Payee, Withdrawal, Deposit, Category, Memo, Balance, and a blue inclusion checkbox per row.
-- Projected transactions from scheduled reminders are included automatically.
+- Projected transactions from scheduled payments are included automatically.
 - Bottom toolbar: inline **date picker** to change the end date and a **Refresh** button to recalculate; **?** help button at the bottom left.
