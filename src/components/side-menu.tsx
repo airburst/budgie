@@ -11,6 +11,14 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+const setActiveAccount = (account: string) => {
+  console.log(
+    "%c🤪 ~ file: side-menu.tsx -> Set active account : ",
+    "color: #818a88",
+    account,
+  );
+};
+
 export default function SideMenu() {
   return (
     <Sidebar>
@@ -37,9 +45,7 @@ export default function SideMenu() {
                   render={
                     <button
                       aria-label="Current account"
-                      onClick={() =>
-                        console.log("TODO: set state for current account")
-                      }
+                      onClick={() => setActiveAccount("home")}
                     />
                   }
                 >
@@ -47,12 +53,26 @@ export default function SideMenu() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton render={<a href="#" />}>
+                <SidebarMenuButton
+                  render={
+                    <button
+                      aria-label="Joint account"
+                      onClick={() => setActiveAccount("joint")}
+                    />
+                  }
+                >
                   <span>Joint</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton render={<a href="#" />}>
+                <SidebarMenuButton
+                  render={
+                    <button
+                      aria-label="Savings account"
+                      onClick={() => setActiveAccount("savings")}
+                    />
+                  }
+                >
                   <span>Savings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -10,9 +10,15 @@ export default defineConfig({
       "@": new URL("./src", import.meta.url).pathname,
     },
   },
+  optimizeDeps: {
+    exclude: ["electron", "electron-settings"],
+  },
   build: {
     outDir: "../dist",
     emptyOutDir: true,
+    rollupOptions: {
+      external: ["electron", "electron-settings"],
+    },
   },
   server: {
     port: 3000,
