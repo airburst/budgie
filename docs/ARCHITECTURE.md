@@ -191,18 +191,15 @@ Use `better-sqlite3`.
 Initialize the database in the Main process and set up an `ipcMain.handle` listener.
 
 ```js
-const { app, ipcMain } = require("electron");
-const Database = require("better-sqlite3");
-const path = require("path");
+import { app, ipcMain } from "electron";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import path from "path";
 
-// Store DB in the user's local app data folder
-const dbPath = path.join(app.getPath("userData"), "app.db");
-const db = new Database(dbPath);
-
-// Create a table if it doesn't exist
-db.prepare(
-  "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)",
-).run();
+// The database should be in the user's local app data folder
+const dbPath = path.join(app.getPath("userData"), "database.db");
+const sqlite = new Database(dbPath);
+export const db = drizzle(sqlite);
 
 // Handle requests from the UI
 ipcMain.handle("get-users", async () => {

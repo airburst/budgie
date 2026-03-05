@@ -1,5 +1,6 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
+const { setupDatabase } = require("./db");
 const isDev = !app.isPackaged;
 
 let mainWindow;
@@ -35,7 +36,10 @@ function createWindow() {
 }
 
 // Create window when Electron is ready
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  setupDatabase();
+  createWindow();
+});
 
 // Quit when all windows are closed except on macOS
 app.on("window-all-closed", () => {
