@@ -10,6 +10,7 @@ const dbPath = path.join(app.getPath("home"), "app_database.db");
 
 // 2. Initialize better-sqlite3
 const sqlite = new Database(dbPath);
+sqlite.pragma("journal_mode = WAL");
 
 // 3. Initialize Drizzle
 export const db = drizzle(sqlite, { schema });

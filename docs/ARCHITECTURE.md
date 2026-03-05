@@ -1,234 +1,151 @@
-# Project Architecture
+# Budgie Architecture
 
-## Overview
-
-Budgie is a desktop personal finance app built with **Electron 40**, **React 19**, **TypeScript**, and **Tailwind CSS v4**. Vite handles the renderer build; electron-builder packages the final binaries.
-
-```mermaid
-graph TD
-    subgraph Electron App
-        A[Main Process<br/>public/electron.js<br/>Node.js · CJS]
-        B[Preload Script<br/>public/preload.js<br/>contextBridge]
-        C[Renderer Process<br/>React · Vite · TypeScript]
-    end
-
-    A -- IPC: ipcMain.handle --> B
-    B -- contextBridge.exposeInMainWorld --> C
-    C -- window.api.* --> B
-    B -- ipcRenderer.invoke --> A
-```
+Electron 40 + React 19 + TypeScript + Tailwind v4 + better-sqlite3 + Drizzle ORM. Single-user desktop personal finance app.
 
 ---
 
-## Process Architecture
+## Process Map
 
-| Process  | Entry point          | Runtime             | Responsibilities                        |
-| -------- | -------------------- | ------------------- | --------------------------------------- |
-| Main     | `public/electron.js` | Node.js (CJS)       | Window management, SQLite, IPC handlers |
-| Preload  | `public/preload.js`  | Node.js (sandboxed) | Expose safe API surface to renderer     |
-| Renderer | `src/index.tsx`      | Chromium            | React UI, routing, user interaction     |
+```
+public/electron.js   Main process (CJS, Node.js) — window, IPC handlers, DB
+public/preload.js    Preload (CJS, sandboxed)    — contextBridge API surface
+src/                 Renderer (Vite + React)      — all UI code
+```
 
-The main process creates a single `BrowserWindow`. In dev it loads `http://localhost:3000` (Vite dev server); in production it loads `file://…/build/index.html`.
+`contextIsolation: true`. Renderer has zero Node access. All DB access goes through IPC.
 
-> **Current state:** `contextIsolation` is disabled and the preload script is empty. This will be replaced by the Three-Layer Bridge described in the [Database Access](#database-access) section once the data layer is built.
+---
+
+## Adding an IPC Handler (the full pattern)
+
+Four files must change together:
+
+**1. `src/main/db/index.ts`** — add query function or export if needed, then rebuild:
+
+```
+bun run vite build --config vite.main.config.ts
+```
+
+This writes `public/db.js` (CJS bundle). Any change to `src/main/db/` requires a rebuild.
+
+**2. `public/electron.js`** — register handler after `setupDatabase()`:
+
+```js
+ipcMain.handle("channel:name", () => db.select().from(schema.tableName));
+```
+
+**3. `public/preload.js`** — expose to renderer:
+
+```js
+contextBridge.exposeInMainWorld("api", {
+  existingMethod: () => ipcRenderer.invoke("existing:channel"),
+  newMethod: (arg) => ipcRenderer.invoke("channel:name", arg),
+});
+```
+
+**4. `src/types/electron.d.ts`** — extend the interface:
+
+```ts
+interface ElectronAPI {
+  existingMethod: () => Promise<ExistingType[]>;
+  newMethod: (arg: ArgType) => Promise<ReturnType>;
+}
+```
+
+Types use `InferSelectModel<typeof schema.tableName>` from drizzle-orm.
+
+---
+
+## Database
+
+- File: `~/app_database.db` (`app.getPath("home")`)
+- WAL mode enabled (`sqlite.pragma("journal_mode = WAL")`)
+- Schema: `src/main/db/schema.ts` — Drizzle `sqliteTable` definitions
+- Migrations: `src/main/db/migrations/` — generated with `bun run db:migrate`
+- Drizzle instance (`db`) and `schema` namespace are both exported from `src/main/db/index.ts`
+
+**To add a table:** edit `schema.ts`, run `bun run db:migrate`, then rebuild `db.js`.
 
 ---
 
 ## Frontend Structure
 
-```mermaid
-graph TD
-    A[src/index.html]
-    B[src/index.tsx<br/>createRoot · StrictMode]
-    C[src/App.tsx<br/>react-router v7 · HashRouter]
-    D[pages/Home.tsx]
-    E[components/layout.tsx<br/>SidebarProvider · header · main]
-    F[components/side-menu.tsx<br/>Sidebar · account nav]
-    G[components/ui/*<br/>17 shadcn components]
-
-    A --> B --> C --> D --> E
-    E --> F
-    E --> G
+```
+src/
+  index.html        Inline script sets .dark class before paint
+  index.tsx         createRoot, StrictMode
+  App.tsx           QueryClientProvider → HashRouter → Routes, dark mode listener
+  pages/
+    Home.tsx        Currently: proof-of-concept tasks query
+  components/
+    layout.tsx      SidebarProvider + SideMenu + sticky header + <main>
+    side-menu.tsx   Left nav rail, account list (stub)
+    ui/             shadcn components (@base-ui/react primitives)
+  types/
+    electron.d.ts   window.api type declarations
+  index.css         All Tailwind config, design tokens, dark mode variables
 ```
 
 ### Routing
 
-Routing uses **react-router v7**. `HashRouter` is used intentionally — hash-based URLs work correctly with `file://` in production without requiring a dev server to handle navigation.
+`HashRouter` (required — works with `file://` in production). Add routes in `App.tsx`.
+
+Current routes:
 
 ```
-/     → pages/Home.tsx      (only route currently defined)
+/   →   pages/Home.tsx
 ```
 
-Future routes per the feature spec: Overview, Accounts, Transaction Register, Scheduled Payments, Budget, Reports.
-
-### Layout
-
-`components/layout.tsx` is the persistent shell:
-
-- `SidebarProvider` — React context managing open/collapsed state (persisted to a cookie)
-- `SideMenu` — fixed left rail with branding and account navigation
-- Sticky `<header>` — holds the sidebar toggle (`Cmd/Ctrl+B`)
-- `<main>` — page content area
-
-### Component Library
-
-Components live in `src/components/ui/` and follow the shadcn pattern using `@base-ui/react` primitives (not Radix). Included: Button, Card, Input, Select, Textarea, Badge, Sheet, Sidebar, Tooltip, Dropdown, Alert Dialog, Combobox, and others.
+Planned: Overview, Accounts, Transaction Register, Scheduled Payments, Budget, Reports.
 
 ---
 
-## Build Pipeline
+## Data Fetching Pattern
 
-```mermaid
-flowchart LR
-    A[bun run build]
-    B[vite build<br/>src/ → build/]
-    C[electron-builder<br/>build/ → out/]
-    D[out/mac-arm64/Budgie.app<br/>out/win/Budgie Setup.exe<br/>out/linux/budgie.deb]
+TanStack Query v5. `queryClient` is a module-level singleton in `App.tsx`.
 
-    A --> B --> C --> D
+```ts
+// Read
+const { data = [] } = useQuery({
+  queryKey: ["tableName"],
+  queryFn: () => window.api.getItems(),
+});
+
+// Write
+const mutation = useMutation({
+  mutationFn: (payload) => window.api.createItem(payload),
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tableName"] }),
+});
 ```
 
-### Dev
-
-```
-bun run start
-├── vite              → serves src/ at localhost:3000
-└── electron-start    → wait-on :3000, then electron .
-```
-
-`app.isPackaged` is `false` when running via `electron .`, so `isDev = !app.isPackaged` evaluates to `true`.
-
-### Production
-
-1. `vite build` — bundles the React app into `build/` with `base: "./"` (relative asset paths, required for `file://`)
-2. `electron-builder` — packages `build/**/*` + `public/electron.js` + `package.json` into `out/`
-
-Key Vite options:
-
-| Option              | Value                           | Why                                        |
-| ------------------- | ------------------------------- | ------------------------------------------ |
-| `root`              | `src/`                          | HTML entry is `src/index.html`             |
-| `base`              | `./`                            | Relative asset URLs for `file://` protocol |
-| `build.outDir`      | `../build`                      | One level up from root, at repo root       |
-| `external`          | `electron`, `electron-settings` | Native modules, not bundleable             |
-| `server.strictPort` | `true`                          | `wait-on` depends on a fixed port          |
+No global state library. Server state lives in TanStack Query. UI state is component-local `useState`.
 
 ---
 
 ## Styling
 
-Tailwind v4 is configured entirely in CSS — there is no `tailwind.config.ts`. Configuration, design tokens, and theme mapping all live in `src/index.css`.
+Tailwind v4 — no `tailwind.config.ts`. All config in `src/index.css`.
 
-### Design Tokens
-
-Colors use the `oklch()` color space. Key tokens:
-
-| Token           | Light                                | Dark             |
-| --------------- | ------------------------------------ | ---------------- |
-| `--background`  | white                                | near-black       |
-| `--foreground`  | near-black                           | near-white       |
-| `--primary`     | `oklch(0.51 0.23 277)` — blue/indigo | slightly lighter |
-| `--secondary`   | light grey                           | dark grey        |
-| `--destructive` | `oklch(0.577 0.245 27.325)` — red    | muted red        |
-| `--radius`      | `0.45rem`                            | same             |
-
-Dark mode is class-based: add `.dark` to an ancestor element (not a media query).
-
-A 5-step chart palette is defined (`--chart-1` through `--chart-5`) in the blue range.
-
-### Theme Mapping
-
-An `@theme inline` block maps all CSS variables into Tailwind's utility system:
-
-```css
-@theme inline {
-  --font-sans: "Noto Sans Variable", sans-serif;
-  --color-primary: var(--primary);
-  --color-background: var(--background);
-  /* … all tokens */
-}
-```
-
-This makes `bg-primary`, `text-foreground`, `rounded-sm` etc. all resolve to the CSS variables — enabling runtime theme switching by toggling `.dark`.
+- Design tokens: `oklch()` color space, defined in `:root` and `.dark`
+- Dark mode: `.dark` class on `<html>`. Applied by inline script in `index.html` on load; kept in sync by `useEffect` in `App.tsx` listening to `prefers-color-scheme`
+- Theme mapped into Tailwind via `@theme inline` block — use `bg-background`, `text-foreground`, `text-primary` etc.
+- Font: Noto Sans Variable (`font-sans`)
+- Chart palette: `--chart-1` through `--chart-5` (blue range)
+- Border radius: `--radius: 0.45rem`; steps: `rounded-sm/md/lg/xl/2xl/3xl/4xl`
 
 ---
 
-## State Management
+## Build
 
-Currently state is managed in two ways:
-
-1. **`SidebarContext`** — the only React context; tracks open/collapsed state and persists it to a cookie (`sidebar_state`, 7-day max-age).
-2. **Local `useState`** — all other stateful logic is component-local.
-
-A global state management library will be added to handle app-level state (active account, UI state, cached IPC data). Active account selection in `side-menu.tsx` is currently a `console.log` stub pending this.
-
-The data state model (transactions, accounts, categories, scheduled payments) will be owned by the Main process in SQLite and surfaced to the renderer via IPC, described below.
-
----
-
-## Database Access
-
-In 2026, the best practice for building an Electron app with a local SQLite database follows a "Main-as-Server" architecture. Because the Renderer process (your UI) is essentially a browser, it should never have direct access to the database for security and performance reasons.
-
-### 1. Recommended Architecture: The Three-Layer Bridge
-
-To keep your app secure and performant, you must separate your concerns into three distinct layers:
-
-**Main Process (The Controller):** This is where your Node.js code lives. It owns the SQLite connection and executes all SQL queries.
-
-**Preload Script (The Gatekeeper):** A secure bridge that exposes a limited, safe API to the UI using `contextBridge`.
-
-**Renderer Process (The UI):** Your React frontend. It "asks" the Main process for data via IPC (Inter-Process Communication) and receives a Promise in return.
-
-### 2. Choosing Your SQLite Driver
-
-Use `better-sqlite3`.
-
-### 3. Implementation Blueprint
-
-**Step A: The Main Process (main.js)**
-
-Initialize the database in the Main process and set up an `ipcMain.handle` listener.
-
-```js
-import { app, ipcMain } from "electron";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import path from "path";
-
-// The database should be in the user's local app data folder
-const dbPath = path.join(app.getPath("userData"), "database.db");
-const sqlite = new Database(dbPath);
-export const db = drizzle(sqlite);
-
-// Handle requests from the UI
-ipcMain.handle("get-users", async () => {
-  return db.prepare("SELECT * FROM users").all();
-});
+```
+bun run start          Dev: Vite on :3000 + Electron (wait-on)
+bun run build          Prod: vite build → vite build (db) → electron-builder → out/
+bun run db:migrate     Generate migration SQL from schema changes
+bun run check-types    tsc --noEmit
+bun run lint           eslint --fix
 ```
 
-**Step B: The Preload Script (preload.js)**
+Two Vite builds:
 
-Expose only the necessary function to the window object. Do not expose the entire `ipcRenderer` for security.
-
-```js
-const { contextBridge, ipcRenderer } = require("electron");
-
-contextBridge.exposeInMainWorld("api", {
-  getUsers: () => ipcRenderer.invoke("get-users"),
-});
-```
-
-**Step C: The Renderer (Your Frontend)**
-
-Call the API as if it were a standard web service.
-
-```js
-// In your React component
-const users = await window.api.getUsers();
-console.log(users);
-```
-
-### 4. Pro Tips for 2026
-
-**WAL Mode:** Always enable Write-Ahead Logging (`db.pragma('journal_mode = WAL')`) to allow multiple readers and one writer simultaneously without locking the UI.
+- `vite.config.ts` — renderer: `src/` → `build/`, `base: "./"` for `file://` compat
+- `vite.main.config.ts` — DB module: `src/main/db/index.ts` → `public/db.js` (CJS, externalises electron/better-sqlite3/drizzle-orm)

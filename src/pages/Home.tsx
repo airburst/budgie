@@ -1,14 +1,12 @@
 import Layout from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Task } from "@/types/electron.d";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Home() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-
-  useEffect(() => {
-    window.api.getTasks().then(setTasks);
-  }, []);
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks"],
+    queryFn: () => window.api.getTasks(),
+  });
 
   return (
     <Layout>
