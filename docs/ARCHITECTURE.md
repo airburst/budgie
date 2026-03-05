@@ -232,7 +232,3 @@ console.log(users);
 ### 4. Pro Tips for 2026
 
 **WAL Mode:** Always enable Write-Ahead Logging (`db.pragma('journal_mode = WAL')`) to allow multiple readers and one writer simultaneously without locking the UI.
-
-**Externalize Native Modules:** Ensure `better-sqlite3` is marked as an `external` in the Vite config, as it contains native C++ binaries that cannot be bundled into a single JS file.
-
-**Security:** Never pass raw SQL strings from the Renderer to the Main process. This prevents SQL injection within your own desktop app. Always use Prepared Statements in the Main process.

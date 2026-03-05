@@ -1,6 +1,6 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const { setupDatabase } = require("./db");
+const { setupDatabase, db, schema } = require("./db");
 const isDev = !app.isPackaged;
 
 let mainWindow;
@@ -11,9 +11,8 @@ function createWindow() {
     width: 1280,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true, // for electron-settings
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
     },
   });
 
@@ -38,6 +37,9 @@ function createWindow() {
 // Create window when Electron is ready
 app.whenReady().then(() => {
   setupDatabase();
+
+  ipcMain.handle("tasks:getAll", () => db.select().from(schema.tasks));
+
   createWindow();
 });
 

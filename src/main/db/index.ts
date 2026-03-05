@@ -13,6 +13,7 @@ const sqlite = new Database(dbPath);
 
 // 3. Initialize Drizzle
 export const db = drizzle(sqlite, { schema });
+export { schema };
 
 // 4. Run migrations on startup
 export function setupDatabase() {
