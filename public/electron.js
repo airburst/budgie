@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { setupDatabase, db, schema } = require("./db");
+const registerAccountsHandlers = require("./ipc/accounts");
 const isDev = !app.isPackaged;
 
 let mainWindow;
@@ -37,8 +38,10 @@ function createWindow() {
 // Create window when Electron is ready
 app.whenReady().then(() => {
   setupDatabase();
+  // Add IPC handlers for database operations
+  ipcMain.handle("tasks:getAll", () => db.select().from(schema.tasks)); // FIXME: remove
 
-  ipcMain.handle("tasks:getAll", () => db.select().from(schema.tasks));
+  registerAccountsHandlers(ipcMain, db, schema);
 
   createWindow();
 });

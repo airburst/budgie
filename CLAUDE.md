@@ -1,0 +1,81 @@
+# Budgie — Agent Instructions
+
+## New Entity Rule
+
+Whenever a new table is added to `src/main/db/schema.ts`, you **must** wire up full CRUD
+across all five files before considering the task done.
+
+**One file per entity.** Each entity lives in its own `public/ipc/<entity>.js`. Never combine
+multiple entities in one handler file, and never add cross-entity joins to these handlers —
+each handler queries only its own table.
+
+### 1. `public/ipc/entity.js` — create handler file
+
+```js
+const { eq } = require("drizzle-orm");
+
+module.exports = function registerEntityHandlers(ipcMain, db, schema) {
+  ipcMain.handle("entity:getAll",   ()           => db.select().from(schema.entity));
+  ipcMain.handle("entity:getById",  (_, id)      => db.select().from(schema.entity).where(eq(schema.entity.id, id)).then(r => r[0] ?? null));
+  ipcMain.handle("entity:create",   (_, data)    => db.insert(schema.entity).values(data).returning());
+  ipcMain.handle("entity:update",   (_, id, data)=> db.update(schema.entity).set(data).where(eq(schema.entity.id, id)).returning());
+  ipcMain.handle("entity:delete",   (_, id)      => db.delete(schema.entity).where(eq(schema.entity.id, id)));
+};
+```
+
+### 2. `public/electron.js` — import and register
+
+```js
+const registerEntityHandlers = require("./ipc/entity");
+
+// inside app.whenReady():
+registerEntityHandlers(ipcMain, db, schema);
+```
+
+### 3. `public/preload.js` — expose on `window.api`
+
+```js
+getEntities:    ()           => ipcRenderer.invoke("entity:getAll"),
+getEntity:      (id)         => ipcRenderer.invoke("entity:getById", id),
+createEntity:   (data)       => ipcRenderer.invoke("entity:create", data),
+updateEntity:   (id, data)   => ipcRenderer.invoke("entity:update", id, data),
+deleteEntity:   (id)         => ipcRenderer.invoke("entity:delete", id),
+```
+
+### 4. `src/types/electron.d.ts` — extend `ElectronAPI`
+
+```ts
+import type { InferSelectModel } from "drizzle-orm";
+import type { entity } from "@/main/db/schema";
+
+export type Entity = InferSelectModel<typeof entity>;
+
+// In ElectronAPI interface:
+getEntities:    ()                        => Promise<Entity[]>;
+getEntity:      (id: number)              => Promise<Entity | null>;
+createEntity:   (data: Omit<Entity, "id" | "createdAt">) => Promise<Entity[]>;
+updateEntity:   (id: number, data: Partial<Omit<Entity, "id" | "createdAt">>) => Promise<Entity[]>;
+deleteEntity:   (id: number)              => Promise<void>;
+```
+
+### 5. Rebuild `public/db.js`
+
+After any change to `src/main/db/`:
+
+```
+bun run vite build --config vite.main.config.ts
+```
+
+---
+
+## IPC Channel Naming Convention
+
+`<entity>:<verb>` — e.g. `accounts:getAll`, `accounts:getById`, `accounts:create`, `accounts:update`, `accounts:delete`.
+
+## Migration
+
+After editing `schema.ts`, generate a migration before wiring IPC:
+
+```
+bun run db:migrate
+```
