@@ -1,6 +1,6 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
-const isDev = require("electron-is-dev");
+const isDev = !app.isPackaged;
 
 let mainWindow;
 
@@ -20,7 +20,7 @@ function createWindow() {
   mainWindow.loadURL(
     isDev
       ? "http://localhost:3000"
-      : `file://${path.join(__dirname, "../dist/index.html")}`,
+      : `file://${path.join(__dirname, "../build/index.html")}`,
   );
 
   // Open the DevTools in development mode

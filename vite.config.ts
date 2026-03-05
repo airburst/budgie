@@ -13,8 +13,9 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["electron", "electron-settings"],
   },
+  base: "./",
   build: {
-    outDir: "../dist",
+    outDir: "../build",
     emptyOutDir: true,
     rollupOptions: {
       external: ["electron", "electron-settings"],
