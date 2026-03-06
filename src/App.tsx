@@ -2,6 +2,7 @@ import Home from "@/pages/Home";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router";
+import Accounts from "./pages/Accounts";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +20,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HashRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Accounts />} />
+          <Route path="/home" element={<Home />} />
         </Routes>
       </HashRouter>
     </QueryClientProvider>
