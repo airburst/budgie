@@ -11,13 +11,15 @@
     "build": "vite build && vite build --config vite.main.config.ts && bun run electron-build",
     "electron-start": "wait-on http://localhost:3000 && vite build --config vite.main.config.ts && electron .",
     "electron-build": "electron-builder",
+    "electron-build:win": "electron-builder --win",
     "test": "bun test || echo \"No tests specified\"",
     "lint": "eslint --fix",
     "check-types": "tsc --noEmit",
     "format": "prettier --write .",
     "prepare": "husky",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
-    "db:migrate": "drizzle-kit generate"
+    "db:migrate": "drizzle-kit generate",
+    "db:seed": "bun run src/main/db/seeds/accounts.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
@@ -92,7 +94,7 @@
       "category": "public.app-category.developer-tools"
     },
     "win": {
-      "target": "nsis"
+      "target": "portable"
     },
     "linux": {
       "target": "deb"

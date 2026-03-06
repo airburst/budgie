@@ -20,8 +20,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HashRouter>
         <Routes>
-          <Route path="/" element={<Accounts />} />
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/accounts" element={<Accounts />} />
         </Routes>
       </HashRouter>
     </QueryClientProvider>

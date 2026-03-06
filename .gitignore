@@ -24,3 +24,6 @@
 # AI
 .claude
 .worktrees
+
+# test database
+test.db
