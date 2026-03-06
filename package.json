@@ -82,7 +82,9 @@
     "files": [
       "build/**/*",
       "public/electron.js",
+      "public/preload.js",
       "public/db.js",
+      "public/ipc/**/*",
       "src/main/db/migrations/**/*",
       "package.json"
     ],
