@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Category Spending Report - BudgetPro</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-x-hidden">
+<div class="layout-container flex h-full grow flex-col">
+<!-- Header -->
+<header class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-10 py-3 sticky top-0 z-50">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-4 text-primary">
+<div class="size-6">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M4 42.4379C4 42.4379 14.0962 36.0744 24 41.1692C35.0664 46.8624 44 42.2078 44 42.2078L44 7.01134C44 7.01134 35.068 11.6577 24.0031 5.96913C14.0971 0.876274 4 7.27094 4 7.27094L4 42.4379Z"></path>
+</svg>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight">BudgetPro</h2>
+</div>
+<label class="flex flex-col min-w-40 h-10 max-w-64">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full overflow-hidden">
+<div class="text-slate-500 bg-slate-100 dark:bg-slate-800 flex items-center justify-center pl-4 border-r-0">
+<span class="material-symbols-outlined text-xl">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 border-none bg-slate-100 dark:bg-slate-800 focus:ring-0 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 px-4 pl-2 text-sm" placeholder="Search transactions..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex flex-1 justify-end gap-8">
+<nav class="flex items-center gap-8">
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium" href="#">Dashboard</a>
+<a class="text-primary text-sm font-bold" href="#">Reports</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium" href="#">Accounts</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-medium" href="#">Budgets</a>
+</nav>
+<div class="bg-primary/10 border border-primary/20 rounded-full size-10 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar smiling young man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY5HFPKFN5WLPEgESYp0dBTlYWg-Eo3yyNFbSH3eZJXfjLly-Wm2qomrxFSqXVSrTpnPQrgS5tdRdRIjdoUyeb9KGNEv2lCEEmjRsKmadID9DCd3EdauAcVoELwQ-9Pm8dgnNRvf3f-rf8oTgHOoIvDX5vDBQxPtp-SmM_z7uhotalFkFyrtZm6FcaBQkiWsHPyoqxucThom6TiOvGhqxNOmsLU0szriwJsO872Wu8J7FOkMD_NIqGvp1vDLnQDk0N4ZIP9vyJrQo"/>
+</div>
+</div>
+</header>
+<main class="flex flex-1 justify-center py-8">
+<div class="layout-content-container flex flex-col w-full max-w-[1024px] px-6">
+<!-- Breadcrumbs & Back -->
+<div class="flex items-center gap-2 mb-6">
+<button class="flex items-center gap-2 text-primary font-semibold hover:underline bg-primary/5 px-3 py-1.5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-lg">arrow_back</span>
+<span>Back to Dashboard</span>
+</button>
+<span class="text-slate-400 mx-2">/</span>
+<a class="text-slate-500 text-sm font-medium" href="#">Reports</a>
+<span class="text-slate-400 mx-2">/</span>
+<span class="text-slate-900 dark:text-slate-100 text-sm font-bold">Groceries Breakdown</span>
+</div>
+<!-- Page Header -->
+<div class="flex flex-wrap justify-between items-end gap-4 mb-8">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-lg">
+<span class="material-symbols-outlined text-3xl">shopping_cart</span>
+</div>
+<h1 class="text-slate-900 dark:text-slate-100 text-4xl font-black tracking-tight">Groceries Spending</h1>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-lg mt-2">Spending analysis for October 1, 2023 - October 31, 2023</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 rounded-lg h-10 px-4 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold hover:bg-slate-50 transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span>
+<span>Filter</span>
+</button>
+<button class="flex items-center gap-2 rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-all shadow-md">
+<span class="material-symbols-outlined text-lg">download</span>
+<span>Export CSV</span>
+</button>
+</div>
+</div>
+<!-- Mini-Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Total Spent</p>
+<span class="material-symbols-outlined text-primary">payments</span>
+</div>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-tight">$1,240.50</p>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-xs mr-0.5">trending_up</span>
+                                12%
+                            </span>
+<span class="text-slate-400 text-xs">vs last month</span>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Avg Transaction</p>
+<span class="material-symbols-outlined text-primary">receipt_long</span>
+</div>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-tight">$62.02</p>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="flex items-center text-rose-600 dark:text-rose-400 text-sm font-bold bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-xs mr-0.5">trending_down</span>
+                                5%
+                            </span>
+<span class="text-slate-400 text-xs">vs last month</span>
+</div>
+</div>
+<div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="flex items-center justify-between">
+<p class="text-slate-500 dark:text-slate-400 text-sm font-semibold uppercase tracking-wider">Top Vendor</p>
+<span class="material-symbols-outlined text-primary">storefront</span>
+</div>
+<p class="text-slate-900 dark:text-slate-100 text-3xl font-bold leading-tight">Whole Foods</p>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="text-slate-500 dark:text-slate-400 text-sm">8 transactions</span>
+</div>
+</div>
+</div>
+<!-- Transaction History Table -->
+<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+<div class="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight">Transaction History</h2>
+<span class="text-slate-500 text-sm">20 results found</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-slate-50 dark:bg-slate-800/50">
+<th class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">Date</th>
+<th class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">Vendor</th>
+<th class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">Account</th>
+<th class="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest text-right">Amount</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 28, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+<img class="w-5 h-5 object-contain" data-alt="Whole Foods Market logo" onerror="this.src='https://placeholder.pics/svg/32'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ5fKzyRCfTtZSZ1Fu-f2lYw769TCNEbnNOlT9OruhHPgAzXIKtCjQLhI9Wk0VEBMIqqUZ3mWc2nrQFD-sogR9K5KrMH8IwLfwMFuquA34kYAxMTLVVFm7HB3YYDYgJWItR8cMItfC05t3jcSFJh_kkU4dOAhxBMy7HWkJ2U2qpl64e2rBAjdRwbRjk9Tzt1jiiaJEdtWFByYky04BayD8ovIkc7zaLWaHnBRGrr_dYgROJCBRpRvUEJblFGiwdu8dgGOweKb1eLU"/>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Whole Foods Market</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
+<span class="material-symbols-outlined text-xs">credit_card</span>
+                                            Chase Sapphire • 4242
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$142.30</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 24, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+<img class="w-5 h-5 object-contain" data-alt="Trader Joe's logo" onerror="this.src='https://placeholder.pics/svg/32'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-KnzMZSNjneVPHvyP8xfN4gT135wg26Towi5NrRzODrnY3JZ0T6hV22cS7QFSjebgsV0-BDgBSZ_02WKg2YZRioFhY0WHRYKmGwHQbaThnx_3xSigan6xElb9R9WYRZ4ON7AbQWivTnvb_cCyTPZbOHFTIVNvmdr2i2vsSLiertOunMnAjcdnx7AYqbXL25V7W_LvCKucFOy3lXR2jSwigsayhYFYf_k9sCXTaiv0woC7_OAIvcHrJJFQjGhCSttQ3e7JhKz7Go0"/>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Trader Joe's</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-xs">account_balance</span>
+                                            Main Checking • 9012
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$89.15</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 21, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+<img class="w-5 h-5 object-contain" data-alt="Safeway logo" onerror="this.src='https://placeholder.pics/svg/32'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxZN8B27bzqUTmCLODbPkEegnmZijqRP7VkU35uxt5mhT1ePj72zNsrwyQuhvkgFdaaCZONKGaiPahFggC89tb1eWKudS_QdgzLU70gTRd4xqEtdUmQRwlLSyvrR6QRTUnOFWQDQwsEnvmgLUToSS5E1SS3YFPQa82cSGtgBhPj0-_Xsc4eJrciNUsH9kbuale0HopBZR2j-WaP-ZSzgMFLhy08oLOp52vXANM2HSWS4bh6cIC6HHFSvqCgGZcJcSzUPqSrsItisA"/>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Safeway</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
+<span class="material-symbols-outlined text-xs">credit_card</span>
+                                            Chase Sapphire • 4242
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$210.45</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 18, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+<img class="w-5 h-5 object-contain" data-alt="Costco logo" onerror="this.src='https://placeholder.pics/svg/32'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSNTPC7UY_8I2GebK1bNznNrhI0GErxWLIitYZ2dSYAx9NhtLFfzf4ZyKf2UiLfMQIJDqzMIyDhl79oczDFcnubM3UNPNRTOF8DJ3YycaY2EPHwYMxO7bbQGVORBQ_NMIR9JYt-ExrULtmWi2b1x8os1Xl4YvE6ePxsyfwrKjFt62M4Ucug4jOx9UO1H5FVnTnA_VbcK6hl3J7hoqSSoiWOB61K8F5fBk24OUBilfv1i1xT7k8rwYTeZU4hfqP_rYg7vd0CkNGDu0"/>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Costco Wholesale</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
+<span class="material-symbols-outlined text-xs">credit_card</span>
+                                            Chase Sapphire • 4242
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$455.20</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 14, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden text-slate-400">
+<span class="material-symbols-outlined">store</span>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Farmer's Market</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-xs">account_balance</span>
+                                            Main Checking • 9012
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$45.00</td>
+</tr>
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+<td class="px-6 py-4 text-slate-600 dark:text-slate-300 text-sm">Oct 09, 2023</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+<img class="w-5 h-5 object-contain" data-alt="Instacart logo" onerror="this.src='https://placeholder.pics/svg/32'" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuoJlUPpjQUClc0pIDKcVNOydQ-069NE3X-nT4EqSKIW9iUhxS3SwJJnfALe0BC9SQLX-NWp7occJM_8D30vJYk34N5VnyeRMjOq8PSWjk5bSKpmmBk_O_Ecyb7qwg4UPVuprQnBfexTgEIQB42qdnsmH23X9ll_jKxak_lZ29wBJTnd3poTdP-ru9eMpZyo2Qy_oGgVWSKq6pMcjEwPmvbh2c6L9QA_UxAIC8IfPyKMsTKfeq1j_ZEyEAtNZotMYWEM26i2jL23U"/>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-semibold text-sm">Instacart</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
+<span class="material-symbols-outlined text-xs">credit_card</span>
+                                            Chase Sapphire • 4242
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-sm">$128.40</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
+<p class="text-slate-500 text-sm font-medium">Showing 1 to 6 of 20 transactions</p>
+<div class="flex gap-2">
+<button class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 disabled:opacity-50 hover:bg-slate-50 dark:hover:bg-slate-800" disabled="">
+<span class="material-symbols-outlined text-xl">chevron_left</span>
+</button>
+<button class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800">
+<span class="material-symbols-outlined text-xl">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Stats Bar -->
+<footer class="mt-auto bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 px-10">
+<div class="max-w-[1024px] mx-auto flex flex-wrap justify-between items-center gap-6">
+<div class="flex flex-col gap-1">
+<p class="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">Monthly Budget Progress</p>
+<div class="flex items-center gap-4">
+<div class="w-64 h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700">
+<div class="h-full bg-primary w-[82%]" style="box-shadow: 0 0 10px rgba(19, 91, 236, 0.4)"></div>
+</div>
+<span class="text-slate-900 dark:text-slate-100 font-bold text-sm">82% Used</span>
+</div>
+</div>
+<div class="flex gap-8">
+<div class="flex flex-col">
+<span class="text-slate-500 dark:text-slate-400 text-xs font-medium">Budgeted</span>
+<span class="text-slate-900 dark:text-slate-100 font-bold">$1,500.00</span>
+</div>
+<div class="flex flex-col">
+<span class="text-slate-500 dark:text-slate-400 text-xs font-medium">Spent</span>
+<span class="text-slate-900 dark:text-slate-100 font-bold">$1,240.50</span>
+</div>
+<div class="flex flex-col">
+<span class="text-slate-500 dark:text-slate-400 text-xs font-medium">Remaining</span>
+<span class="text-emerald-600 dark:text-emerald-400 font-bold">$259.50</span>
+</div>
+</div>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

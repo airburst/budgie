@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Edit Scheduled Payment</title>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex items-center justify-center p-4 lg:p-8">
+<!-- Modal Backdrop -->
+<div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-0"></div>
+<!-- Modal Container -->
+<div class="relative z-10 w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
+<!-- Header -->
+<div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<div>
+<h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">Edit Scheduled Payment</h1>
+<p class="text-sm text-slate-500 dark:text-slate-400">Configure your recurring bill details and frequency.</p>
+</div>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="p-6 space-y-6">
+<!-- Basic Info Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Payee -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Payee</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">store</span>
+<input class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="e.g. Netflix, Rent, Electric Co." type="text"/>
+</div>
+</div>
+<!-- Amount -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Amount</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+<input class="w-full pl-8 pr-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" placeholder="0.00" step="0.01" type="number"/>
+</div>
+</div>
+<!-- Category -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Category</label>
+<select class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+<option>Housing &amp; Utilities</option>
+<option>Subscriptions</option>
+<option>Insurance</option>
+<option>Transportation</option>
+</select>
+</div>
+<!-- From Account -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">From Account</label>
+<select class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+<option>Main Checking (...4291)</option>
+<option>Savings (...0012)</option>
+<option>Credit Card (...8829)</option>
+</select>
+</div>
+</div>
+<div class="h-px bg-slate-200 dark:bg-slate-800"></div>
+<!-- Schedule Settings -->
+<div class="space-y-4">
+<h3 class="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+                    Recurrence Rules
+                </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Start Date -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">First Payment Date</label>
+<input class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" type="date"/>
+</div>
+<!-- Frequency -->
+<div class="space-y-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Frequency</label>
+<select class="w-full px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+<option>Daily</option>
+<option>Weekly</option>
+<option>Bi-weekly</option>
+<option selected="">Monthly</option>
+<option>Yearly</option>
+</select>
+</div>
+</div>
+<!-- End Condition -->
+<div class="space-y-3">
+<p class="text-sm font-semibold text-slate-700 dark:text-slate-300">End Condition</p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<input checked="" class="w-4 h-4 text-primary focus:ring-primary border-slate-300" name="end_condition" type="radio"/>
+<span class="text-sm">Never (Ongoing)</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<input class="w-4 h-4 text-primary focus:ring-primary border-slate-300" name="end_condition" type="radio"/>
+<span class="text-sm">On Date</span>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+<input class="w-4 h-4 text-primary focus:ring-primary border-slate-300" name="end_condition" type="radio"/>
+<span class="text-sm">After X times</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Preferences -->
+<div class="bg-primary/5 dark:bg-primary/10 p-4 rounded-xl border border-primary/20">
+<div class="flex items-start gap-4">
+<div class="flex items-center h-6">
+<input checked="" class="w-5 h-5 rounded text-primary border-primary/40 focus:ring-primary/50 cursor-pointer" id="auto-post" type="checkbox"/>
+</div>
+<label class="cursor-pointer" for="auto-post">
+<p class="text-sm font-bold text-slate-900 dark:text-slate-100">Auto-post payment</p>
+<p class="text-xs text-slate-500 dark:text-slate-400">The system will automatically record this payment on the scheduled date. If unchecked, we will just remind you.</p>
+</label>
+</div>
+</div>
+</form>
+<!-- Footer Actions -->
+<div class="px-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-end gap-3">
+<button class="px-6 py-2.5 rounded-lg font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                Cancel
+            </button>
+<button class="px-8 py-2.5 rounded-lg font-semibold text-white bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+                Save Schedule
+            </button>
+</div>
+</div>
+</body></html>
