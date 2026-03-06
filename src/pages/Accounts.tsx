@@ -1,4 +1,4 @@
-import SideMenu from "@/components/side-menu";
+import SideMenu from "@/components/AccountsMenu/accounts-menu";
 import Layout from "@/pages/layout";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 

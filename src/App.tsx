@@ -1,4 +1,4 @@
-import Home from "@/pages/Home";
+import Home from "@/pages/Home/Home";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router";
