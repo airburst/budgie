@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,12 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useCategories } from "@/hooks/useCategories";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
-import { CategorySheet } from "./CategorySheet";
-import { useCategories } from "@/hooks/useCategories";
+import { CategorySheet } from "./CategoryForm";
 
 export default function Categories() {
   const { categories, remove } = useCategories();

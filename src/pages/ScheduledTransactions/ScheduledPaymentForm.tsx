@@ -1,3 +1,4 @@
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +18,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import type { ScheduledTransaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 import { RRule } from "rrule";
-import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 
 type ScheduledPaymentSheetProps = {
   open: boolean;
@@ -92,8 +93,7 @@ export function ScheduledPaymentSheet({
   onOpenChange,
   editingId,
 }: ScheduledPaymentSheetProps) {
-  const { scheduled, accounts, categories, create, update } =
-    useScheduledTransactions();
+  const { scheduled, accounts, create, update } = useScheduledTransactions();
 
   const [form, setForm] = useState(empty);
 
@@ -123,8 +123,7 @@ export function ScheduledPaymentSheet({
         amount: String(editing.amount),
         categoryId: editing.categoryId ? String(editing.categoryId) : "",
         accountId: String(editing.accountId),
-        startDate:
-          editing.nextDueDate ?? new Date().toISOString().slice(0, 10),
+        startDate: editing.nextDueDate ?? new Date().toISOString().slice(0, 10),
         frequency,
         endCondition,
         endDate,
@@ -216,22 +215,10 @@ export function ScheduledPaymentSheet({
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label>Category</Label>
-              <Select
+              <CategoryCombobox
                 value={form.categoryId}
-                onValueChange={(v) => set("categoryId", v ?? "")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="No category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onValueChange={(v) => set("categoryId", v)}
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <Label>Account</Label>
@@ -240,7 +227,13 @@ export function ScheduledPaymentSheet({
                 onValueChange={(v) => set("accountId", v ?? "")}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select account" />
+                  <SelectValue placeholder="Select account">
+                    {(v: string | null) =>
+                      v
+                        ? accounts.find((a) => a.id === Number(v))?.name
+                        : undefined
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((a) => (

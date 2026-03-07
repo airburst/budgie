@@ -7,6 +7,7 @@ export function useCategories() {
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: () => window.api.getCategories(),
+    select: (data) => [...data].sort((a, b) => a.name.localeCompare(b.name)),
   });
 
   const create = useMutation({

@@ -1,16 +1,15 @@
 import { Button } from "@/components/ui/button";
+import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
 import { ScheduledCalendar } from "./ScheduledCalendar";
-import { ScheduledPaymentSheet } from "./ScheduledPaymentSheet";
+import { ScheduledPaymentSheet } from "./ScheduledPaymentForm";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
 import { ScheduledTable } from "./ScheduledTable";
-import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 
 export default function ScheduledTransactions() {
-  const { scheduled, accounts, remove } =
-    useScheduledTransactions();
+  const { scheduled, accounts, remove } = useScheduledTransactions();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);

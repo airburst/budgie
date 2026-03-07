@@ -1,3 +1,4 @@
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,13 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Transaction } from "@/types/electron";
@@ -43,8 +37,7 @@ export function TransactionSheet({
   editingId,
   accountId,
 }: TransactionSheetProps) {
-  const { transactions, categories, create, update } =
-    useTransactions(accountId);
+  const { transactions, create, update } = useTransactions(accountId);
 
   const [form, setForm] = useState(empty);
 
@@ -145,22 +138,10 @@ export function TransactionSheet({
 
           <div className="flex flex-col gap-1.5">
             <Label>Category</Label>
-            <Select
+            <CategoryCombobox
               value={form.categoryId}
-              onValueChange={(v) => set("categoryId", v ?? "")}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="No category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">No category</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(v) => set("categoryId", v)}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
