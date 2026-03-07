@@ -2,6 +2,7 @@ import { builtinModules } from "module";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  publicDir: false,
   build: {
     lib: {
       entry: "src/main/db/index.ts",

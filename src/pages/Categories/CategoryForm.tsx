@@ -53,6 +53,7 @@ export function CategorySheet({
       name: form.name,
       color: form.color || null,
       icon: form.icon || null,
+      parentId: editing?.parentId ?? null,
     };
     if (editing) {
       await update.mutateAsync({ id: editing.id, data });

@@ -107,3 +107,19 @@ After editing `schema.ts`, generate a migration before wiring IPC:
 ```
 bun run db:migrate
 ```
+
+### CRITICAL: Never drop tables
+
+This is a financial application. **Never generate or apply a migration that contains `DROP TABLE`.**
+Data loss is unacceptable.
+
+Drizzle will sometimes generate `DROP TABLE` / recreate migrations when it detects a default
+value change (e.g. because `new Date().toISOString()` in the schema produces a different
+timestamp on each `generate` run). Always inspect the generated SQL before applying it.
+
+If a generated migration contains `DROP TABLE`, discard it and write a manual migration instead.
+For adding columns, `ALTER TABLE ... ADD COLUMN` is always sufficient and safe:
+
+```sql
+ALTER TABLE `table_name` ADD COLUMN `column_name` type REFERENCES `other_table`(`id`);
+```

@@ -1,4 +1,7 @@
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+const now = () => new Date().toISOString();
 
 export const accounts = sqliteTable("accounts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -10,15 +13,18 @@ export const accounts = sqliteTable("accounts", {
   balance: real("balance").notNull().default(0),
   currency: text("currency").notNull().default("GBP"),
   notes: text("notes"),
-  createdAt: text("created_at").default(new Date().toISOString()),
+  createdAt: text("created_at").$defaultFn(now),
 });
 
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  parentId: integer("parent_id").references(
+    (): AnySQLiteColumn => categories.id,
+  ),
   name: text("name").notNull(),
   color: text("color"),
   icon: text("icon"),
-  createdAt: text("created_at").default(new Date().toISOString()),
+  createdAt: text("created_at").$defaultFn(now),
 });
 
 export const transactions = sqliteTable("transactions", {
@@ -32,7 +38,7 @@ export const transactions = sqliteTable("transactions", {
   amount: real("amount").notNull(),
   notes: text("notes"),
   cleared: integer("cleared", { mode: "boolean" }).notNull().default(false),
-  createdAt: text("created_at").default(new Date().toISOString()),
+  createdAt: text("created_at").$defaultFn(now),
 });
 
 export const scheduledTransactions = sqliteTable("scheduled_transactions", {
@@ -48,5 +54,5 @@ export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   autoPost: integer("auto_post", { mode: "boolean" }).notNull().default(false),
   notes: text("notes"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
-  createdAt: text("created_at").default(new Date().toISOString()),
+  createdAt: text("created_at").$defaultFn(now),
 });

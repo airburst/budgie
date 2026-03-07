@@ -16,7 +16,10 @@ type CategoryComboboxProps = {
   onValueChange: (value: string) => void;
 };
 
-export function CategoryCombobox({ value, onValueChange }: CategoryComboboxProps) {
+export function CategoryCombobox({
+  value,
+  onValueChange,
+}: CategoryComboboxProps) {
   const { categories, create } = useCategories();
   const [inputValue, setInputValue] = useState("");
 
@@ -27,7 +30,12 @@ export function CategoryCombobox({ value, onValueChange }: CategoryComboboxProps
   async function handleCreate() {
     const name = inputValue.trim();
     if (!name) return;
-    const [newCat] = await create.mutateAsync({ name, color: null, icon: null });
+    const [newCat] = await create.mutateAsync({
+      name,
+      color: null,
+      icon: null,
+      parentId: null,
+    });
     if (newCat) {
       onValueChange(String(newCat.id));
     }
