@@ -25,7 +25,8 @@ type TransactionSheetProps = {
 const empty = {
   date: new Date().toISOString().slice(0, 10),
   payee: "",
-  amount: "",
+  withdrawal: "",
+  deposit: "",
   categoryId: "",
   notes: "",
   cleared: false,
@@ -50,7 +51,8 @@ export function TransactionSheet({
       setForm({
         date: editing.date,
         payee: editing.payee,
-        amount: String(editing.amount),
+        withdrawal: editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
+        deposit: editing.amount > 0 ? editing.amount.toFixed(2) : "",
         categoryId: editing.categoryId ? String(editing.categoryId) : "",
         notes: editing.notes ?? "",
         cleared: editing.cleared ?? false,
@@ -64,13 +66,14 @@ export function TransactionSheet({
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save() {
+    const amount =
+      (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
     const data: Omit<Transaction, "id" | "createdAt"> = {
       accountId,
       date: form.date,
       payee: form.payee,
-      amount: parseFloat(form.amount as string) || 0,
+      amount,
       categoryId: form.categoryId ? parseInt(form.categoryId) : null,
       notes: form.notes || null,
       cleared: form.cleared,
@@ -81,6 +84,11 @@ export function TransactionSheet({
       await create.mutateAsync(data);
     }
     onOpenChange(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await save();
   }
 
   const isPending = create.isPending || update.isPending;
@@ -100,29 +108,15 @@ export function TransactionSheet({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tx-date">Date</Label>
-              <Input
-                id="tx-date"
-                type="date"
-                value={form.date}
-                onChange={(e) => set("date", e.target.value)}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tx-amount">Amount</Label>
-              <Input
-                id="tx-amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.amount}
-                onChange={(e) => set("amount", e.target.value)}
-                required
-              />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tx-date">Date</Label>
+            <Input
+              id="tx-date"
+              type="date"
+              value={form.date}
+              onChange={(e) => set("date", e.target.value)}
+              required
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -142,6 +136,41 @@ export function TransactionSheet({
               value={form.categoryId}
               onValueChange={(v) => set("categoryId", v)}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tx-withdrawal">Withdrawal</Label>
+              <Input
+                id="tx-withdrawal"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.withdrawal}
+                onChange={(e) => set("withdrawal", e.target.value)}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) set("withdrawal", val.toFixed(2));
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="tx-deposit">Deposit</Label>
+              <Input
+                id="tx-deposit"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.deposit}
+                onChange={(e) => set("deposit", e.target.value)}
+                onBlur={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val)) set("deposit", val.toFixed(2));
+                }}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -171,7 +200,7 @@ export function TransactionSheet({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit as never} disabled={isPending}>
+          <Button onClick={save} disabled={isPending}>
             {editing ? "Save Changes" : "Add Transaction"}
           </Button>
         </DialogFooter>
