@@ -1,3 +1,4 @@
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -112,10 +113,9 @@ export function RecurrenceSection({
           </div>
 
           {config.endCondition === "on_date" && (
-            <Input
-              type="date"
+            <DatePicker
               value={config.endDate}
-              onChange={(e) => set({ endDate: e.target.value })}
+              onChange={(v) => set({ endDate: v })}
             />
           )}
           {config.endCondition === "after_x" && (

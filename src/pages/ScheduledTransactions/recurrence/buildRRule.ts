@@ -103,10 +103,16 @@ export function buildRRule(config: RecurrenceConfig): string {
   return raw.startsWith("RRULE:") ? raw.slice(6) : raw;
 }
 
-export function computeNextDueDate(rruleStr: string): string | null {
+export function computeNextDueDate(
+  rruleStr: string,
+  startDate?: string,
+): string | null {
   try {
-    const rule = RRule.fromString(rruleStr);
-    const next = rule.after(new Date(), true);
+    const dtstart = startDate
+      ? new Date(startDate + "T12:00:00Z")
+      : new Date();
+    const rule = new RRule({ ...RRule.parseString(rruleStr), dtstart });
+    const next = rule.after(dtstart, true);
     return next ? next.toISOString().slice(0, 10) : null;
   } catch {
     return null;

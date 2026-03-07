@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -100,7 +101,7 @@ export function ScheduledPaymentDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const rruleStr = buildRRule(form.recurrence);
-    const nextDueDate = computeNextDueDate(rruleStr);
+    const nextDueDate = computeNextDueDate(rruleStr, form.startDate);
     const amount =
       (parseFloat(form.deposit as string) || 0) -
       (parseFloat(form.withdrawal as string) || 0);
@@ -230,12 +231,10 @@ export function ScheduledPaymentDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
                     <Label htmlFor="sp-start">First Payment Date</Label>
-                    <Input
-                      id="sp-start"
-                      type="date"
+                    <DatePicker
                       value={form.startDate}
-                      onChange={(e) => set("startDate", e.target.value)}
-                      required
+                      onChange={(v) => set("startDate", v)}
+                      disabled={{ before: new Date() }}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
