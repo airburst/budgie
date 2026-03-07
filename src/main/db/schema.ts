@@ -24,6 +24,7 @@ export const categories = sqliteTable("categories", {
   expenseType: text("expense_type", { enum: ["expense", "income"] })
     .notNull()
     .default("expense"),
+  deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 

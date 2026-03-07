@@ -57,7 +57,7 @@ export function CategorySheet({
   }
 
   async function save() {
-    const data: Omit<Category, "id" | "createdAt"> = {
+    const data: Omit<Category, "id" | "createdAt" | "deleted"> = {
       name: form.name,
       expenseType: form.expenseType,
       parentId: resolvedParentId,

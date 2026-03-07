@@ -1,0 +1,1 @@
+ALTER TABLE `categories` ADD COLUMN `deleted` integer DEFAULT false NOT NULL;

@@ -2,7 +2,10 @@ const { eq } = require("drizzle-orm");
 
 module.exports = function registerCategoriesHandlers(ipcMain, db, schema) {
   ipcMain.handle("categories:getAll", () =>
-    db.select().from(schema.categories),
+    db
+      .select()
+      .from(schema.categories)
+      .where(eq(schema.categories.deleted, false)),
   );
   ipcMain.handle("categories:getById", (_, id) =>
     db
@@ -21,7 +24,20 @@ module.exports = function registerCategoriesHandlers(ipcMain, db, schema) {
       .where(eq(schema.categories.id, id))
       .returning(),
   );
-  ipcMain.handle("categories:delete", (_, id) =>
-    db.delete(schema.categories).where(eq(schema.categories.id, id)),
-  );
+  ipcMain.handle("categories:delete", async (_, id) => {
+    try {
+      return await db
+        .delete(schema.categories)
+        .where(eq(schema.categories.id, id));
+    } catch (err) {
+      if (err && err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+        return db
+          .update(schema.categories)
+          .set({ deleted: true })
+          .where(eq(schema.categories.id, id))
+          .returning();
+      }
+      throw err;
+    }
+  });
 };

@@ -11,7 +11,7 @@ export function useCategories() {
   });
 
   const create = useMutation({
-    mutationFn: (data: Omit<Category, "id" | "createdAt">) =>
+    mutationFn: (data: Omit<Category, "id" | "createdAt" | "deleted">) =>
       window.api.createCategory(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
@@ -22,7 +22,7 @@ export function useCategories() {
       data,
     }: {
       id: number;
-      data: Partial<Omit<Category, "id" | "createdAt">>;
+      data: Partial<Omit<Category, "id" | "createdAt" | "deleted">>;
     }) => window.api.updateCategory(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });

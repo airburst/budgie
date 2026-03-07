@@ -54,11 +54,11 @@ interface ElectronAPI {
   getCategories: () => Promise<Category[]>;
   getCategory: (id: number) => Promise<Category | null>;
   createCategory: (
-    data: Omit<Category, "id" | "createdAt">,
+    data: Omit<Category, "id" | "createdAt" | "deleted">,
   ) => Promise<Category[]>;
   updateCategory: (
     id: number,
-    data: Partial<Omit<Category, "id" | "createdAt">>,
+    data: Partial<Omit<Category, "id" | "createdAt" | "deleted">>,
   ) => Promise<Category[]>;
   deleteCategory: (id: number) => Promise<void>;
 
