@@ -16,8 +16,10 @@ export function useTransactions(accountId: number) {
   const create = useMutation({
     mutationFn: (data: Omit<Transaction, "id" | "createdAt">) =>
       window.api.createTransaction(data),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
   });
 
   const update = useMutation({
@@ -28,14 +30,18 @@ export function useTransactions(accountId: number) {
       id: number;
       data: Partial<Omit<Transaction, "id" | "createdAt">>;
     }) => window.api.updateTransaction(id, data),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
   });
 
   const remove = useMutation({
     mutationFn: (id: number) => window.api.deleteTransaction(id),
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
   });
 
   return { transactions, categories, create, update, remove };

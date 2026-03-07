@@ -33,6 +33,19 @@ const api = {
     ipcRenderer.invoke("scheduled_transactions:update", id, data),
   deleteScheduledTransaction: (id) =>
     ipcRenderer.invoke("scheduled_transactions:delete", id),
+
+  getAccountReconciliations: () =>
+    ipcRenderer.invoke("account_reconciliations:getAll"),
+  getAccountReconciliationsByAccount: (accountId) =>
+    ipcRenderer.invoke("account_reconciliations:getByAccount", accountId),
+  getAccountReconciliation: (id) =>
+    ipcRenderer.invoke("account_reconciliations:getById", id),
+  createAccountReconciliation: (data) =>
+    ipcRenderer.invoke("account_reconciliations:create", data),
+  updateAccountReconciliation: (id, data) =>
+    ipcRenderer.invoke("account_reconciliations:update", id, data),
+  deleteAccountReconciliation: (id) =>
+    ipcRenderer.invoke("account_reconciliations:delete", id),
 };
 
 contextBridge.exposeInMainWorld("api", api);

@@ -9,19 +9,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { type Account } from "@/types";
-import { PlusIcon } from "lucide-react";
+import type { AccountWithBalances } from "@/types/electron";
+import { CheckCircle2Icon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { ReconciliationDialog } from "../AccountTransactions/ReconciliationDialog";
 import { AccountForm } from "./AccountForm";
 
 type AccountsTableProps = {
-  accounts: Account[];
+  accounts: AccountWithBalances[];
 };
 
 export function AccountsTable({ accounts }: AccountsTableProps) {
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
+  const [reconcileAccount, setReconcileAccount] =
+    useState<AccountWithBalances | null>(null);
 
   if (accounts.length === 0) {
     return (
@@ -40,53 +43,83 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
     );
   }
 
+  const total = accounts.reduce((sum, a) => sum + a.computedBalance, 0);
+
   return (
-    <div className="border border-border-muted rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="w-25 bg-accent">Account</TableHead>
-            <TableHead className="text-right bg-accent">Balance</TableHead>
-            <TableHead className="text-right bg-accent">
-              Cleared Balance
-            </TableHead>
-            <TableHead className="text-right bg-accent">
-              Last Reconcile
-            </TableHead>
-            <TableHead className="text-right bg-accent">
-              Remaining Credit
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {accounts.map((account) => (
-            <TableRow
-              key={account.id}
-              className="cursor-pointer"
-              onClick={() => navigate(`/accounts/${account.id}`)}
-            >
-              <TableCell className="font-medium">{account.name}</TableCell>
-              <TableCell className="text-right">
-                <Amount value={account.balance} />
-              </TableCell>
-              <TableCell className="text-right">
-                <Amount value={account.balance} />
-              </TableCell>
-              <TableCell className="text-right"></TableCell>
-              <TableCell className="text-right"></TableCell>
+    <>
+      <div className="border border-border-muted rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="bg-accent">Account</TableHead>
+              <TableHead className="text-right bg-accent">Balance</TableHead>
+              <TableHead className="text-right bg-accent">
+                Cleared Balance
+              </TableHead>
+              <TableHead className="text-right bg-accent">
+                Last Reconcile
+              </TableHead>
+              <TableHead className="text-right bg-accent">
+                Remaining Credit
+              </TableHead>
+              <TableHead className="bg-accent" />
             </TableRow>
-          ))}
-        </TableBody>
-        <TableFooter>
-          <TableRow className="hover:bg-transparent">
-            <TableCell>Total</TableCell>
-            <TableCell className="text-right">
-              <Amount value={2500} />
-            </TableCell>
-            <TableCell colSpan={3} />
-          </TableRow>
-        </TableFooter>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {accounts.map((account) => (
+              <TableRow
+                key={account.id}
+                className="cursor-pointer"
+                onClick={() => navigate(`/accounts/${account.id}`)}
+              >
+                <TableCell className="font-medium">{account.name}</TableCell>
+                <TableCell className="text-right">
+                  <Amount value={account.computedBalance} />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Amount value={account.clearedBalance} />
+                </TableCell>
+                <TableCell className="text-right text-sm text-muted-foreground">
+                  {account.lastReconcileDate
+                    ? new Date(account.lastReconcileDate).toLocaleDateString()
+                    : "Never"}
+                </TableCell>
+                <TableCell className="text-right"></TableCell>
+                <TableCell
+                  className="text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Reconcile"
+                    onClick={() => setReconcileAccount(account)}
+                  >
+                    <CheckCircle2Icon className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow className="hover:bg-transparent">
+              <TableCell>Total</TableCell>
+              <TableCell className="text-right">
+                <Amount value={total} />
+              </TableCell>
+              <TableCell colSpan={4} />
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+
+      {reconcileAccount && (
+        <ReconciliationDialog
+          account={reconcileAccount}
+          open={!!reconcileAccount}
+          onOpenChange={(open) => !open && setReconcileAccount(null)}
+        />
+      )}
+    </>
   );
 }

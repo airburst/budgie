@@ -36,6 +36,13 @@
       "when": 1772884925066,
       "tag": "0005_cloudy_anita_blake",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1772892067652,
+      "tag": "0006_massive_amphibian",
+      "breakpoints": true
     }
   ]
 }

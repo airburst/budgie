@@ -1,4 +1,5 @@
 import type {
+  accountReconciliations,
   accounts,
   categories,
   scheduledTransactions,
@@ -7,6 +8,15 @@ import type {
 import type { InferSelectModel } from "drizzle-orm";
 
 export type Account = InferSelectModel<typeof accounts>;
+export type AccountReconciliation = InferSelectModel<
+  typeof accountReconciliations
+>;
+export type AccountWithBalances = Account & {
+  computedBalance: number;
+  clearedBalance: number;
+  lastReconcileDate: string | null;
+  lastReconcileBalance: number | null;
+};
 export type Category = InferSelectModel<typeof categories>;
 export type Transaction = InferSelectModel<typeof transactions>;
 export type ScheduledTransaction = InferSelectModel<
@@ -14,8 +24,8 @@ export type ScheduledTransaction = InferSelectModel<
 >;
 
 interface ElectronAPI {
-  getAccounts: () => Promise<Account[]>;
-  getAccount: (id: number) => Promise<Account | null>;
+  getAccounts: () => Promise<AccountWithBalances[]>;
+  getAccount: (id: number) => Promise<AccountWithBalances | null>;
   createAccount: (
     data: Omit<Account, "id" | "createdAt">,
   ) => Promise<Account[]>;
@@ -24,6 +34,22 @@ interface ElectronAPI {
     data: Partial<Omit<Account, "id" | "createdAt">>,
   ) => Promise<Account[]>;
   deleteAccount: (id: number) => Promise<void>;
+
+  getAccountReconciliations: () => Promise<AccountReconciliation[]>;
+  getAccountReconciliationsByAccount: (
+    accountId: number,
+  ) => Promise<AccountReconciliation[]>;
+  getAccountReconciliation: (
+    id: number,
+  ) => Promise<AccountReconciliation | null>;
+  createAccountReconciliation: (
+    data: Omit<AccountReconciliation, "id" | "createdAt">,
+  ) => Promise<AccountReconciliation[]>;
+  updateAccountReconciliation: (
+    id: number,
+    data: Partial<Omit<AccountReconciliation, "id" | "createdAt">>,
+  ) => Promise<AccountReconciliation[]>;
+  deleteAccountReconciliation: (id: number) => Promise<void>;
 
   getCategories: () => Promise<Category[]>;
   getCategory: (id: number) => Promise<Category | null>;

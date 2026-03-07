@@ -41,6 +41,17 @@ export const transactions = sqliteTable("transactions", {
   createdAt: text("created_at").$defaultFn(now),
 });
 
+export const accountReconciliations = sqliteTable("account_reconciliations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  accountId: integer("account_id")
+    .notNull()
+    .references(() => accounts.id),
+  date: text("date").notNull(),
+  balance: real("balance").notNull(),
+  notes: text("notes"),
+  createdAt: text("created_at").$defaultFn(now),
+});
+
 export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   accountId: integer("account_id")

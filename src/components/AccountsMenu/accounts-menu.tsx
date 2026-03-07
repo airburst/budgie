@@ -18,11 +18,11 @@ export default function AccountsMenu() {
         Accounts
       </p>
       <ul className="flex flex-col gap-0.5">
-        {accounts.map(({ id, name, balance }) => (
+        {accounts.map(({ id, name, computedBalance }) => (
           <li key={id}>
             <AccountButton
               name={name}
-              balance={balance}
+              balance={computedBalance}
               isActive={activeAccountId === id}
               onClick={() => navigate(`/accounts/${id}`)}
             />
