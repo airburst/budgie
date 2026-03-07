@@ -39,6 +39,9 @@ export const transactions = sqliteTable("transactions", {
   amount: real("amount").notNull(),
   notes: text("notes"),
   cleared: integer("cleared", { mode: "boolean" }).notNull().default(false),
+  reconciled: integer("reconciled", { mode: "boolean" })
+    .notNull()
+    .default(false),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 

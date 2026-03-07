@@ -66,13 +66,18 @@ interface ElectronAPI {
   getTransaction: (id: number) => Promise<Transaction | null>;
   getTransactionsByAccount: (accountId: number) => Promise<Transaction[]>;
   createTransaction: (
-    data: Omit<Transaction, "id" | "createdAt">,
+    data: Omit<Transaction, "id" | "createdAt" | "reconciled">,
   ) => Promise<Transaction[]>;
   updateTransaction: (
     id: number,
     data: Partial<Omit<Transaction, "id" | "createdAt">>,
   ) => Promise<Transaction[]>;
   deleteTransaction: (id: number) => Promise<void>;
+  reconcileTransactions: (payload: {
+    toReconcile: number[];
+    toUnclear: number[];
+    checkpoint: Omit<AccountReconciliation, "id" | "createdAt">;
+  }) => Promise<AccountReconciliation[]>;
 
   getScheduledTransactions: () => Promise<ScheduledTransaction[]>;
   getScheduledTransaction: (id: number) => Promise<ScheduledTransaction | null>;

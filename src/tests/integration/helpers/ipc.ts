@@ -38,4 +38,5 @@ export function registerAllHandlers(
   require("../../../../public/ipc/transactions.js")(ipcMain, db, schema);
   require("../../../../public/ipc/categories.js")(ipcMain, db, schema);
   require("../../../../public/ipc/scheduled-transactions.js")(ipcMain, db, schema);
+  require("../../../../public/ipc/account-reconciliations.js")(ipcMain, db, schema);
 }

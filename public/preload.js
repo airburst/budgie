@@ -22,6 +22,8 @@ const api = {
   updateTransaction: (id, data) =>
     ipcRenderer.invoke("transactions:update", id, data),
   deleteTransaction: (id) => ipcRenderer.invoke("transactions:delete", id),
+  reconcileTransactions: (payload) =>
+    ipcRenderer.invoke("transactions:reconcile", payload),
 
   getScheduledTransactions: () =>
     ipcRenderer.invoke("scheduled_transactions:getAll"),

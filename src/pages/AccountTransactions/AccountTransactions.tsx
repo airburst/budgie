@@ -2,10 +2,11 @@ import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useTransactions } from "@/hooks/useTransactions";
-import { LineChartIcon, PlusIcon } from "lucide-react";
+import { CheckSquareIcon, LineChartIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import Layout from "../layout";
+import { ReconciliationDialog } from "./ReconciliationDialog";
 import { TransactionFilters } from "./TransactionFilters";
 import { TransactionSheet } from "./TransactionForm";
 import { TransactionsTable } from "./TransactionsTable";
@@ -20,6 +21,7 @@ export default function AccountTransactions() {
   const [filter, setFilter] = useState<Filter>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [reconcileOpen, setReconcileOpen] = useState(false);
 
   const { transactions, categories, update, remove } =
     useTransactions(accountId);
@@ -63,6 +65,14 @@ export default function AccountTransactions() {
                 <LineChartIcon />
                 Forecast
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setReconcileOpen(true)}
+              >
+                <CheckSquareIcon />
+                Reconcile
+              </Button>
             </div>
           </div>
           <TransactionsTable
@@ -83,6 +93,13 @@ export default function AccountTransactions() {
         editingId={editingId}
         accountId={accountId}
       />
+      {account && (
+        <ReconciliationDialog
+          account={account}
+          open={reconcileOpen}
+          onOpenChange={setReconcileOpen}
+        />
+      )}
     </Layout>
   );
 }

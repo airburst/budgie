@@ -1,4 +1,4 @@
-import type { Transaction } from "@/types/electron";
+import type { AccountReconciliation, Transaction } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCategories } from "./useCategories";
 
@@ -14,7 +14,7 @@ export function useTransactions(accountId: number) {
   const { categories } = useCategories();
 
   const create = useMutation({
-    mutationFn: (data: Omit<Transaction, "id" | "createdAt">) =>
+    mutationFn: (data: Omit<Transaction, "id" | "createdAt" | "reconciled">) =>
       window.api.createTransaction(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions", accountId] });
@@ -28,7 +28,7 @@ export function useTransactions(accountId: number) {
       data,
     }: {
       id: number;
-      data: Partial<Omit<Transaction, "id" | "createdAt">>;
+      data: Partial<Omit<Transaction, "id" | "createdAt" | "reconciled">>;
     }) => window.api.updateTransaction(id, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions", accountId] });
@@ -44,5 +44,17 @@ export function useTransactions(accountId: number) {
     },
   });
 
-  return { transactions, categories, create, update, remove };
+  const reconcile = useMutation({
+    mutationFn: (payload: {
+      toReconcile: number[];
+      toUnclear: number[];
+      checkpoint: Omit<AccountReconciliation, "id" | "createdAt">;
+    }) => window.api.reconcileTransactions(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
+
+  return { transactions, categories, create, update, remove, reconcile };
 }

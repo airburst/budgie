@@ -251,3 +251,23 @@ export const SCHEDULED_B: ScheduledBase[] = [
     autoPost: false,
   },
 ];
+
+// ─── Reconciliation checkpoint fixtures ───────────────────────────────────────
+// Aligned with TRANSACTIONS_A dates and ACCOUNT_A opening balance (1000).
+//
+// Jan statement covers txs[0] Salary Jan (+2500) and txs[1] Groceries (-250):
+//   openingBalance (1000) + 2500 - 250 = 3250
+//
+// Feb statement covers txs[2] Salary Feb (+2500), txs[3] Rent (-500),
+//   txs[4] Utilities (-547.80) on top of the Jan reconciled balance (3250):
+//   3250 + 2500 - 500 - 547.80 = 4702.20
+
+export const RECONCILE_JAN = {
+  date: "2026-01-31",
+  balance: 3250,
+} as const;
+
+export const RECONCILE_FEB = {
+  date: "2026-02-28",
+  balance: 4702.2,
+} as const;

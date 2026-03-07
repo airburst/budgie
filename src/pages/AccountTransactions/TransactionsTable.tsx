@@ -10,6 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { computeRunningBalances } from "@/lib/balances";
 import { formatDate } from "@/lib/utils";
 import type { Category, Transaction } from "@/types/electron";
@@ -40,7 +46,6 @@ export function TransactionsTable({
     [categories],
   );
 
-  // Running balance keyed by transaction id, computed in chronological order
   const runningBalances = useMemo(
     () => computeRunningBalances(transactions, openingBalance),
     [transactions, openingBalance],
@@ -55,7 +60,7 @@ export function TransactionsTable({
       <TableHead className="bg-accent">Category</TableHead>
       <TableHead className="bg-accent">Notes</TableHead>
       <TableHead className="text-right bg-accent">Balance</TableHead>
-      <TableHead className="text-center bg-accent">C</TableHead>
+      <TableHead className="text-center bg-accent">C/R</TableHead>
       <TableHead className="bg-accent" />
     </TableRow>
   );
@@ -83,74 +88,118 @@ export function TransactionsTable({
   return (
     <>
       <div className="border border-border rounded-md">
-        <Table>
-          <TableHeader>{headers}</TableHeader>
-          <TableBody>
-            {transactions.map((tx) => {
-              const category = tx.categoryId
-                ? categoryMap.get(tx.categoryId)
-                : null;
-              const balance = runningBalances.get(tx.id) ?? openingBalance;
-              return (
-                <TableRow
-                  key={tx.id}
-                  className="cursor-pointer"
-                  onDoubleClick={() => onEdit(tx.id)}
-                >
-                  <TableCell>{formatDate(tx.date)}</TableCell>
-                  <TableCell>{tx.payee}</TableCell>
-                  <TableCell className="text-right">
-                    {tx.amount < 0 ? <Amount value={tx.amount} /> : null}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {tx.amount > 0 ? <Amount value={tx.amount} /> : null}
-                  </TableCell>
-                  <TableCell>
-                    {category ? (
-                      <Badge variant="secondary">{category.name}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
-                    {tx.notes ?? ""}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Amount value={balance} />
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <input
-                      type="checkbox"
-                      checked={!!tx.cleared}
-                      onChange={(e) => onToggleCleared(tx.id, e.target.checked)}
-                      className="cursor-pointer"
-                    />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => onEdit(tx.id)}
-                        aria-label="Edit transaction"
-                      >
-                        <PencilIcon />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => setPendingDeleteId(tx.id)}
-                        aria-label="Delete transaction"
-                      >
-                        <Trash2Icon className="text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <TooltipProvider>
+          <Table>
+            <TableHeader>{headers}</TableHeader>
+            <TableBody>
+              {transactions.map((tx) => {
+                const category = tx.categoryId
+                  ? categoryMap.get(tx.categoryId)
+                  : null;
+                const balance = runningBalances.get(tx.id) ?? openingBalance;
+                const isReconciled = tx.reconciled;
+
+                return (
+                  <TableRow
+                    key={tx.id}
+                    className={isReconciled ? "opacity-60" : "cursor-pointer"}
+                    onDoubleClick={() => {
+                      if (!isReconciled) onEdit(tx.id);
+                    }}
+                  >
+                    <TableCell>{formatDate(tx.date)}</TableCell>
+                    <TableCell>{tx.payee}</TableCell>
+                    <TableCell className="text-right">
+                      {tx.amount < 0 ? <Amount value={tx.amount} /> : null}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {tx.amount > 0 ? <Amount value={tx.amount} /> : null}
+                    </TableCell>
+                    <TableCell>
+                      {category ? (
+                        <Badge variant="secondary">{category.name}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
+                      {tx.notes ?? ""}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Amount value={balance} />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {isReconciled ? (
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          R
+                        </span>
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={!!tx.cleared}
+                          onChange={(e) =>
+                            onToggleCleared(tx.id, e.target.checked)
+                          }
+                          className="cursor-pointer"
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isReconciled ? (
+                        <Tooltip>
+                          <TooltipTrigger
+                            render={
+                              <span className="inline-flex items-center gap-1" />
+                            }
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled
+                              aria-label="Edit transaction"
+                            >
+                              <PencilIcon />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              disabled
+                              aria-label="Delete transaction"
+                            >
+                              <Trash2Icon className="text-destructive" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Reconciled transactions cannot be edited
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => onEdit(tx.id)}
+                            aria-label="Edit transaction"
+                          >
+                            <PencilIcon />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setPendingDeleteId(tx.id)}
+                            aria-label="Delete transaction"
+                          >
+                            <Trash2Icon className="text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TooltipProvider>
       </div>
 
       <ConfirmDialog
