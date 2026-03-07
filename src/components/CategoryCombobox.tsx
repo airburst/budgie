@@ -27,6 +27,16 @@ export function CategoryCombobox({
     ? (categories.find((c) => String(c.id) === value) ?? null)
     : null;
 
+  function label(cat: Category) {
+    if (cat.parentId == null) return cat.name;
+    const parent = categories.find((c) => c.id === cat.parentId);
+    return parent ? `${parent.name} > ${cat.name}` : cat.name;
+  }
+
+  const sorted = [...categories].sort((a, b) =>
+    label(a).localeCompare(label(b)),
+  );
+
   async function handleCreate() {
     const name = inputValue.trim();
     if (!name) return;
@@ -43,9 +53,9 @@ export function CategoryCombobox({
 
   return (
     <Combobox
-      items={categories}
+      items={sorted}
       value={selected}
-      itemToStringLabel={(cat: Category) => cat.name}
+      itemToStringLabel={(cat: Category) => label(cat)}
       onValueChange={(cat) =>
         onValueChange(cat ? String((cat as Category).id) : "")
       }
@@ -56,7 +66,7 @@ export function CategoryCombobox({
         <ComboboxList>
           {(cat: Category) => (
             <ComboboxItem key={cat.id} value={cat}>
-              {cat.name}
+              {label(cat)}
             </ComboboxItem>
           )}
         </ComboboxList>

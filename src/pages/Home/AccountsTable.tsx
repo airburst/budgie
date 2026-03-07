@@ -1,4 +1,5 @@
 import { Amount } from "@/components/ui/amount";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -9,7 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type Account } from "@/types";
+import { PlusIcon } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import { AccountForm } from "./AccountForm";
 
 type AccountsTableProps = {
   accounts: Account[];
@@ -17,6 +21,24 @@ type AccountsTableProps = {
 
 export function AccountsTable({ accounts }: AccountsTableProps) {
   const navigate = useNavigate();
+  const [formOpen, setFormOpen] = useState(false);
+
+  if (accounts.length === 0) {
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+          <p className="text-muted-foreground">
+            No accounts yet. Add your first account to get started.
+          </p>
+          <Button onClick={() => setFormOpen(true)}>
+            <PlusIcon />
+            Add Account
+          </Button>
+        </div>
+        <AccountForm open={formOpen} onOpenChange={setFormOpen} />
+      </>
+    );
+  }
 
   return (
     <div className="border border-border-muted rounded-md">
