@@ -1,5 +1,6 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +52,8 @@ export function TransactionSheet({
       setForm({
         date: editing.date,
         payee: editing.payee,
-        withdrawal: editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
+        withdrawal:
+          editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
         deposit: editing.amount > 0 ? editing.amount.toFixed(2) : "",
         categoryId: editing.categoryId ? String(editing.categoryId) : "",
         notes: editing.notes ?? "",
@@ -110,13 +112,7 @@ export function TransactionSheet({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tx-date">Date</Label>
-            <Input
-              id="tx-date"
-              type="date"
-              value={form.date}
-              onChange={(e) => set("date", e.target.value)}
-              required
-            />
+            <DatePicker value={form.date} onChange={(v) => set("date", v)} />
           </div>
 
           <div className="flex flex-col gap-1.5">
