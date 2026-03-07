@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { computeRunningBalances } from "@/lib/balances";
 import { formatDate } from "@/lib/utils";
 import type { Category, Transaction } from "@/types/electron";
 import { PencilIcon, Trash2Icon } from "lucide-react";
@@ -40,18 +41,10 @@ export function TransactionsTable({
   );
 
   // Running balance keyed by transaction id, computed in chronological order
-  const runningBalances = useMemo(() => {
-    const sorted = [...transactions].sort(
-      (a, b) => a.date.localeCompare(b.date) || a.id - b.id,
-    );
-    const map = new Map<number, number>();
-    let balance = openingBalance;
-    for (const tx of sorted) {
-      balance += tx.amount;
-      map.set(tx.id, balance);
-    }
-    return map;
-  }, [transactions, openingBalance]);
+  const runningBalances = useMemo(
+    () => computeRunningBalances(transactions, openingBalance),
+    [transactions, openingBalance],
+  );
 
   const headers = (
     <TableRow className="hover:bg-transparent">
@@ -99,7 +92,11 @@ export function TransactionsTable({
                 : null;
               const balance = runningBalances.get(tx.id) ?? openingBalance;
               return (
-                <TableRow key={tx.id} className="cursor-pointer" onDoubleClick={() => onEdit(tx.id)}>
+                <TableRow
+                  key={tx.id}
+                  className="cursor-pointer"
+                  onDoubleClick={() => onEdit(tx.id)}
+                >
                   <TableCell>{formatDate(tx.date)}</TableCell>
                   <TableCell>{tx.payee}</TableCell>
                   <TableCell className="text-right">
@@ -110,9 +107,7 @@ export function TransactionsTable({
                   </TableCell>
                   <TableCell>
                     {category ? (
-                      <Badge variant="secondary">
-                        {category.name}
-                      </Badge>
+                      <Badge variant="secondary">{category.name}</Badge>
                     ) : (
                       <span className="text-muted-foreground text-sm">—</span>
                     )}

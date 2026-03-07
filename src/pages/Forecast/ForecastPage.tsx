@@ -26,7 +26,6 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { buildForecastRows } from "@/lib/forecast";
-import type { ForecastRow } from "@/lib/forecast";
 import { formatDate } from "@/lib/utils";
 import { addMonths, format } from "date-fns";
 import { ArrowLeftIcon, HelpCircleIcon, RefreshCwIcon } from "lucide-react";

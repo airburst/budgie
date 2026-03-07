@@ -12,7 +12,7 @@
     "electron-start": "wait-on http://localhost:3000 && vite build --config vite.main.config.ts && electron .",
     "electron-build": "electron-builder",
     "electron-build:win": "electron-builder --win",
-    "test": "vitest run",
+    "test": "npm rebuild better-sqlite3 && vitest run",
     "lint": "eslint --fix",
     "check-types": "tsc --noEmit",
     "format": "prettier --write .",
