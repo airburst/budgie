@@ -15,11 +15,27 @@ each handler queries only its own table.
 const { eq } = require("drizzle-orm");
 
 module.exports = function registerEntityHandlers(ipcMain, db, schema) {
-  ipcMain.handle("entity:getAll",   ()           => db.select().from(schema.entity));
-  ipcMain.handle("entity:getById",  (_, id)      => db.select().from(schema.entity).where(eq(schema.entity.id, id)).then(r => r[0] ?? null));
-  ipcMain.handle("entity:create",   (_, data)    => db.insert(schema.entity).values(data).returning());
-  ipcMain.handle("entity:update",   (_, id, data)=> db.update(schema.entity).set(data).where(eq(schema.entity.id, id)).returning());
-  ipcMain.handle("entity:delete",   (_, id)      => db.delete(schema.entity).where(eq(schema.entity.id, id)));
+  ipcMain.handle("entity:getAll", () => db.select().from(schema.entity));
+  ipcMain.handle("entity:getById", (_, id) =>
+    db
+      .select()
+      .from(schema.entity)
+      .where(eq(schema.entity.id, id))
+      .then((r) => r[0] ?? null),
+  );
+  ipcMain.handle("entity:create", (_, data) =>
+    db.insert(schema.entity).values(data).returning(),
+  );
+  ipcMain.handle("entity:update", (_, id, data) =>
+    db
+      .update(schema.entity)
+      .set(data)
+      .where(eq(schema.entity.id, id))
+      .returning(),
+  );
+  ipcMain.handle("entity:delete", (_, id) =>
+    db.delete(schema.entity).where(eq(schema.entity.id, id)),
+  );
 };
 ```
 
@@ -51,11 +67,12 @@ import type { entity } from "@/main/db/schema";
 export type Entity = InferSelectModel<typeof entity>;
 
 // In ElectronAPI interface:
-getEntities:    ()                        => Promise<Entity[]>;
-getEntity:      (id: number)              => Promise<Entity | null>;
-createEntity:   (data: Omit<Entity, "id" | "createdAt">) => Promise<Entity[]>;
-updateEntity:   (id: number, data: Partial<Omit<Entity, "id" | "createdAt">>) => Promise<Entity[]>;
-deleteEntity:   (id: number)              => Promise<void>;
+getEntities: () => Promise<Entity[]>;
+getEntity: (id: number) => Promise<Entity | null>;
+createEntity: (data: Omit<Entity, "id" | "createdAt">) => Promise<Entity[]>;
+updateEntity: (id: number, data: Partial<Omit<Entity, "id" | "createdAt">>) =>
+  Promise<Entity[]>;
+deleteEntity: (id: number) => Promise<void>;
 ```
 
 ### 5. Rebuild `public/db.js`
@@ -65,6 +82,17 @@ After any change to `src/main/db/`:
 ```
 bun run vite build --config vite.main.config.ts
 ```
+
+---
+
+## UI Components
+
+All UI components must come from the shadcn component registry at **https://ui.shadcn.com/docs/components**.
+
+- **Always prefer the Base UI variant** when a component offers both a Radix UI and a Base UI implementation. Base UI components are listed under the "Base UI" section in the sidebar (e.g. Button, Dialog, Select, Combobox, Button Group, etc.).
+- Install missing components with `bunx shadcn@latest add <component-name>` before building custom implementations.
+- Never hand-roll UI primitives (dialogs, selects, comboboxes, tooltips, popovers, etc.) that already exist in the registry.
+- Existing components live in `src/components/ui/`. Read a component file before using it to understand its API — the Base UI wrappers often differ from the Radix equivalents in prop names and composition patterns.
 
 ---
 

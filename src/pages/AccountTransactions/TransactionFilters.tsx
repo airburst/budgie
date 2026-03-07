@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+
 type Filter = "all" | "income" | "expenses";
 
 type TransactionFiltersProps = {
@@ -10,20 +13,18 @@ export function TransactionFilters({
   onChange,
 }: TransactionFiltersProps) {
   return (
-    <div className="flex items-center bg-muted p-1 rounded-lg gap-1">
+    <ButtonGroup>
       {(["all", "income", "expenses"] as Filter[]).map((f) => (
-        <button
+        <Button
           key={f}
+          variant={value === f ? "default" : "outline"}
+          size="sm"
           onClick={() => onChange(f)}
-          className={`px-3 py-1 text-xs font-semibold rounded-md capitalize transition-colors ${
-            value === f
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+          className="capitalize"
         >
           {f}
-        </button>
+        </Button>
       ))}
-    </div>
+    </ButtonGroup>
   );
 }
