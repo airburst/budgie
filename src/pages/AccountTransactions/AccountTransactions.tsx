@@ -1,5 +1,6 @@
 import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
 import { Button } from "@/components/ui/button";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useTransactions } from "@/hooks/useTransactions";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -19,7 +20,10 @@ export default function AccountTransactions() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  const { transactions, categories, remove } = useTransactions(accountId);
+  const { transactions, categories, update, remove } =
+    useTransactions(accountId);
+  const { accounts } = useAccounts();
+  const account = accounts.find((a) => a.id === accountId);
 
   const filtered = transactions.filter((t) => {
     if (filter === "income") return t.amount > 0;
@@ -55,8 +59,12 @@ export default function AccountTransactions() {
           <TransactionsTable
             transactions={filtered}
             categories={categories}
+            openingBalance={account?.balance ?? 0}
             onEdit={openEdit}
             onDelete={(id) => remove.mutate(id)}
+            onToggleCleared={(id, cleared) =>
+              update.mutate({ id, data: { cleared } })
+            }
           />
         </div>
       </div>

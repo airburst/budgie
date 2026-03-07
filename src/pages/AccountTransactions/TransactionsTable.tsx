@@ -11,46 +11,70 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Category, Transaction } from "@/types/electron";
-import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type TransactionsTableProps = {
   transactions: Transaction[];
   categories: Category[];
+  openingBalance: number;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  onToggleCleared: (id: number, cleared: boolean) => void;
 };
 
 export function TransactionsTable({
   transactions,
   categories,
+  openingBalance,
   onEdit,
   onDelete,
+  onToggleCleared,
 }: TransactionsTableProps) {
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories],
+  );
+
+  // Running balance keyed by transaction id, computed in chronological order
+  const runningBalances = useMemo(() => {
+    const sorted = [...transactions].sort(
+      (a, b) => a.date.localeCompare(b.date) || a.id - b.id,
+    );
+    const map = new Map<number, number>();
+    let balance = openingBalance;
+    for (const tx of sorted) {
+      balance += tx.amount;
+      map.set(tx.id, balance);
+    }
+    return map;
+  }, [transactions, openingBalance]);
+
+  const headers = (
+    <TableRow className="hover:bg-transparent">
+      <TableHead className="bg-accent">Date</TableHead>
+      <TableHead className="bg-accent">Payee</TableHead>
+      <TableHead className="text-right bg-accent">Withdrawal</TableHead>
+      <TableHead className="text-right bg-accent">Deposit</TableHead>
+      <TableHead className="bg-accent">Category</TableHead>
+      <TableHead className="bg-accent">Notes</TableHead>
+      <TableHead className="text-right bg-accent">Balance</TableHead>
+      <TableHead className="text-center bg-accent">C</TableHead>
+      <TableHead className="bg-accent" />
+    </TableRow>
   );
 
   if (transactions.length === 0) {
     return (
       <div className="border border-border rounded-md">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="bg-accent">Date</TableHead>
-              <TableHead className="bg-accent">Payee</TableHead>
-              <TableHead className="bg-accent">Category</TableHead>
-              <TableHead className="text-right bg-accent">Amount</TableHead>
-              <TableHead className="text-center bg-accent">Cleared</TableHead>
-              <TableHead className="bg-accent" />
-            </TableRow>
-          </TableHeader>
+          <TableHeader>{headers}</TableHeader>
           <TableBody>
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={9}
                 className="text-center text-muted-foreground py-12"
               >
                 No transactions yet.
@@ -66,27 +90,27 @@ export function TransactionsTable({
     <>
       <div className="border border-border rounded-md">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="bg-accent">Date</TableHead>
-              <TableHead className="bg-accent">Payee</TableHead>
-              <TableHead className="bg-accent">Category</TableHead>
-              <TableHead className="text-right bg-accent">Amount</TableHead>
-              <TableHead className="text-center bg-accent">Cleared</TableHead>
-              <TableHead className="bg-accent" />
-            </TableRow>
-          </TableHeader>
+          <TableHeader>{headers}</TableHeader>
           <TableBody>
             {transactions.map((tx) => {
               const category = tx.categoryId
                 ? categoryMap.get(tx.categoryId)
                 : null;
+              const balance = runningBalances.get(tx.id) ?? openingBalance;
               return (
                 <TableRow key={tx.id}>
                   <TableCell className="text-muted-foreground text-sm">
                     {tx.date}
                   </TableCell>
                   <TableCell className="font-medium">{tx.payee}</TableCell>
+                  <TableCell className="text-right">
+                    {tx.amount < 0 ? (
+                      <Amount value={tx.amount} />
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {tx.amount > 0 ? <Amount value={tx.amount} /> : null}
+                  </TableCell>
                   <TableCell>
                     {category ? (
                       <Badge
@@ -106,15 +130,19 @@ export function TransactionsTable({
                       <span className="text-muted-foreground text-sm">—</span>
                     )}
                   </TableCell>
+                  <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
+                    {tx.notes ?? ""}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <Amount value={tx.amount} />
+                    <Amount value={balance} />
                   </TableCell>
                   <TableCell className="text-center">
-                    {tx.cleared ? (
-                      <CheckIcon className="size-4 text-green-600 mx-auto" />
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
+                    <input
+                      type="checkbox"
+                      checked={!!tx.cleared}
+                      onChange={(e) => onToggleCleared(tx.id, e.target.checked)}
+                      className="cursor-pointer"
+                    />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
