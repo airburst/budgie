@@ -1,5 +1,6 @@
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -163,12 +164,11 @@ export function ReconciliationDialog({
                 </div>
               )}
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="recon-date">Statement date</Label>
-                <Input
-                  id="recon-date"
-                  type="date"
+                <Label>Statement date</Label>
+                <DatePicker
                   value={statementDate}
-                  onChange={(e) => setStatementDate(e.target.value)}
+                  onChange={setStatementDate}
+                  placeholder="Pick statement date"
                 />
               </div>
               <div className="flex flex-col gap-1.5">

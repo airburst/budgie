@@ -10,12 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { computeRunningBalances } from "@/lib/balances";
 import { formatDate } from "@/lib/utils";
 import type { Category, Transaction } from "@/types/electron";
@@ -88,11 +82,10 @@ export function TransactionsTable({
   return (
     <>
       <div className="border border-border rounded-md">
-        <TooltipProvider>
-          <Table>
-            <TableHeader>{headers}</TableHeader>
-            <TableBody>
-              {transactions.map((tx) => {
+        <Table>
+          <TableHeader>{headers}</TableHeader>
+          <TableBody>
+            {transactions.map((tx) => {
                 const category = tx.categoryId
                   ? categoryMap.get(tx.categoryId)
                   : null;
@@ -145,35 +138,7 @@ export function TransactionsTable({
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {isReconciled ? (
-                        <Tooltip>
-                          <TooltipTrigger
-                            render={
-                              <span className="inline-flex items-center gap-1" />
-                            }
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled
-                              aria-label="Edit transaction"
-                            >
-                              <PencilIcon />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              disabled
-                              aria-label="Delete transaction"
-                            >
-                              <Trash2Icon className="text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Reconciled transactions cannot be edited
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
+                      {isReconciled ? null : (
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -196,10 +161,9 @@ export function TransactionsTable({
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            </TableBody>
-          </Table>
-        </TooltipProvider>
+            })}
+          </TableBody>
+        </Table>
       </div>
 
       <ConfirmDialog
