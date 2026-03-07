@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 import type { Category, Transaction } from "@/types/electron";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -98,15 +99,11 @@ export function TransactionsTable({
                 : null;
               const balance = runningBalances.get(tx.id) ?? openingBalance;
               return (
-                <TableRow key={tx.id}>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {tx.date}
-                  </TableCell>
-                  <TableCell className="font-medium">{tx.payee}</TableCell>
+                <TableRow key={tx.id} className="cursor-pointer" onDoubleClick={() => onEdit(tx.id)}>
+                  <TableCell>{formatDate(tx.date)}</TableCell>
+                  <TableCell>{tx.payee}</TableCell>
                   <TableCell className="text-right">
-                    {tx.amount < 0 ? (
-                      <Amount value={tx.amount} />
-                    ) : null}
+                    {tx.amount < 0 ? <Amount value={tx.amount} /> : null}
                   </TableCell>
                   <TableCell className="text-right">
                     {tx.amount > 0 ? <Amount value={tx.amount} /> : null}

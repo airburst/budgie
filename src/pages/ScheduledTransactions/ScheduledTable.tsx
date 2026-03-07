@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 import type { Account, ScheduledTransaction } from "@/types/electron";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -88,7 +89,7 @@ export function ScheduledTable({
               return (
                 <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
                   <TableCell className="text-sm text-muted-foreground">
-                    {s.nextDueDate ?? "—"}
+                    {s.nextDueDate ? formatDate(s.nextDueDate) : "—"}
                   </TableCell>
                   <TableCell className="font-medium">{s.payee}</TableCell>
                   <TableCell className="text-right">

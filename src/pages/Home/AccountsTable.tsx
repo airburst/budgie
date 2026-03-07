@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatDate } from "@/lib/utils";
 import type { AccountWithBalances } from "@/types/electron";
 import { CheckCircle2Icon, PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -81,7 +82,7 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                 </TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">
                   {account.lastReconcileDate
-                    ? new Date(account.lastReconcileDate).toLocaleDateString()
+                    ? formatDate(account.lastReconcileDate)
                     : "Never"}
                 </TableCell>
                 <TableCell className="text-right"></TableCell>
