@@ -1,5 +1,6 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,18 +36,20 @@ type ScheduledPaymentDialogProps = {
   editingId: number | null;
 };
 
-const empty = {
-  payee: "",
-  withdrawal: "",
-  deposit: "",
-  categoryId: "",
-  accountId: "",
-  startDate: new Date().toISOString().slice(0, 10),
-  recurrence: DEFAULT_RECURRENCE_CONFIG,
-  autoPost: false,
-  notes: "",
-  active: true,
-};
+function makeEmpty() {
+  return {
+    payee: "",
+    withdrawal: "",
+    deposit: "",
+    categoryId: "",
+    accountId: "",
+    startDate: new Date().toISOString().slice(0, 10),
+    recurrence: DEFAULT_RECURRENCE_CONFIG,
+    autoPost: false,
+    notes: "",
+    active: true,
+  };
+}
 
 export function ScheduledPaymentDialog({
   open,
@@ -56,7 +58,7 @@ export function ScheduledPaymentDialog({
 }: ScheduledPaymentDialogProps) {
   const { scheduled, accounts, create, update } = useScheduledTransactions();
 
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(makeEmpty);
 
   const editing = editingId ? scheduled.find((s) => s.id === editingId) : null;
 
@@ -76,7 +78,7 @@ export function ScheduledPaymentDialog({
         active: editing.active ?? true,
       });
     } else {
-      setForm(empty);
+      setForm(makeEmpty());
     }
   }, [editingId, open]);
 

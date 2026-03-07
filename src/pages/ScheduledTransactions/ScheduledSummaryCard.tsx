@@ -9,12 +9,11 @@ type ScheduledSummaryCardProps = {
 export function ScheduledSummaryCard({
   scheduledTransactions,
 }: ScheduledSummaryCardProps) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const in7 = new Date(today);
-  in7.setDate(today.getDate() + 7);
-
   const { total, dueSoon } = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const in7 = new Date(today);
+    in7.setDate(today.getDate() + 7);
     const active = scheduledTransactions.filter((s) => s.active);
     const total = active.reduce((acc, s) => acc + s.amount, 0);
     const dueSoon = active.filter((s) => {

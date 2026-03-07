@@ -33,6 +33,15 @@ export function ScheduledTable({
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
   );
+  const sorted = useMemo(
+    () =>
+      [...scheduledTransactions].sort((a, b) => {
+        if (!a.nextDueDate) return 1;
+        if (!b.nextDueDate) return -1;
+        return a.nextDueDate.localeCompare(b.nextDueDate);
+      }),
+    [scheduledTransactions],
+  );
 
   if (scheduledTransactions.length === 0) {
     return (
@@ -62,12 +71,6 @@ export function ScheduledTable({
       </div>
     );
   }
-
-  const sorted = [...scheduledTransactions].sort((a, b) => {
-    if (!a.nextDueDate) return 1;
-    if (!b.nextDueDate) return -1;
-    return a.nextDueDate.localeCompare(b.nextDueDate);
-  });
 
   return (
     <>

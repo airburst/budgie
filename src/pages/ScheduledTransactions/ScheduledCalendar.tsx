@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { ScheduledTransaction } from "@/types/electron";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type ScheduledCalendarProps = {
   scheduledTransactions: ScheduledTransaction[];
@@ -30,11 +30,28 @@ export function ScheduledCalendar({
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
 
-  const dueDates = new Set(
-    scheduledTransactions
-      .filter((s) => s.active && s.nextDueDate)
-      .map((s) => s.nextDueDate!),
-  );
+  const { dueDates, cells, todayDay, todayMonth, todayYear } = useMemo(() => {
+    const today = new Date();
+    const dueDates = new Set(
+      scheduledTransactions
+        .filter((s) => s.active && s.nextDueDate)
+        .map((s) => s.nextDueDate!),
+    );
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: (number | null)[] = [
+      ...Array(firstDay).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    while (cells.length % 7 !== 0) cells.push(null);
+    return {
+      dueDates,
+      cells,
+      todayDay: today.getDate(),
+      todayMonth: today.getMonth(),
+      todayYear: today.getFullYear(),
+    };
+  }, [scheduledTransactions, year, month]);
 
   function prevMonth() {
     if (month === 0) {
@@ -50,19 +67,8 @@ export function ScheduledCalendar({
     } else setMonth((m) => m + 1);
   }
 
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  // pad to full weeks
-  while (cells.length % 7 !== 0) cells.push(null);
-
   const isToday = (day: number) =>
-    day === now.getDate() &&
-    month === now.getMonth() &&
-    year === now.getFullYear();
+    day === todayDay && month === todayMonth && year === todayYear;
 
   const hasDot = (day: number) => {
     const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;

@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { memo } from "react";
 import { RRule } from "rrule";
 
 const FREQ_LABELS: Record<number, string> = {
@@ -12,7 +13,7 @@ type FrequencyBadgeProps = {
   rruleStr: string;
 };
 
-export function FrequencyBadge({ rruleStr }: FrequencyBadgeProps) {
+export const FrequencyBadge = memo(function FrequencyBadge({ rruleStr }: FrequencyBadgeProps) {
   try {
     const rule = RRule.fromString(rruleStr);
     const label = FREQ_LABELS[rule.options.freq] ?? rruleStr;
@@ -20,4 +21,4 @@ export function FrequencyBadge({ rruleStr }: FrequencyBadgeProps) {
   } catch {
     return <Badge variant="outline">{rruleStr}</Badge>;
   }
-}
+});

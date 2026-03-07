@@ -9,7 +9,7 @@ import {
 import { useCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types/electron";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type CategoryComboboxProps = {
   value: string;
@@ -27,15 +27,25 @@ export function CategoryCombobox({
     ? (categories.find((c) => String(c.id) === value) ?? null)
     : null;
 
-  function label(cat: Category) {
-    if (cat.parentId == null) return cat.name;
-    const parent = categories.find((c) => c.id === cat.parentId);
-    return parent ? `${parent.name} > ${cat.name}` : cat.name;
-  }
+  const { sorted, labelMap } = useMemo(() => {
+    const parentMap = new Map(categories.map((c) => [c.id, c.name]));
+    const labelMap = new Map(
+      categories.map((c) => [
+        c.id,
+        c.parentId != null
+          ? `${parentMap.get(c.parentId) ?? ""} > ${c.name}`
+          : c.name,
+      ]),
+    );
+    const sorted = [...categories].sort((a, b) =>
+      (labelMap.get(a.id) ?? "").localeCompare(labelMap.get(b.id) ?? ""),
+    );
+    return { sorted, labelMap };
+  }, [categories]);
 
-  const sorted = [...categories].sort((a, b) =>
-    label(a).localeCompare(label(b)),
-  );
+  function label(cat: Category) {
+    return labelMap.get(cat.id) ?? cat.name;
+  }
 
   async function handleCreate() {
     const name = inputValue.trim();

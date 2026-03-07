@@ -23,15 +23,17 @@ type TransactionSheetProps = {
   accountId: number;
 };
 
-const empty = {
-  date: new Date().toISOString().slice(0, 10),
-  payee: "",
-  withdrawal: "",
-  deposit: "",
-  categoryId: "",
-  notes: "",
-  cleared: false,
-};
+function makeEmpty() {
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    payee: "",
+    withdrawal: "",
+    deposit: "",
+    categoryId: "",
+    notes: "",
+    cleared: false,
+  };
+}
 
 export function TransactionForm({
   open,
@@ -41,7 +43,7 @@ export function TransactionForm({
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
 
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(makeEmpty);
 
   const editing = editingId
     ? transactions.find((t) => t.id === editingId)
@@ -60,7 +62,7 @@ export function TransactionForm({
         cleared: editing.cleared ?? false,
       });
     } else {
-      setForm(empty);
+      setForm(makeEmpty());
     }
   }, [editingId, open]);
 

@@ -16,7 +16,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Layout from "../layout";
 import { CategorySheet } from "./CategoryForm";
 
@@ -44,9 +44,20 @@ export default function Categories() {
     if (!open) setNewSubParentId(null);
   }
 
-  const topLevel = categories.filter((c) => c.parentId === null);
-  const childrenOf = (id: number) =>
-    categories.filter((c) => c.parentId === id);
+  const { topLevel, childrenMap } = useMemo(() => {
+    const topLevel = categories.filter((c) => c.parentId === null);
+    const childrenMap = new Map<number, typeof categories>();
+    for (const c of categories) {
+      if (c.parentId !== null) {
+        const arr = childrenMap.get(c.parentId) ?? [];
+        arr.push(c);
+        childrenMap.set(c.parentId, arr);
+      }
+    }
+    return { topLevel, childrenMap };
+  }, [categories]);
+
+  const childrenOf = (id: number) => childrenMap.get(id) ?? [];
 
   return (
     <Layout>

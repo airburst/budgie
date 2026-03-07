@@ -1,13 +1,16 @@
 import type { Category } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+const sortByName = (data: Category[]) =>
+  [...data].sort((a, b) => a.name.localeCompare(b.name));
+
 export function useCategories() {
   const qc = useQueryClient();
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: () => window.api.getCategories(),
-    select: (data) => [...data].sort((a, b) => a.name.localeCompare(b.name)),
+    select: sortByName,
   });
 
   const create = useMutation({

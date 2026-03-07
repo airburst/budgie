@@ -17,8 +17,18 @@ export default defineConfig({
   build: {
     outDir: "../build",
     emptyOutDir: true,
+    sourcemap: false,
     rollupOptions: {
       external: ["electron", "electron-settings"],
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router"],
+          "vendor-query": ["@tanstack/react-query"],
+          "vendor-recharts": ["recharts"],
+          "vendor-rrule": ["rrule"],
+          "vendor-dates": ["date-fns", "react-day-picker"],
+        },
+      },
     },
   },
   server: {

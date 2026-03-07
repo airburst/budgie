@@ -1,13 +1,22 @@
-import AccountTransactions from "@/pages/AccountTransactions/AccountTransactions";
-import Categories from "@/pages/Categories/Categories";
-import ForecastPage from "@/pages/Forecast/ForecastPage";
-import Home from "@/pages/Home/Home";
-import ScheduledTransactions from "@/pages/ScheduledTransactions/ScheduledTransactions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router";
 
-const queryClient = new QueryClient();
+const AccountTransactions = lazy(
+  () => import("@/pages/AccountTransactions/AccountTransactions"),
+);
+const Categories = lazy(() => import("@/pages/Categories/Categories"));
+const ForecastPage = lazy(() => import("@/pages/Forecast/ForecastPage"));
+const Home = lazy(() => import("@/pages/Home/Home"));
+const ScheduledTransactions = lazy(
+  () => import("@/pages/ScheduledTransactions/ScheduledTransactions"),
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 1000 * 60 },
+  },
+});
 
 function App() {
   useEffect(() => {
@@ -22,13 +31,15 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <HashRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/accounts/:id" element={<AccountTransactions />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/scheduled" element={<ScheduledTransactions />} />
-          <Route path="/forecast/:id" element={<ForecastPage />} />
-        </Routes>
+        <Suspense>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/accounts/:id" element={<AccountTransactions />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/scheduled" element={<ScheduledTransactions />} />
+            <Route path="/forecast/:id" element={<ForecastPage />} />
+          </Routes>
+        </Suspense>
       </HashRouter>
     </QueryClientProvider>
   );

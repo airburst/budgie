@@ -1,13 +1,15 @@
+import { memo } from "react";
+
+const GBP = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+});
+
 type AmountProps = {
   value: number;
 };
 
-export function Amount({ value }: AmountProps) {
+export const Amount = memo(function Amount({ value }: AmountProps) {
   const color = value >= 0 ? "text-green-600" : "text-red-600";
-  const formatted = value.toLocaleString("en-GB", {
-    style: "currency",
-    currency: "GBP",
-  });
-
-  return <span className={color}>{formatted}</span>;
-}
+  return <span className={color}>{GBP.format(value)}</span>;
+});

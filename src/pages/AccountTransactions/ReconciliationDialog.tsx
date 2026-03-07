@@ -27,6 +27,34 @@ function fmt(n: number) {
   return n.toLocaleString("en-GB", { style: "currency", currency: "GBP" });
 }
 
+type TxRowProps = {
+  t: Transaction;
+  checkedIds: Set<number>;
+  onToggle: (id: number) => void;
+};
+
+function TxRow({ t, checkedIds, onToggle }: TxRowProps) {
+  return (
+    <tr className="border-b border-border last:border-0">
+      <td className="py-1.5 pr-2">
+        <input
+          type="checkbox"
+          checked={checkedIds.has(t.id)}
+          onChange={() => onToggle(t.id)}
+          className="cursor-pointer"
+        />
+      </td>
+      <td className="py-1.5 pr-3 text-sm text-muted-foreground whitespace-nowrap">
+        {formatDate(t.date)}
+      </td>
+      <td className="py-1.5 pr-3 text-sm max-w-32 truncate">{t.payee}</td>
+      <td className="py-1.5 text-sm text-right tabular-nums">
+        <Amount value={t.amount} />
+      </td>
+    </tr>
+  );
+}
+
 export function ReconciliationDialog({
   account,
   open,
@@ -120,28 +148,6 @@ export function ReconciliationDialog({
     handleClose();
   }
 
-  function TxRow({ t }: { t: Transaction }) {
-    return (
-      <tr key={t.id} className="border-b border-border last:border-0">
-        <td className="py-1.5 pr-2">
-          <input
-            type="checkbox"
-            checked={checkedIds.has(t.id)}
-            onChange={() => toggleChecked(t.id)}
-            className="cursor-pointer"
-          />
-        </td>
-        <td className="py-1.5 pr-3 text-sm text-muted-foreground whitespace-nowrap">
-          {formatDate(t.date)}
-        </td>
-        <td className="py-1.5 pr-3 text-sm max-w-32 truncate">{t.payee}</td>
-        <td className="py-1.5 text-sm text-right tabular-nums">
-          <Amount value={t.amount} />
-        </td>
-      </tr>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent
@@ -205,7 +211,7 @@ export function ReconciliationDialog({
                   <table className="w-full">
                     <tbody>
                       {debits.map((t) => (
-                        <TxRow key={t.id} t={t} />
+                        <TxRow key={t.id} t={t} checkedIds={checkedIds} onToggle={toggleChecked} />
                       ))}
                     </tbody>
                   </table>
@@ -221,7 +227,7 @@ export function ReconciliationDialog({
                   <table className="w-full">
                     <tbody>
                       {credits.map((t) => (
-                        <TxRow key={t.id} t={t} />
+                        <TxRow key={t.id} t={t} checkedIds={checkedIds} onToggle={toggleChecked} />
                       ))}
                     </tbody>
                   </table>
