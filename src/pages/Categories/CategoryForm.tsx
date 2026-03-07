@@ -17,6 +17,7 @@ type CategorySheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingId: number | null;
+  parentId?: number | null;
 };
 
 const empty = { name: "", color: "#6366f1", icon: "" };
@@ -25,11 +26,17 @@ export function CategorySheet({
   open,
   onOpenChange,
   editingId,
+  parentId,
 }: CategorySheetProps) {
   const { categories, create, update } = useCategories();
   const [form, setForm] = useState(empty);
 
   const editing = editingId ? categories.find((c) => c.id === editingId) : null;
+
+  const resolvedParentId = editing != null ? editing.parentId : parentId ?? null;
+  const parentName = resolvedParentId != null
+    ? (categories.find((c) => c.id === resolvedParentId)?.name ?? null)
+    : null;
 
   useEffect(() => {
     if (editing) {
@@ -53,7 +60,7 @@ export function CategorySheet({
       name: form.name,
       color: form.color || null,
       icon: form.icon || null,
-      parentId: editing?.parentId ?? null,
+      parentId: resolvedParentId,
     };
     if (editing) {
       await update.mutateAsync({ id: editing.id, data });
@@ -70,14 +77,25 @@ export function CategorySheet({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Edit Category" : "New Category"}
+            {editing ? "Edit Category" : parentName ? "New Sub-category" : "New Category"}
           </DialogTitle>
           <DialogDescription>
-            {editing ? "Update this category." : "Add a new spending category."}
+            {editing
+              ? "Update this category."
+              : parentName
+              ? `Add a sub-category under ${parentName}.`
+              : "Add a new spending category."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {parentName && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Parent category</Label>
+              <p className="text-sm text-muted-foreground">{parentName}</p>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="cat-name">Name</Label>
             <Input
@@ -127,7 +145,7 @@ export function CategorySheet({
             Cancel
           </Button>
           <Button onClick={handleSubmit as never} disabled={isPending}>
-            {editing ? "Save Changes" : "Create Category"}
+            {editing ? "Save Changes" : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>
