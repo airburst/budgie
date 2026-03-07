@@ -29,6 +29,13 @@
       "when": 1741564800000,
       "tag": "0003_transactions_reconciled",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1741651200000,
+      "tag": "0004_settings",
+      "breakpoints": true
     }
   ]
 }

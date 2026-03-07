@@ -6,6 +6,7 @@ const registerCategoriesHandlers = require("./ipc/categories");
 const registerTransactionsHandlers = require("./ipc/transactions");
 const registerScheduledTransactionsHandlers = require("./ipc/scheduled-transactions");
 const registerAccountReconciliationsHandlers = require("./ipc/account-reconciliations");
+const registerSettingsHandlers = require("./ipc/settings");
 const isDev = !app.isPackaged;
 
 let mainWindow;
@@ -60,6 +61,7 @@ app.whenReady().then(() => {
   registerTransactionsHandlers(ipcMain, db, schema);
   registerScheduledTransactionsHandlers(ipcMain, db, schema);
   registerAccountReconciliationsHandlers(ipcMain, db, schema);
+  registerSettingsHandlers(ipcMain, db, schema);
 
   createWindow();
 });

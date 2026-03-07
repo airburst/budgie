@@ -5,7 +5,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChartNoAxesCombinedIcon, Settings2Icon } from "lucide-react";
+import { ChartNoAxesCombinedIcon, Settings } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router";
 
 const navLinks = [
@@ -52,7 +52,7 @@ const Header = () => {
               <Button variant="ghost" size="icon" aria-label="Settings" />
             }
           >
-            <Settings2Icon className="size-5" />
+            <Settings className="size-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => navigate("/categories")}>

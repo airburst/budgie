@@ -33,7 +33,7 @@ const empty = {
   cleared: false,
 };
 
-export function TransactionSheet({
+export function TransactionForm({
   open,
   onOpenChange,
   editingId,

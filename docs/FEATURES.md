@@ -102,6 +102,8 @@ Opens as a modal dialog triggered from the Register toolbar.
 - **Statement balance** — numeric text field, focused by default; user enters the closing balance from their bank statement.
 - **Cancel** and **Next** buttons at the bottom right; **?** help button at the bottom left.
 
+- TODO: Handle imported QIF files. [technical spec](https://github.com/jemmyw/Qif/blob/master/QIF_references)
+
 #### Forecast confirm panel
 
 Small modal dialog triggered from the Register toolbar via the **Forecast** button.

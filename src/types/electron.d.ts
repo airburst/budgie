@@ -3,6 +3,7 @@ import type {
   accounts,
   categories,
   scheduledTransactions,
+  settings,
   transactions,
 } from "@/main/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
@@ -22,6 +23,11 @@ export type Transaction = InferSelectModel<typeof transactions>;
 export type ScheduledTransaction = InferSelectModel<
   typeof scheduledTransactions
 >;
+export type Settings = InferSelectModel<typeof settings>;
+export type Preferences = {
+  hideReconciled: boolean;
+  hideCleared: boolean;
+};
 
 interface ElectronAPI {
   getAccounts: () => Promise<AccountWithBalances[]>;
@@ -89,6 +95,17 @@ interface ElectronAPI {
     data: Partial<Omit<ScheduledTransaction, "id" | "createdAt">>,
   ) => Promise<ScheduledTransaction[]>;
   deleteScheduledTransaction: (id: number) => Promise<void>;
+
+  getSettings: () => Promise<Settings[]>;
+  getSetting: (id: number) => Promise<Settings | null>;
+  createSetting: (data: Omit<Settings, "id">) => Promise<Settings[]>;
+  updateSetting: (
+    id: number,
+    data: Partial<Omit<Settings, "id">>,
+  ) => Promise<Settings[]>;
+  deleteSetting: (id: number) => Promise<void>;
+  getPreferences: () => Promise<Preferences>;
+  setPreferences: (prefs: Preferences) => Promise<Settings[]>;
 }
 
 declare global {

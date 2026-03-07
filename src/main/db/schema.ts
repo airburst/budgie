@@ -71,3 +71,8 @@ export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+export const settings = sqliteTable("settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  preferences: text("preferences").notNull().default("{}"),
+});

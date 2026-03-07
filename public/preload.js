@@ -48,6 +48,14 @@ const api = {
     ipcRenderer.invoke("account_reconciliations:update", id, data),
   deleteAccountReconciliation: (id) =>
     ipcRenderer.invoke("account_reconciliations:delete", id),
+
+  getSettings: () => ipcRenderer.invoke("settings:getAll"),
+  getSetting: (id) => ipcRenderer.invoke("settings:getById", id),
+  createSetting: (data) => ipcRenderer.invoke("settings:create", data),
+  updateSetting: (id, data) => ipcRenderer.invoke("settings:update", id, data),
+  deleteSetting: (id) => ipcRenderer.invoke("settings:delete", id),
+  getPreferences: () => ipcRenderer.invoke("settings:getPreferences"),
+  setPreferences: (prefs) => ipcRenderer.invoke("settings:setPreferences", prefs),
 };
 
 contextBridge.exposeInMainWorld("api", api);
