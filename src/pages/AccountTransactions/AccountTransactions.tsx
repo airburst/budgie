@@ -2,9 +2,9 @@ import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
 import { Button } from "@/components/ui/button";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useTransactions } from "@/hooks/useTransactions";
-import { PlusIcon } from "lucide-react";
+import { LineChartIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import Layout from "../layout";
 import { TransactionFilters } from "./TransactionFilters";
 import { TransactionSheet } from "./TransactionForm";
@@ -16,6 +16,7 @@ export default function AccountTransactions() {
   const { id } = useParams<{ id: string }>();
   const accountId = Number(id);
 
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>("all");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -53,6 +54,14 @@ export default function AccountTransactions() {
               <Button onClick={openAdd} size="sm">
                 <PlusIcon />
                 Add Transaction
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/forecast/${accountId}`)}
+              >
+                <LineChartIcon />
+                Forecast
               </Button>
             </div>
           </div>
