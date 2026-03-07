@@ -16,7 +16,7 @@ export function ScheduledSummaryCard({
 
   const { total, dueSoon } = useMemo(() => {
     const active = scheduledTransactions.filter((s) => s.active);
-    const total = active.reduce((acc, s) => acc + Math.abs(s.amount), 0);
+    const total = active.reduce((acc, s) => acc + s.amount, 0);
     const dueSoon = active.filter((s) => {
       if (!s.nextDueDate) return false;
       const d = new Date(s.nextDueDate);
@@ -31,7 +31,7 @@ export function ScheduledSummaryCard({
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
           Total Scheduled
         </p>
-        <Amount value={-total} />
+        <Amount value={total} />
       </div>
       <div className="border-t border-border/50 pt-3">
         <p className="text-xs text-muted-foreground">

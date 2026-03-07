@@ -26,13 +26,13 @@ export default function ScheduledTransactions() {
 
   return (
     <Layout>
-      <div className="flex h-full">
-        <div className="w-72 shrink-0 border-r border-border p-4 flex flex-col gap-4 overflow-y-auto">
+      <div className="grid grid-cols-[minmax(18rem,1fr)_3fr] h-full">
+        <div className="shrink-0 border-r border-border p-4 flex flex-col gap-4 overflow-y-auto">
           <ScheduledCalendar scheduledTransactions={scheduled} />
           <ScheduledSummaryCard scheduledTransactions={scheduled} />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="overflow-y-auto p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
