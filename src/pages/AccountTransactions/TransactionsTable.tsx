@@ -110,17 +110,7 @@ export function TransactionsTable({
                   </TableCell>
                   <TableCell>
                     {category ? (
-                      <Badge
-                        variant="secondary"
-                        style={
-                          category.color
-                            ? {
-                                backgroundColor: category.color + "22",
-                                color: category.color,
-                              }
-                            : undefined
-                        }
-                      >
+                      <Badge variant="secondary">
                         {category.name}
                       </Badge>
                     ) : (

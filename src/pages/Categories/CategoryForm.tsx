@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types/electron";
 import { useEffect, useState } from "react";
@@ -20,7 +21,7 @@ type CategorySheetProps = {
   parentId?: number | null;
 };
 
-const empty = { name: "", color: "#6366f1", icon: "" };
+const empty = { name: "", expenseType: "expense" as "expense" | "income" };
 
 export function CategorySheet({
   open,
@@ -33,17 +34,18 @@ export function CategorySheet({
 
   const editing = editingId ? categories.find((c) => c.id === editingId) : null;
 
-  const resolvedParentId = editing != null ? editing.parentId : parentId ?? null;
-  const parentName = resolvedParentId != null
-    ? (categories.find((c) => c.id === resolvedParentId)?.name ?? null)
-    : null;
+  const resolvedParentId =
+    editing != null ? editing.parentId : (parentId ?? null);
+  const parentName =
+    resolvedParentId != null
+      ? (categories.find((c) => c.id === resolvedParentId)?.name ?? null)
+      : null;
 
   useEffect(() => {
     if (editing) {
       setForm({
         name: editing.name,
-        color: editing.color ?? "#6366f1",
-        icon: editing.icon ?? "",
+        expenseType: editing.expenseType,
       });
     } else {
       setForm(empty);
@@ -54,12 +56,10 @@ export function CategorySheet({
     setForm((f) => ({ ...f, [field]: value }));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save() {
     const data: Omit<Category, "id" | "createdAt"> = {
       name: form.name,
-      color: form.color || null,
-      icon: form.icon || null,
+      expenseType: form.expenseType,
       parentId: resolvedParentId,
     };
     if (editing) {
@@ -70,6 +70,11 @@ export function CategorySheet({
     onOpenChange(false);
   }
 
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await save();
+  }
+
   const isPending = create.isPending || update.isPending;
 
   return (
@@ -77,14 +82,18 @@ export function CategorySheet({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {editing ? "Edit Category" : parentName ? "New Sub-category" : "New Category"}
+            {editing
+              ? "Edit Category"
+              : parentName
+                ? "New Sub-category"
+                : "New Category"}
           </DialogTitle>
           <DialogDescription>
             {editing
               ? "Update this category."
               : parentName
-              ? `Add a sub-category under ${parentName}.`
-              : "Add a new spending category."}
+                ? `Add a sub-category under ${parentName}.`
+                : "Add a new spending category."}
           </DialogDescription>
         </DialogHeader>
 
@@ -108,35 +117,31 @@ export function CategorySheet({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cat-color">Colour</Label>
-            <div className="flex items-center gap-2">
-              <input
-                id="cat-color"
-                type="color"
-                value={form.color}
-                onChange={(e) => set("color", e.target.value)}
-                className="h-8 w-12 cursor-pointer rounded border border-input bg-transparent p-0.5"
-              />
-              <Input
-                value={form.color}
-                onChange={(e) => set("color", e.target.value)}
-                placeholder="#6366f1"
-                className="font-mono"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="cat-icon">Icon</Label>
-            <Input
-              id="cat-icon"
-              placeholder="e.g. ShoppingCart, Home..."
-              value={form.icon}
-              onChange={(e) => set("icon", e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Lucide icon name (optional)
-            </p>
+            <Label>Type</Label>
+            <RadioGroup
+              value={form.expenseType}
+              onValueChange={(v) => set("expenseType", v)}
+              className="flex flex-row gap-4"
+            >
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="type-expense" value="expense" />
+                <Label
+                  htmlFor="type-expense"
+                  className="cursor-pointer font-normal"
+                >
+                  Expense
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem id="type-income" value="income" />
+                <Label
+                  htmlFor="type-income"
+                  className="cursor-pointer font-normal"
+                >
+                  Income
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </form>
 
@@ -144,7 +149,7 @@ export function CategorySheet({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit as never} disabled={isPending}>
+          <Button onClick={save} disabled={isPending}>
             {editing ? "Save Changes" : "Create"}
           </Button>
         </DialogFooter>

@@ -42,8 +42,7 @@ export function CategoryCombobox({
     if (!name) return;
     const [newCat] = await create.mutateAsync({
       name,
-      color: null,
-      icon: null,
+      expenseType: "expense",
       parentId: null,
     });
     if (newCat) {

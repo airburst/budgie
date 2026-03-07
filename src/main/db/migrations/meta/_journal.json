@@ -5,43 +5,15 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1772731961910,
-      "tag": "0000_pale_shen",
+      "when": 1741305600000,
+      "tag": "0000_initial",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
-      "when": 1772734390870,
-      "tag": "0001_lively_morg",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1772813835067,
-      "tag": "0003_amused_sersi",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1772869178668,
-      "tag": "0004_massive_devos",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1772884925066,
-      "tag": "0005_cloudy_anita_blake",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1772892067652,
-      "tag": "0006_massive_amphibian",
+      "when": 1741392000000,
+      "tag": "0001_seed_categories",
       "breakpoints": true
     }
   ]

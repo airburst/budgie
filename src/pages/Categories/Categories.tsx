@@ -1,5 +1,4 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -65,8 +64,7 @@ export default function Categories() {
             <TableHeader>
               <TableRow>
                 <TableHead className="bg-accent">Name</TableHead>
-                <TableHead className="bg-accent">Colour</TableHead>
-                <TableHead className="bg-accent">Icon</TableHead>
+                <TableHead className="bg-accent">Type</TableHead>
                 <TableHead className="bg-accent" />
               </TableRow>
             </TableHeader>
@@ -74,7 +72,7 @@ export default function Categories() {
               {categories.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={3}
                     className="text-center text-muted-foreground py-12"
                   >
                     No categories yet.
@@ -84,32 +82,8 @@ export default function Categories() {
                 topLevel.flatMap((cat) => [
                   <TableRow key={cat.id}>
                     <TableCell className="font-medium">{cat.name}</TableCell>
-                    <TableCell>
-                      {cat.color ? (
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="inline-block size-4 rounded-full border border-border"
-                            style={{ backgroundColor: cat.color }}
-                          />
-                          <Badge
-                            variant="outline"
-                            className="font-mono text-xs"
-                          >
-                            {cat.color}
-                          </Badge>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {cat.icon ? (
-                        <span className="text-sm font-mono text-muted-foreground">
-                          {cat.icon}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
+                    <TableCell className="capitalize text-sm text-muted-foreground">
+                      {cat.expenseType}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -154,32 +128,8 @@ export default function Categories() {
                           {child.name}
                         </span>
                       </TableCell>
-                      <TableCell>
-                        {child.color ? (
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="inline-block size-4 rounded-full border border-border"
-                              style={{ backgroundColor: child.color }}
-                            />
-                            <Badge
-                              variant="outline"
-                              className="font-mono text-xs"
-                            >
-                              {child.color}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {child.icon ? (
-                          <span className="text-sm font-mono text-muted-foreground">
-                            {child.icon}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
+                      <TableCell className="capitalize text-sm text-muted-foreground">
+                        {child.expenseType}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">

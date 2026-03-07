@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
-const { setupDatabase, db, schema } = require("./db");
+const { setupDatabase, schema } = require("./db");
 const registerAccountsHandlers = require("./ipc/accounts");
 const registerCategoriesHandlers = require("./ipc/categories");
 const registerTransactionsHandlers = require("./ipc/transactions");
@@ -53,7 +53,7 @@ app.whenReady().then(() => {
     });
   });
 
-  setupDatabase();
+  const db = setupDatabase();
   // Add IPC handlers for database operations
   registerAccountsHandlers(ipcMain, db, schema);
   registerCategoriesHandlers(ipcMain, db, schema);

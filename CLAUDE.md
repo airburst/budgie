@@ -119,18 +119,46 @@ After editing `schema.ts`, generate a migration before wiring IPC:
 bun run db:migrate
 ```
 
+> **Note:** `bun run db:migrate` (`drizzle-kit generate`) may prompt interactively when it
+> detects column renames. If it does, pipe won't work — write the migration manually instead
+> (see below).
+
+### `created_at` — always use a SQL default
+
+All `created_at` columns must use a stable SQL-level default, **not** a JS function:
+
+```ts
+// CORRECT — stable, never causes drift
+createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+
+// WRONG — JS function serialises differently each generate run → spurious migrations
+createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+```
+
 ### CRITICAL: Never drop tables
 
 This is a financial application. **Never generate or apply a migration that contains `DROP TABLE`.**
 Data loss is unacceptable.
 
-Drizzle will sometimes generate `DROP TABLE` / recreate migrations when it detects a default
-value change (e.g. because `new Date().toISOString()` in the schema produces a different
-timestamp on each `generate` run). Always inspect the generated SQL before applying it.
-
-If a generated migration contains `DROP TABLE`, discard it and write a manual migration instead.
-For adding columns, `ALTER TABLE ... ADD COLUMN` is always sufficient and safe:
+Always inspect generated SQL before applying it. If it contains `DROP TABLE`, discard it and
+write a manual migration instead. For adding columns, `ALTER TABLE ... ADD COLUMN` is always
+sufficient and safe:
 
 ```sql
 ALTER TABLE `table_name` ADD COLUMN `column_name` type REFERENCES `other_table`(`id`);
 ```
+
+### Manual migration checklist
+
+After writing a migration file by hand:
+
+1. Add an entry to `src/main/db/migrations/meta/_journal.json`
+2. Update `src/main/db/migrations/meta/<idx>_snapshot.json` to match the new schema state
+3. Rebuild `public/db.js` (see above)
+4. Test against a fresh DB:
+   ```
+   rm -f test.db
+   sed '/^--> statement-breakpoint/d' src/main/db/migrations/<file>.sql | sqlite3 test.db
+   sqlite3 test.db ".tables"
+   ```
+
