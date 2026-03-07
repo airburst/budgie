@@ -23,7 +23,7 @@ export function MonthlySegment({ monthDays, onChange }: MonthlySegmentProps) {
   }
 
   return (
-    <div className="grid grid-cols-8 gap-1">
+    <div className="grid grid-cols-8 gap-1 w-full">
       {ALL_MONTH_DAYS.map(({ value, label }) => {
         const checked = monthDays.includes(value);
         return (
