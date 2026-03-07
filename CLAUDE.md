@@ -1,5 +1,16 @@
 # Budgie — Agent Instructions
 
+## Before Marking Any Task Done
+
+After every code change, run **both** checks and fix all reported issues before considering the task complete:
+
+```
+bun run lint
+bun run check-types
+```
+
+Both commands must exit cleanly (zero errors) before work is done.
+
 ## New Entity Rule
 
 Whenever a new table is added to `src/main/db/schema.ts`, you **must** wire up full CRUD

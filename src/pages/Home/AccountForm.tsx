@@ -54,8 +54,7 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
     onOpenChange(false);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function save() {
     await create.mutateAsync({
       name: form.name,
       number: form.number || null,
@@ -70,6 +69,11 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
       notes: form.notes || null,
     });
     handleClose();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await save();
   }
 
   return (
@@ -147,7 +151,7 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit as never} disabled={create.isPending}>
+          <Button onClick={save} disabled={create.isPending}>
             Create
           </Button>
         </DialogFooter>
