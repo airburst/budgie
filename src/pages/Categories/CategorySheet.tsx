@@ -1,17 +1,17 @@
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { useCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types/electron";
 import { useEffect, useState } from "react";
-import { useCategories } from "@/hooks/useCategories";
 
 type CategorySheetProps = {
   open: boolean;
@@ -65,16 +65,18 @@ export function CategorySheet({
   const isPending = create.isPending || update.isPending;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-sm">
-        <SheetHeader>
-          <SheetTitle>{editing ? "Edit Category" : "New Category"}</SheetTitle>
-          <SheetDescription>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>
+            {editing ? "Edit Category" : "New Category"}
+          </DialogTitle>
+          <DialogDescription>
             {editing ? "Update this category." : "Add a new spending category."}
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="cat-name">Name</Label>
             <Input
@@ -119,15 +121,15 @@ export function CategorySheet({
           </div>
         </form>
 
-        <SheetFooter>
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit as never} disabled={isPending}>
             {editing ? "Save Changes" : "Create Category"}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
