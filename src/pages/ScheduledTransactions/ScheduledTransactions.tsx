@@ -4,7 +4,7 @@ import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
 import { ScheduledCalendar } from "./ScheduledCalendar";
-import { ScheduledPaymentSheet } from "./ScheduledPaymentForm";
+import { ScheduledPaymentDialog } from "./ScheduledPaymentForm";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
 import { ScheduledTable } from "./ScheduledTable";
 
@@ -35,16 +35,14 @@ export default function ScheduledTransactions() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                Scheduled Payments
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Manage your recurring bills and upcoming transfers.
               </p>
             </div>
             <Button onClick={openAdd} size="sm">
               <PlusIcon />
-              Add Scheduled Payment
+              Add Reminder
             </Button>
           </div>
 
@@ -57,7 +55,7 @@ export default function ScheduledTransactions() {
         </div>
       </div>
 
-      <ScheduledPaymentSheet
+      <ScheduledPaymentDialog
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         editingId={editingId}

@@ -1,5 +1,13 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -9,40 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import type { ScheduledTransaction } from "@/types/electron";
 import { useEffect, useState } from "react";
-import { RRule } from "rrule";
+import { buildRRule, computeNextDueDate } from "./recurrence/buildRRule";
+import { parseRRule } from "./recurrence/parseRRule";
+import { RecurrenceSection } from "./recurrence/RecurrenceSection";
+import type { RecurrenceConfig } from "./recurrence/types";
+import { DEFAULT_RECURRENCE_CONFIG } from "./recurrence/types";
 
-type ScheduledPaymentSheetProps = {
+type ScheduledPaymentDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingId: number | null;
-};
-
-type EndCondition = "never" | "on_date" | "after_x";
-
-const FREQ_MAP: Record<string, string> = {
-  Daily: "FREQ=DAILY",
-  Weekly: "FREQ=WEEKLY",
-  Monthly: "FREQ=MONTHLY",
-  Yearly: "FREQ=YEARLY",
-};
-
-const FREQ_NUM_TO_LABEL: Record<number, string> = {
-  [RRule.DAILY]: "Daily",
-  [RRule.WEEKLY]: "Weekly",
-  [RRule.MONTHLY]: "Monthly",
-  [RRule.YEARLY]: "Yearly",
 };
 
 const empty = {
@@ -51,48 +39,17 @@ const empty = {
   categoryId: "",
   accountId: "",
   startDate: new Date().toISOString().slice(0, 10),
-  frequency: "Monthly",
-  endCondition: "never" as EndCondition,
-  endDate: "",
-  endCount: "",
+  recurrence: DEFAULT_RECURRENCE_CONFIG,
   autoPost: false,
   notes: "",
   active: true,
 };
 
-function buildRRule(
-  startDate: string,
-  frequency: string,
-  endCondition: EndCondition,
-  endDate: string,
-  endCount: string,
-): string {
-  const base = FREQ_MAP[frequency] ?? "FREQ=MONTHLY";
-  let rrule = base;
-  if (endCondition === "on_date" && endDate) {
-    const until = endDate.replace(/-/g, "");
-    rrule += `;UNTIL=${until}T000000Z`;
-  } else if (endCondition === "after_x" && endCount) {
-    rrule += `;COUNT=${endCount}`;
-  }
-  return rrule;
-}
-
-function computeNextDueDate(rruleStr: string): string | null {
-  try {
-    const rule = RRule.fromString(rruleStr);
-    const next = rule.after(new Date(), true);
-    return next ? next.toISOString().slice(0, 10) : null;
-  } catch {
-    return null;
-  }
-}
-
-export function ScheduledPaymentSheet({
+export function ScheduledPaymentDialog({
   open,
   onOpenChange,
   editingId,
-}: ScheduledPaymentSheetProps) {
+}: ScheduledPaymentDialogProps) {
   const { scheduled, accounts, create, update } = useScheduledTransactions();
 
   const [form, setForm] = useState(empty);
@@ -101,33 +58,13 @@ export function ScheduledPaymentSheet({
 
   useEffect(() => {
     if (editing) {
-      let frequency = "Monthly";
-      let endCondition: EndCondition = "never";
-      let endDate = "";
-      let endCount = "";
-      try {
-        const rule = RRule.fromString(editing.rrule);
-        frequency = FREQ_NUM_TO_LABEL[rule.options.freq] ?? "Monthly";
-        if (rule.options.until) {
-          endCondition = "on_date";
-          endDate = rule.options.until.toISOString().slice(0, 10);
-        } else if (rule.options.count) {
-          endCondition = "after_x";
-          endCount = String(rule.options.count);
-        }
-      } catch {
-        // keep defaults
-      }
       setForm({
         payee: editing.payee,
         amount: String(editing.amount),
         categoryId: editing.categoryId ? String(editing.categoryId) : "",
         accountId: String(editing.accountId),
         startDate: editing.nextDueDate ?? new Date().toISOString().slice(0, 10),
-        frequency,
-        endCondition,
-        endDate,
-        endCount,
+        recurrence: parseRRule(editing.rrule),
         autoPost: editing.autoPost ?? false,
         notes: editing.notes ?? "",
         active: editing.active ?? true,
@@ -143,13 +80,7 @@ export function ScheduledPaymentSheet({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const rruleStr = buildRRule(
-      form.startDate,
-      form.frequency,
-      form.endCondition,
-      form.endDate,
-      form.endCount,
-    );
+    const rruleStr = buildRRule(form.recurrence);
     const nextDueDate = computeNextDueDate(rruleStr);
 
     const data: Omit<ScheduledTransaction, "id" | "createdAt"> = {
@@ -175,18 +106,18 @@ export function ScheduledPaymentSheet({
   const isPending = create.isPending || update.isPending;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
             {editing ? "Edit Scheduled Payment" : "Add Scheduled Payment"}
-          </SheetTitle>
-          <SheetDescription>
+          </DialogTitle>
+          <DialogDescription>
             Configure a recurring bill or transfer.
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="sp-payee">Payee</Label>
@@ -250,7 +181,7 @@ export function ScheduledPaymentSheet({
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               Recurrence Rules
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="sp-start">First Payment Date</Label>
                 <Input
@@ -261,67 +192,13 @@ export function ScheduledPaymentSheet({
                   required
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label>Frequency</Label>
-                <Select
-                  value={form.frequency}
-                  onValueChange={(v) => set("frequency", v ?? "Monthly")}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Daily", "Weekly", "Monthly", "Yearly"].map((f) => (
-                      <SelectItem key={f} value={f}>
-                        {f}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label>End Condition</Label>
-            <div className="flex gap-2">
-              {(
-                [
-                  ["never", "Never"],
-                  ["on_date", "On date"],
-                  ["after_x", "After X times"],
-                ] as [EndCondition, string][]
-              ).map(([val, label]) => (
-                <button
-                  key={val}
-                  type="button"
-                  onClick={() => set("endCondition", val)}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-colors ${
-                    form.endCondition === val
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {form.endCondition === "on_date" && (
-              <Input
-                type="date"
-                value={form.endDate}
-                onChange={(e) => set("endDate", e.target.value)}
+              <RecurrenceSection
+                config={form.recurrence}
+                onChange={(recurrence: RecurrenceConfig) =>
+                  setForm((f) => ({ ...f, recurrence }))
+                }
               />
-            )}
-            {form.endCondition === "after_x" && (
-              <Input
-                type="number"
-                min="1"
-                placeholder="Number of payments"
-                value={form.endCount}
-                onChange={(e) => set("endCount", e.target.value)}
-              />
-            )}
+            </div>
           </div>
 
           <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-start gap-3">
@@ -354,7 +231,7 @@ export function ScheduledPaymentSheet({
           </div>
         </form>
 
-        <SheetFooter>
+        <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -364,8 +241,8 @@ export function ScheduledPaymentSheet({
           >
             {editing ? "Save Schedule" : "Add Schedule"}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
