@@ -1,13 +1,10 @@
 import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
-import { useQuery } from "@tanstack/react-query";
+import { useAccounts } from "@/hooks/useAccounts";
 import Layout from "../layout";
 import { AccountsTable } from "./AccountsTable";
 
 export default function Home() {
-  const { data: accounts = [] } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => window.api.getAccounts(),
-  });
+  const { accounts } = useAccounts();
 
   return (
     <Layout>

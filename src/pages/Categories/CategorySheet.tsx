@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import type { Category } from "@/types/electron";
 import { useEffect, useState } from "react";
-import { useCategories } from "./useCategories";
+import { useCategories } from "@/hooks/useCategories";
 
 type CategorySheetProps = {
   open: boolean;

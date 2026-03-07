@@ -1,5 +1,7 @@
 import type { ScheduledTransaction } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAccounts } from "./useAccounts";
+import { useCategories } from "./useCategories";
 
 export function useScheduledTransactions() {
   const qc = useQueryClient();
@@ -9,15 +11,8 @@ export function useScheduledTransactions() {
     queryFn: () => window.api.getScheduledTransactions(),
   });
 
-  const { data: accounts = [] } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: () => window.api.getAccounts(),
-  });
-
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => window.api.getCategories(),
-  });
+  const { accounts } = useAccounts();
+  const { categories } = useCategories();
 
   const create = useMutation({
     mutationFn: (data: Omit<ScheduledTransaction, "id" | "createdAt">) =>

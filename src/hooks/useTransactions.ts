@@ -1,5 +1,6 @@
 import type { Transaction } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCategories } from "./useCategories";
 
 export function useTransactions(accountId: number) {
   const qc = useQueryClient();
@@ -10,10 +11,7 @@ export function useTransactions(accountId: number) {
     enabled: !!accountId,
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => window.api.getCategories(),
-  });
+  const { categories } = useCategories();
 
   const create = useMutation({
     mutationFn: (data: Omit<Transaction, "id" | "createdAt">) =>

@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ScheduledTransaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 import { RRule } from "rrule";
-import { useScheduledTransactions } from "./useScheduledTransactions";
+import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 
 type ScheduledPaymentSheetProps = {
   open: boolean;

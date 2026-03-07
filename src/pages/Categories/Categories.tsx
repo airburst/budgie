@@ -12,7 +12,7 @@ import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
 import { CategorySheet } from "./CategorySheet";
-import { useCategories } from "./useCategories";
+import { useCategories } from "@/hooks/useCategories";
 
 export default function Categories() {
   const { categories, remove } = useCategories();

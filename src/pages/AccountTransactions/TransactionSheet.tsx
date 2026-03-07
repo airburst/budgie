@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { Transaction } from "@/types/electron";
 import { useEffect, useState } from "react";
-import { useTransactions } from "./useTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 
 type TransactionSheetProps = {
   open: boolean;

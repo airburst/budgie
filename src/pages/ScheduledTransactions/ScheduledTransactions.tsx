@@ -6,7 +6,7 @@ import { ScheduledCalendar } from "./ScheduledCalendar";
 import { ScheduledPaymentSheet } from "./ScheduledPaymentSheet";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
 import { ScheduledTable } from "./ScheduledTable";
-import { useScheduledTransactions } from "./useScheduledTransactions";
+import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 
 export default function ScheduledTransactions() {
   const { scheduled, accounts, remove } =

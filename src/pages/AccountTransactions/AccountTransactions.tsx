@@ -7,7 +7,7 @@ import Layout from "../layout";
 import { TransactionFilters } from "./TransactionFilters";
 import { TransactionSheet } from "./TransactionSheet";
 import { TransactionsTable } from "./TransactionsTable";
-import { useTransactions } from "./useTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 
 type Filter = "all" | "income" | "expenses";
 
