@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
@@ -18,6 +19,7 @@ export default function Categories() {
   const { categories, remove } = useCategories();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   function openAdd() {
     setEditingId(null);
@@ -104,7 +106,7 @@ export default function Categories() {
                         <Button
                           variant="ghost"
                           size="icon-sm"
-                          onClick={() => remove.mutate(cat.id)}
+                          onClick={() => setPendingDeleteId(cat.id)}
                           aria-label="Delete category"
                         >
                           <Trash2Icon className="text-destructive" />
@@ -123,6 +125,14 @@ export default function Categories() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         editingId={editingId}
+      />
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title="Delete category?"
+        description="This will permanently delete this category. This action cannot be undone."
+        onConfirm={() => remove.mutate(pendingDeleteId!)}
       />
     </Layout>
   );

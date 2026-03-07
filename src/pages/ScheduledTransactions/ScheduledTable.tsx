@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import type { Account, ScheduledTransaction } from "@/types/electron";
 import { PencilIcon, Trash2Icon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { FrequencyBadge } from "./FrequencyBadge";
 
 type ScheduledTableProps = {
@@ -26,6 +27,7 @@ export function ScheduledTable({
   onEdit,
   onDelete,
 }: ScheduledTableProps) {
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const accountMap = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
@@ -67,61 +69,71 @@ export function ScheduledTable({
   });
 
   return (
-    <div className="border border-border rounded-md">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="bg-accent">Next Due</TableHead>
-            <TableHead className="bg-accent">Payee</TableHead>
-            <TableHead className="text-right bg-accent">Amount</TableHead>
-            <TableHead className="bg-accent">Frequency</TableHead>
-            <TableHead className="bg-accent">Account</TableHead>
-            <TableHead className="bg-accent" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map((s) => {
-            const account = accountMap.get(s.accountId);
-            return (
-              <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
-                <TableCell className="text-sm text-muted-foreground">
-                  {s.nextDueDate ?? "—"}
-                </TableCell>
-                <TableCell className="font-medium">{s.payee}</TableCell>
-                <TableCell className="text-right">
-                  <Amount value={s.amount} />
-                </TableCell>
-                <TableCell>
-                  <FrequencyBadge rruleStr={s.rrule} />
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {account?.name ?? "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => onEdit(s.id)}
-                      aria-label="Edit scheduled payment"
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => onDelete(s.id)}
-                      aria-label="Delete scheduled payment"
-                    >
-                      <Trash2Icon className="text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+    <>
+      <div className="border border-border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="bg-accent">Next Due</TableHead>
+              <TableHead className="bg-accent">Payee</TableHead>
+              <TableHead className="text-right bg-accent">Amount</TableHead>
+              <TableHead className="bg-accent">Frequency</TableHead>
+              <TableHead className="bg-accent">Account</TableHead>
+              <TableHead className="bg-accent" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((s) => {
+              const account = accountMap.get(s.accountId);
+              return (
+                <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {s.nextDueDate ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-medium">{s.payee}</TableCell>
+                  <TableCell className="text-right">
+                    <Amount value={s.amount} />
+                  </TableCell>
+                  <TableCell>
+                    <FrequencyBadge rruleStr={s.rrule} />
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {account?.name ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => onEdit(s.id)}
+                        aria-label="Edit scheduled payment"
+                      >
+                        <PencilIcon />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => setPendingDeleteId(s.id)}
+                        aria-label="Delete scheduled payment"
+                      >
+                        <Trash2Icon className="text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title="Delete scheduled payment?"
+        description="This will permanently delete this scheduled payment. This action cannot be undone."
+        onConfirm={() => onDelete(pendingDeleteId!)}
+      />
+    </>
   );
 }
