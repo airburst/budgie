@@ -3,18 +3,16 @@ import { Amount } from "@/components/ui/amount";
 type AccountButtonProps = {
   name: string;
   balance: number;
-  activeAccount?: string;
+  isActive: boolean;
   onClick: () => void;
 };
 
 const AccountButton = ({
   name,
   balance,
-  activeAccount,
+  isActive,
   onClick,
 }: AccountButtonProps) => {
-  const isActive = activeAccount === name;
-
   return (
     <button
       aria-label={`${name} account`}

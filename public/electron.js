@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
 const { setupDatabase, db, schema } = require("./db");
 const registerAccountsHandlers = require("./ipc/accounts");
+const registerCategoriesHandlers = require("./ipc/categories");
+const registerTransactionsHandlers = require("./ipc/transactions");
+const registerScheduledTransactionsHandlers = require("./ipc/scheduled-transactions");
 const isDev = !app.isPackaged;
 
 let mainWindow;
@@ -51,9 +54,10 @@ app.whenReady().then(() => {
 
   setupDatabase();
   // Add IPC handlers for database operations
-  ipcMain.handle("tasks:getAll", () => db.select().from(schema.tasks)); // FIXME: remove
-
   registerAccountsHandlers(ipcMain, db, schema);
+  registerCategoriesHandlers(ipcMain, db, schema);
+  registerTransactionsHandlers(ipcMain, db, schema);
+  registerScheduledTransactionsHandlers(ipcMain, db, schema);
 
   createWindow();
 });

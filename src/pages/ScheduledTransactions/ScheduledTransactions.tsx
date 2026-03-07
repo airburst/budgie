@@ -1,0 +1,68 @@
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import { useState } from "react";
+import Layout from "../layout";
+import { ScheduledCalendar } from "./ScheduledCalendar";
+import { ScheduledPaymentSheet } from "./ScheduledPaymentSheet";
+import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
+import { ScheduledTable } from "./ScheduledTable";
+import { useScheduledTransactions } from "./useScheduledTransactions";
+
+export default function ScheduledTransactions() {
+  const { scheduled, accounts, remove } =
+    useScheduledTransactions();
+
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  function openAdd() {
+    setEditingId(null);
+    setSheetOpen(true);
+  }
+
+  function openEdit(id: number) {
+    setEditingId(id);
+    setSheetOpen(true);
+  }
+
+  return (
+    <Layout>
+      <div className="flex h-full">
+        <div className="w-72 shrink-0 border-r border-border p-4 flex flex-col gap-4 overflow-y-auto">
+          <ScheduledCalendar scheduledTransactions={scheduled} />
+          <ScheduledSummaryCard scheduledTransactions={scheduled} />
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Scheduled Payments
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Manage your recurring bills and upcoming transfers.
+              </p>
+            </div>
+            <Button onClick={openAdd} size="sm">
+              <PlusIcon />
+              Add Scheduled Payment
+            </Button>
+          </div>
+
+          <ScheduledTable
+            scheduledTransactions={scheduled}
+            accounts={accounts}
+            onEdit={openEdit}
+            onDelete={(id) => remove.mutate(id)}
+          />
+        </div>
+      </div>
+
+      <ScheduledPaymentSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        editingId={editingId}
+      />
+    </Layout>
+  );
+}

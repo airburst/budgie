@@ -1,8 +1,10 @@
+import AccountTransactions from "@/pages/AccountTransactions/AccountTransactions";
+import Categories from "@/pages/Categories/Categories";
 import Home from "@/pages/Home/Home";
+import ScheduledTransactions from "@/pages/ScheduledTransactions/ScheduledTransactions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HashRouter, Route, Routes } from "react-router";
-import Accounts from "./pages/Accounts";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +23,9 @@ function App() {
       <HashRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/accounts/:id" element={<AccountTransactions />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/scheduled" element={<ScheduledTransactions />} />
         </Routes>
       </HashRouter>
     </QueryClientProvider>
