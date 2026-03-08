@@ -72,11 +72,16 @@ interface ElectronAPI {
   getTransaction: (id: number) => Promise<Transaction | null>;
   getTransactionsByAccount: (accountId: number) => Promise<Transaction[]>;
   createTransaction: (
-    data: Omit<Transaction, "id" | "createdAt" | "reconciled">,
+    data: Omit<
+      Transaction,
+      "id" | "createdAt" | "reconciled" | "transferTransactionId"
+    >,
   ) => Promise<Transaction[]>;
   updateTransaction: (
     id: number,
-    data: Partial<Omit<Transaction, "id" | "createdAt">>,
+    data: Partial<
+      Omit<Transaction, "id" | "createdAt" | "transferTransactionId">
+    >,
   ) => Promise<Transaction[]>;
   deleteTransaction: (id: number) => Promise<void>;
   reconcileTransactions: (payload: {

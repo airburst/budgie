@@ -25,6 +25,14 @@ module.exports = function registerCategoriesHandlers(ipcMain, db, schema) {
       .returning(),
   );
   ipcMain.handle("categories:delete", async (_, id) => {
+    const category = await db
+      .select()
+      .from(schema.categories)
+      .where(eq(schema.categories.id, id))
+      .then((r) => r[0] ?? null);
+    if (category?.expenseType === "transfer") {
+      throw new Error("Transfer categories cannot be deleted.");
+    }
     try {
       return await db
         .delete(schema.categories)

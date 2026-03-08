@@ -45,7 +45,9 @@ export default function Categories() {
   }
 
   const { topLevel, childrenMap } = useMemo(() => {
-    const topLevel = categories.filter((c) => c.parentId === null);
+    const topLevel = categories.filter(
+      (c) => c.parentId === null && c.expenseType !== "transfer",
+    );
     const childrenMap = new Map<number, typeof categories>();
     for (const c of categories) {
       if (c.parentId !== null) {
@@ -80,7 +82,7 @@ export default function Categories() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories.length === 0 ? (
+              {topLevel.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={3}

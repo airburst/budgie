@@ -46,6 +46,7 @@ SELECT name, expense_type FROM (
   SELECT 'Salary',                   'income'                     UNION ALL
   SELECT 'School',                   'expense'                    UNION ALL
   SELECT 'Taxes',                    'expense'                    UNION ALL
+  SELECT 'Transfer',                 'transfer'                   UNION ALL
   SELECT 'Travel',                   'expense'
 ) WHERE NOT EXISTS (SELECT 1 FROM `categories` LIMIT 1);
 --> statement-breakpoint

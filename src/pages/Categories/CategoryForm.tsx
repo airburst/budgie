@@ -21,7 +21,7 @@ type CategorySheetProps = {
   parentId?: number | null;
 };
 
-const empty = { name: "", expenseType: "expense" as "expense" | "income" };
+const empty = { name: "", expenseType: "expense" as Category["expenseType"] };
 
 export function CategorySheet({
   open,

@@ -1,4 +1,4 @@
-const { eq, sql } = require("drizzle-orm");
+const { and, eq, isNull, sql } = require("drizzle-orm");
 
 function withBalances(db, schema) {
   return db
@@ -41,6 +41,19 @@ function withBalances(db, schema) {
     .groupBy(schema.accounts.id);
 }
 
+async function findTransferParent(db, schema) {
+  return db
+    .select()
+    .from(schema.categories)
+    .where(
+      and(
+        eq(schema.categories.name, "Transfer"),
+        isNull(schema.categories.parentId),
+      ),
+    )
+    .then((r) => r[0] ?? null);
+}
+
 module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
   ipcMain.handle("accounts:getAll", () => withBalances(db, schema));
   ipcMain.handle("accounts:getById", (_, id) =>
@@ -48,9 +61,18 @@ module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
       .where(eq(schema.accounts.id, id))
       .then((r) => r[0] ?? null),
   );
-  ipcMain.handle("accounts:create", (_, data) =>
-    db.insert(schema.accounts).values(data).returning(),
-  );
+  ipcMain.handle("accounts:create", async (_, data) => {
+    const [account] = await db.insert(schema.accounts).values(data).returning();
+    const transferParent = await findTransferParent(db, schema);
+    if (transferParent) {
+      await db.insert(schema.categories).values({
+        parentId: transferParent.id,
+        name: account.name,
+        expenseType: "transfer",
+      });
+    }
+    return [account];
+  });
   ipcMain.handle("accounts:update", (_, id, data) =>
     db
       .update(schema.accounts)
@@ -58,7 +80,26 @@ module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
       .where(eq(schema.accounts.id, id))
       .returning(),
   );
-  ipcMain.handle("accounts:delete", (_, id) =>
-    db.delete(schema.accounts).where(eq(schema.accounts.id, id)),
-  );
+  ipcMain.handle("accounts:delete", async (_, id) => {
+    const account = await db
+      .select()
+      .from(schema.accounts)
+      .where(eq(schema.accounts.id, id))
+      .then((r) => r[0] ?? null);
+    if (account) {
+      const transferParent = await findTransferParent(db, schema);
+      if (transferParent) {
+        await db
+          .update(schema.categories)
+          .set({ deleted: true })
+          .where(
+            and(
+              eq(schema.categories.parentId, transferParent.id),
+              eq(schema.categories.name, account.name),
+            ),
+          );
+      }
+    }
+    return db.delete(schema.accounts).where(eq(schema.accounts.id, id));
+  });
 };

@@ -73,7 +73,10 @@ export function TransactionForm({
   async function save() {
     const amount =
       (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
-    const data: Omit<Transaction, "id" | "createdAt" | "reconciled"> = {
+    const data: Omit<
+      Transaction,
+      "id" | "createdAt" | "reconciled" | "transferTransactionId"
+    > = {
       accountId,
       date: form.date,
       payee: form.payee,

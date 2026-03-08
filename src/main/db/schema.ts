@@ -21,7 +21,7 @@ export const categories = sqliteTable("categories", {
     (): AnySQLiteColumn => categories.id,
   ),
   name: text("name").notNull(),
-  expenseType: text("expense_type", { enum: ["expense", "income"] })
+  expenseType: text("expense_type", { enum: ["expense", "income", "transfer"] })
     .notNull()
     .default("expense"),
   deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
@@ -42,6 +42,9 @@ export const transactions = sqliteTable("transactions", {
   reconciled: integer("reconciled", { mode: "boolean" })
     .notNull()
     .default(false),
+  transferTransactionId: integer("transfer_transaction_id").references(
+    (): AnySQLiteColumn => transactions.id,
+  ),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 
