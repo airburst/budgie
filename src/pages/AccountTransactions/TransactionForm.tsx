@@ -24,6 +24,8 @@ type TransactionSheetProps = {
   onOpenChange: (open: boolean) => void;
   editingId: number | null;
   accountId: number;
+  defaultDate?: string;
+  defaultCleared?: boolean;
 };
 
 function makeEmpty() {
@@ -43,6 +45,8 @@ export function TransactionForm({
   onOpenChange,
   editingId,
   accountId,
+  defaultDate,
+  defaultCleared,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
   const { upsert: upsertPayee } = usePayees();
@@ -67,7 +71,10 @@ export function TransactionForm({
         cleared: editing.cleared ?? false,
       });
     } else {
-      setForm(makeEmpty());
+      const empty = makeEmpty();
+      if (defaultDate) empty.date = defaultDate;
+      if (defaultCleared) empty.cleared = true;
+      setForm(empty);
     }
   }, [editingId, open]);
 

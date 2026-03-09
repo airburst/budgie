@@ -9,6 +9,9 @@ const Categories = lazy(() => import("@/pages/Categories/Categories"));
 const ForecastPage = lazy(() => import("@/pages/Forecast/ForecastPage"));
 const Home = lazy(() => import("@/pages/Home/Home"));
 const Payees = lazy(() => import("@/pages/Payees/Payees"));
+const ReconcilePage = lazy(
+  () => import("@/pages/Reconcile/ReconcilePage"),
+);
 const ScheduledTransactions = lazy(
   () => import("@/pages/ScheduledTransactions/ScheduledTransactions"),
 );
@@ -39,6 +42,7 @@ function App() {
             <Route path="/categories" element={<Categories />} />
             <Route path="/payees" element={<Payees />} />
             <Route path="/scheduled" element={<ScheduledTransactions />} />
+            <Route path="/reconcile/:id" element={<ReconcilePage />} />
             <Route path="/forecast/:id" element={<ForecastPage />} />
           </Routes>
         </Suspense>

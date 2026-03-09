@@ -1,29 +1,27 @@
 # New features to add
 
-## Remember payee
+## Icon
 
-I want to add a feature to autocomplete Payee as a user types, based on previous payees entered. This will require a new database table.
+Paste into Dall-e or midjourney:
 
-As well as autofill, if a user selects a previous payee from the dropdown, then we should also populate the category and amount from that last-used transaction.
-
-Selection should work with keyboard (tab to select first item, up/down arrows to navigate list).
-
-Add a payees table and hold the most recent transaction details for each distinct payee (payee, category, amount).
-
-Also create a page to manage payees similar to categories. This will be accessed from a link in the Header bar setting icon (below categories). This page will allow for rows to be added, edited or deleted.
-
-Finally, this entire feature should be optional, absed on a setting. We do not have a settings management page yet, so for now, add a key to the preferences JSON object: { autofillPayees: true }
+1024x1024 app icon, purple background, minimalist budgeting/finance theme, budgie bird silhouette, flat design
 
 ## Reconcilation
 
-Screen is too small; show running totals, etc.
+- Screen is too small; show running totals, etc.
+- Set statement date as today
 
-## Distribution and auto-update
+### Process
 
-https://www.electron.build/auto-update
+This is the user workflow:
 
-Create S3 bucket with https
+1. Create a new reconcilation
+2. Enter statement date from bank statement
+3. Enter ending balances from bank statement. Press Next -> open reconcile panel
+4. Mark every transaction in your list that appears on your bank statement as reconciled
+5. Add any missing transactions from your bank statement
+6. Fix any transaction amounts that don't match
 
-Test with minio
+### Reconcile Panel
 
-Mac code signing: https://www.electron.build/code-signing
+The Reconcile view is designed to help you quickly discover differences between your transaction list and your bank register. At the top is the header, which gives you feedback about which account you have selected, the status of the statement, and the sum of the listed or selected transactions.
