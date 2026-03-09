@@ -72,6 +72,9 @@ const api = {
     ipcRenderer.invoke("settings:moveDataFolder", newFolder),
   chooseDataFolder: () => ipcRenderer.invoke("settings:chooseDataFolder"),
 
+  chooseQifFile: () => ipcRenderer.invoke("import:chooseQifFile"),
+  readQifFile: (filePath) => ipcRenderer.invoke("import:readQifFile", filePath),
+
   getPayees: () => ipcRenderer.invoke("payees:getAll"),
   getPayee: (id) => ipcRenderer.invoke("payees:getById", id),
   createPayee: (data) => ipcRenderer.invoke("payees:create", data),

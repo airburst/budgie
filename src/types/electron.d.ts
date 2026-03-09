@@ -136,6 +136,9 @@ interface ElectronAPI {
   moveDataFolder: (newFolder: string) => Promise<void>;
   chooseDataFolder: () => Promise<string | null>;
 
+  chooseQifFile: () => Promise<string | null>;
+  readQifFile: (filePath: string) => Promise<string>;
+
   getPayees: () => Promise<Payee[]>;
   getPayee: (id: number) => Promise<Payee | null>;
   createPayee: (data: Omit<Payee, "id" | "createdAt">) => Promise<Payee[]>;

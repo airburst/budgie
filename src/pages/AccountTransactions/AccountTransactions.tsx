@@ -14,12 +14,14 @@ import type { Preferences } from "@/types/electron";
 import {
   CheckSquareIcon,
   FunnelIcon,
+  ImportIcon,
   LineChartIcon,
   PlusIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import Layout from "../layout";
+import { ImportDialog } from "./ImportDialog";
 import { ReconciliationDialog } from "./ReconciliationDialog";
 import { TransactionForm } from "./TransactionForm";
 import { TransactionsTable } from "./TransactionsTable";
@@ -32,6 +34,10 @@ export default function AccountTransactions() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [reconcileOpen, setReconcileOpen] = useState(false);
+  const [importData, setImportData] = useState<{
+    content: string;
+    filename: string;
+  } | null>(null);
 
   const { transactions, categories, update, remove } =
     useTransactions(accountId);
@@ -64,6 +70,14 @@ export default function AccountTransactions() {
   function openEdit(id: number) {
     setEditingId(id);
     setSheetOpen(true);
+  }
+
+  async function handleImport() {
+    const filePath = await window.api.chooseQifFile();
+    if (!filePath) return;
+    const content = await window.api.readQifFile(filePath);
+    const filename = filePath.split("/").pop() ?? filePath;
+    setImportData({ content, filename });
   }
 
   useHotkeys(
@@ -158,6 +172,10 @@ export default function AccountTransactions() {
                 <CheckSquareIcon />
                 Reconcile
               </Button>
+              <Button variant="outline" size="sm" onClick={handleImport}>
+                <ImportIcon />
+                Import
+              </Button>
             </div>
           </div>
 
@@ -184,6 +202,15 @@ export default function AccountTransactions() {
           account={account}
           open={reconcileOpen}
           onOpenChange={setReconcileOpen}
+        />
+      )}
+      {importData && (
+        <ImportDialog
+          open={!!importData}
+          onOpenChange={(open) => !open && setImportData(null)}
+          accountId={accountId}
+          qifContent={importData.content}
+          filename={importData.filename}
         />
       )}
     </Layout>

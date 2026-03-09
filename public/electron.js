@@ -11,6 +11,7 @@ const registerAccountReconciliationsHandlers = require("./ipc/account-reconcilia
 const registerSettingsHandlers = require("./ipc/settings");
 const registerBackupsHandlers = require("./ipc/backups");
 const registerPayeesHandlers = require("./ipc/payees");
+const registerImportHandlers = require("./ipc/import");
 const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
@@ -84,6 +85,7 @@ app.whenReady().then(async () => {
     skipAutoBackup = true;
   });
   registerPayeesHandlers(ipcMain, db, schema);
+  registerImportHandlers(ipcMain, dialog);
 
   // Data folder handlers
   ipcMain.handle("settings:getDataFolder", () => path.dirname(dbPath));
