@@ -11,7 +11,56 @@ bun run check-types
 
 Both commands must exit cleanly (zero errors) before work is done.
 
-## New Entity Rule
+---
+
+## Test Infrastructure
+
+Tests live in `src/tests/` and run with Vitest:
+
+```
+bun run test          # run all tests
+```
+
+> `npm rebuild better-sqlite3` may be required before the first run on a new machine
+> (better-sqlite3 is a native module that must be compiled for the current runtime).
+
+### Layout
+
+```
+src/tests/
+  integration/
+    setup.ts               ← pins vi.setSystemTime("2026-03-07T00:00:00.000Z")
+    accounts.test.ts
+    categories.test.ts
+    forecast.test.ts
+    reconciliation.test.ts
+    scheduled.test.ts      ← CRUD + rrule expansion; no auto-post coverage yet
+    transactions.test.ts
+    helpers/
+      db.ts                ← createTestDb() — in-memory SQLite + full migrations
+      fixtures.ts          ← shared typed seed data (accounts, transactions, scheduled)
+      ipc.ts               ← createMockIpc() + registerAllHandlers()
+  unit/
+    balances.unit.test.ts
+    forecast.unit.test.ts
+```
+
+### Key patterns
+
+- **`createTestDb()`** — spins up an in-memory SQLite DB with all migrations applied. Each
+  `describe` block creates its own instance and calls `teardown()` in `afterAll`.
+- **`createMockIpc()` / `registerAllHandlers()`** — loads real CommonJS IPC handlers from
+  `public/ipc/` against the in-memory DB, bypassing Electron entirely.
+- **Deterministic time** — all integration tests run with system time pinned to `2026-03-07`
+  via `vi.setSystemTime` in `setup.ts`. Author fixture dates and expected values relative to
+  that anchor.
+- **Sequential stateful tests** — `it` blocks within an integration `describe` are intentionally
+  sequential; each builds on the previous block's DB state.
+- **`processAutoPost` is directly callable** — it is exported as
+  `require("public/ipc/scheduled-transactions.js").processAutoPost` and takes `(db, schema)`,
+  so it can be exercised directly in integration tests without going through the IPC mock.
+
+---
 
 Whenever a new table is added to `src/main/db/schema.ts`, you **must** wire up full CRUD
 across all five files before considering the task done.
@@ -161,4 +210,3 @@ After writing a migration file by hand:
    sed '/^--> statement-breakpoint/d' src/main/db/migrations/<file>.sql | sqlite3 test.db
    sqlite3 test.db ".tables"
    ```
-

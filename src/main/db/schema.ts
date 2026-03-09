@@ -70,6 +70,7 @@ export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   rrule: text("rrule").notNull(),
   nextDueDate: text("next_due_date"),
   autoPost: integer("auto_post", { mode: "boolean" }).notNull().default(false),
+  daysInAdvance: integer("days_in_advance"),
   notes: text("notes"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),

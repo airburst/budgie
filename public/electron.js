@@ -5,6 +5,7 @@ const registerAccountsHandlers = require("./ipc/accounts");
 const registerCategoriesHandlers = require("./ipc/categories");
 const registerTransactionsHandlers = require("./ipc/transactions");
 const registerScheduledTransactionsHandlers = require("./ipc/scheduled-transactions");
+const { processAutoPost } = require("./ipc/scheduled-transactions");
 const registerAccountReconciliationsHandlers = require("./ipc/account-reconciliations");
 const registerSettingsHandlers = require("./ipc/settings");
 const isDev = !app.isPackaged;
@@ -41,7 +42,7 @@ function createWindow() {
 }
 
 // Create window when Electron is ready
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const csp = isDev
       ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws://localhost:* http://localhost:*; font-src 'self' data:;"
@@ -62,6 +63,8 @@ app.whenReady().then(() => {
   registerScheduledTransactionsHandlers(ipcMain, db, schema);
   registerAccountReconciliationsHandlers(ipcMain, db, schema);
   registerSettingsHandlers(ipcMain, db, schema);
+
+  await processAutoPost(db, schema);
 
   createWindow();
 });

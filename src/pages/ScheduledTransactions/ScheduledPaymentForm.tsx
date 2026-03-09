@@ -46,6 +46,7 @@ function makeEmpty() {
     startDate: new Date().toISOString().slice(0, 10),
     recurrence: DEFAULT_RECURRENCE_CONFIG,
     autoPost: false,
+    daysInAdvance: "",
     notes: "",
     active: true,
   };
@@ -74,6 +75,8 @@ export function ScheduledPaymentDialog({
         startDate: editing.nextDueDate ?? new Date().toISOString().slice(0, 10),
         recurrence: parseRRule(editing.rrule),
         autoPost: editing.autoPost ?? false,
+        daysInAdvance:
+          editing.daysInAdvance != null ? String(editing.daysInAdvance) : "",
         notes: editing.notes ?? "",
         active: editing.active ?? true,
       });
@@ -116,6 +119,10 @@ export function ScheduledPaymentDialog({
       rrule: rruleStr,
       nextDueDate,
       autoPost: form.autoPost,
+      daysInAdvance:
+        form.autoPost && form.daysInAdvance !== ""
+          ? parseInt(form.daysInAdvance as string)
+          : null,
       notes: form.notes || null,
       active: form.active,
     };
@@ -277,10 +284,29 @@ export function ScheduledPaymentDialog({
                 checked={form.autoPost}
                 onChange={(e) => set("autoPost", e.target.checked)}
               />
-              <div>
+              <div className="flex-1">
                 <Label htmlFor="sp-autopost" className="font-medium">
                   Auto-post payment
                 </Label>
+                {form.autoPost && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label
+                      htmlFor="sp-days-advance"
+                      className="text-sm text-muted-foreground whitespace-nowrap"
+                    >
+                      Days in advance
+                    </Label>
+                    <Input
+                      id="sp-days-advance"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      className="w-24"
+                      value={form.daysInAdvance}
+                      onChange={(e) => set("daysInAdvance", e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
