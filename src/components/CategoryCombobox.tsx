@@ -64,7 +64,7 @@ export function CategoryCombobox({
   function firstMatch(): Category | null {
     if (!inputValue) return null;
     const lower = inputValue.toLowerCase();
-    return sorted.find((c) => label(c).toLowerCase().startsWith(lower)) ?? null;
+    return sorted.find((c) => label(c).toLowerCase().includes(lower)) ?? null;
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -75,9 +75,9 @@ export function CategoryCombobox({
       onValueChange(String(match.id));
       return;
     }
-    // Enter with no match: create the typed category
-    if (e.key === "Enter" && inputValue.trim()) {
-      e.preventDefault();
+    // No match: create the typed category
+    if (inputValue.trim()) {
+      if (e.key === "Enter") e.preventDefault();
       handleCreate();
     }
   }
