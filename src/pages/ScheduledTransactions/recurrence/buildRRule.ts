@@ -108,11 +108,23 @@ export function computeNextDueDate(
   startDate?: string,
 ): string | null {
   try {
-    const dtstart = startDate
-      ? new Date(startDate + "T12:00:00Z")
-      : new Date();
+    const dtstart = startDate ? new Date(startDate + "T12:00:00Z") : new Date();
     const rule = new RRule({ ...RRule.parseString(rruleStr), dtstart });
     const next = rule.after(dtstart, true);
+    return next ? next.toISOString().slice(0, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function computeNextOccurrenceAfter(
+  rruleStr: string,
+  fromDate: string,
+): string | null {
+  try {
+    const dtstart = new Date(fromDate + "T12:00:00Z");
+    const rule = new RRule({ ...RRule.parseString(rruleStr), dtstart });
+    const next = rule.after(dtstart, false);
     return next ? next.toISOString().slice(0, 10) : null;
   } catch {
     return null;

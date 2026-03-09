@@ -3,6 +3,7 @@ import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import Layout from "../layout";
+import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { ScheduledCalendar } from "./ScheduledCalendar";
 import { ScheduledPaymentDialog } from "./ScheduledPaymentForm";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
@@ -14,6 +15,9 @@ export default function ScheduledTransactions() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const [recordOpen, setRecordOpen] = useState(false);
+  const [recordingId, setRecordingId] = useState<number | null>(null);
+
   function openAdd() {
     setEditingId(null);
     setSheetOpen(true);
@@ -22,6 +26,11 @@ export default function ScheduledTransactions() {
   function openEdit(id: number) {
     setEditingId(id);
     setSheetOpen(true);
+  }
+
+  function openRecord(id: number) {
+    setRecordingId(id);
+    setRecordOpen(true);
   }
 
   return (
@@ -49,6 +58,7 @@ export default function ScheduledTransactions() {
           <ScheduledTable
             scheduledTransactions={scheduled}
             accounts={accounts}
+            onRecord={openRecord}
             onEdit={openEdit}
             onDelete={(id) => remove.mutate(id)}
           />
@@ -59,6 +69,13 @@ export default function ScheduledTransactions() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         editingId={editingId}
+      />
+
+      <RecordPaymentDialog
+        open={recordOpen}
+        onOpenChange={setRecordOpen}
+        scheduledId={recordingId}
+        onEdit={openEdit}
       />
     </Layout>
   );

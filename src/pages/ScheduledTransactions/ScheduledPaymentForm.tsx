@@ -1,6 +1,5 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { Button } from "@/components/ui/button";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +22,9 @@ import type { ScheduledTransaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 import { buildRRule, computeNextDueDate } from "./recurrence/buildRRule";
 import { parseRRule } from "./recurrence/parseRRule";
-import { RecurrenceSection } from "./recurrence/RecurrenceSection";
-import type { FrequencyType, RecurrenceConfig } from "./recurrence/types";
-import {
-  DEFAULT_RECURRENCE_CONFIG,
-  FREQUENCY_OPTIONS,
-} from "./recurrence/types";
+import { RecurrenceFields } from "./recurrence/RecurrenceFields";
+import type { FrequencyType } from "./recurrence/types";
+import { DEFAULT_RECURRENCE_CONFIG } from "./recurrence/types";
 
 type ScheduledPaymentDialogProps = {
   open: boolean;
@@ -230,51 +226,15 @@ export function ScheduledPaymentDialog({
               </div>
             </div>
 
-            {/* Recurrence section */}
-            <div className="border-t border-border pt-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Recurrence Rules
-              </p>
-              <div className="flex flex-col gap-3">
-                {/* First Payment Date | Frequency on same row */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="sp-start">First Payment Date</Label>
-                    <DatePicker
-                      value={form.startDate}
-                      onChange={(v) => set("startDate", v)}
-                      disabled={{ before: new Date() }}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label>Frequency</Label>
-                    <Select
-                      value={form.recurrence.frequency}
-                      onValueChange={(v) =>
-                        handleFrequencyChange(v as FrequencyType)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FREQUENCY_OPTIONS.map((f) => (
-                          <SelectItem key={f} value={f}>
-                            {f}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <RecurrenceSection
-                  config={form.recurrence}
-                  onChange={(recurrence: RecurrenceConfig) =>
-                    setForm((f) => ({ ...f, recurrence }))
-                  }
-                />
-              </div>
-            </div>
+            <RecurrenceFields
+              startDate={form.startDate}
+              recurrence={form.recurrence}
+              onStartDateChange={(v) => set("startDate", v)}
+              onFrequencyChange={handleFrequencyChange}
+              onRecurrenceChange={(recurrence) =>
+                setForm((f) => ({ ...f, recurrence }))
+              }
+            />
 
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 flex items-start gap-3">
               <input

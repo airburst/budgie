@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import type { Account, ScheduledTransaction } from "@/types/electron";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, ReceiptText, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { FrequencyBadge } from "./FrequencyBadge";
 
 type ScheduledTableProps = {
   scheduledTransactions: ScheduledTransaction[];
   accounts: Account[];
+  onRecord: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
 };
@@ -25,6 +26,7 @@ type ScheduledTableProps = {
 export function ScheduledTable({
   scheduledTransactions,
   accounts,
+  onRecord,
   onEdit,
   onDelete,
 }: ScheduledTableProps) {
@@ -90,7 +92,11 @@ export function ScheduledTable({
             {sorted.map((s) => {
               const account = accountMap.get(s.accountId);
               return (
-                <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
+                <TableRow
+                  key={s.id}
+                  className={`cursor-pointer${!s.active ? " opacity-50" : ""}`}
+                  onDoubleClick={() => onRecord(s.id)}
+                >
                   <TableCell className="text-sm text-muted-foreground">
                     {s.nextDueDate ? formatDate(s.nextDueDate) : "—"}
                   </TableCell>
@@ -109,7 +115,21 @@ export function ScheduledTable({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => onEdit(s.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRecord(s.id);
+                        }}
+                        aria-label="Record payment"
+                      >
+                        <ReceiptText />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(s.id);
+                        }}
                         aria-label="Edit scheduled payment"
                       >
                         <PencilIcon />
@@ -117,7 +137,10 @@ export function ScheduledTable({
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        onClick={() => setPendingDeleteId(s.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPendingDeleteId(s.id);
+                        }}
                         aria-label="Delete scheduled payment"
                       >
                         <Trash2Icon className="text-destructive" />

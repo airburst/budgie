@@ -34,7 +34,8 @@ src/tests/
     categories.test.ts
     forecast.test.ts
     reconciliation.test.ts
-    scheduled.test.ts      ← CRUD + rrule expansion; no auto-post coverage yet
+    scheduled.test.ts      ← CRUD + rrule expansion
+    auto-post.test.ts      ← processAutoPost sweep (7 suites)
     transactions.test.ts
     helpers/
       db.ts                ← createTestDb() — in-memory SQLite + full migrations

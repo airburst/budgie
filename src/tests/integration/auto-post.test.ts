@@ -74,7 +74,7 @@ describe("processAutoPost — skip conditions", () => {
       active: true,
     });
 
-    await expect(processAutoPost(db, schema)).resolves.not.toThrow();
+    await expect(processAutoPost(db, schema)).resolves.toBeUndefined();
 
     const txns = await db.select().from(schema.transactions);
     expect(txns).toHaveLength(0);
