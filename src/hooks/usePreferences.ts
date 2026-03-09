@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 const DEFAULT_PREFERENCES: Preferences = {
   hideReconciled: true,
   hideCleared: false,
+  autofillPayees: true,
 };
 
 export function usePreferences() {

@@ -1,4 +1,5 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
+import { PayeeCombobox } from "@/components/PayeeCombobox";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -12,8 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { usePayees } from "@/hooks/usePayees";
+import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { Transaction } from "@/types/electron";
+import type { Payee, Transaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 
 type TransactionSheetProps = {
@@ -42,6 +45,8 @@ export function TransactionForm({
   accountId,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
+  const { upsert: upsertPayee } = usePayees();
+  const { preferences } = usePreferences();
 
   const [form, setForm] = useState(makeEmpty);
 
@@ -70,6 +75,21 @@ export function TransactionForm({
     setForm((f) => ({ ...f, [field]: value }));
   }
 
+  function handlePayeeSelect(payee: Payee) {
+    if (payee.categoryId) {
+      set("categoryId", String(payee.categoryId));
+    }
+    if (payee.amount !== null && payee.amount !== undefined) {
+      if (payee.amount < 0) {
+        set("withdrawal", Math.abs(payee.amount).toFixed(2));
+        set("deposit", "");
+      } else if (payee.amount > 0) {
+        set("deposit", payee.amount.toFixed(2));
+        set("withdrawal", "");
+      }
+    }
+  }
+
   async function save() {
     const amount =
       (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
@@ -89,6 +109,13 @@ export function TransactionForm({
       await update.mutateAsync({ id: editing.id, data });
     } else {
       await create.mutateAsync(data);
+    }
+    if (preferences.autofillPayees && form.payee.trim()) {
+      upsertPayee.mutate({
+        name: form.payee.trim(),
+        categoryId: data.categoryId ?? null,
+        amount: amount !== 0 ? amount : null,
+      });
     }
     onOpenChange(false);
   }
@@ -122,13 +149,22 @@ export function TransactionForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tx-payee">Payee</Label>
-            <Input
-              id="tx-payee"
-              placeholder="e.g. Starbucks, Amazon..."
-              value={form.payee}
-              onChange={(e) => set("payee", e.target.value)}
-              required
-            />
+            {preferences.autofillPayees ? (
+              <PayeeCombobox
+                key={`${editingId ?? "new"}-${String(open)}`}
+                value={form.payee}
+                onValueChange={(v) => set("payee", v)}
+                onPayeeSelect={handlePayeeSelect}
+              />
+            ) : (
+              <Input
+                id="tx-payee"
+                placeholder="e.g. Starbucks, Amazon..."
+                value={form.payee}
+                onChange={(e) => set("payee", e.target.value)}
+                required
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

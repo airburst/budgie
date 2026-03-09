@@ -2,6 +2,7 @@ import type {
   accountReconciliations,
   accounts,
   categories,
+  payees,
   scheduledTransactions,
   settings,
   transactions,
@@ -24,10 +25,12 @@ export type ScheduledTransaction = InferSelectModel<
   typeof scheduledTransactions
 >;
 export type Settings = InferSelectModel<typeof settings>;
+export type Payee = InferSelectModel<typeof payees>;
 export type Preferences = {
   hideReconciled: boolean;
   hideCleared: boolean;
   backupFolder?: string;
+  autofillPayees: boolean;
 };
 
 export type BackupInfo = {
@@ -127,6 +130,20 @@ interface ElectronAPI {
   restoreBackup: (filePath: string) => Promise<void>;
   chooseBackupFolder: () => Promise<string | null>;
   chooseBackupFile: (folder?: string) => Promise<string | null>;
+
+  getPayees: () => Promise<Payee[]>;
+  getPayee: (id: number) => Promise<Payee | null>;
+  createPayee: (data: Omit<Payee, "id" | "createdAt">) => Promise<Payee[]>;
+  updatePayee: (
+    id: number,
+    data: Partial<Omit<Payee, "id" | "createdAt">>,
+  ) => Promise<Payee[]>;
+  deletePayee: (id: number) => Promise<void>;
+  upsertPayee: (
+    name: string,
+    categoryId: number | null,
+    amount: number | null,
+  ) => Promise<Payee[]>;
 }
 
 declare global {

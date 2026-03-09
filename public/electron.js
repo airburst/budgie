@@ -9,6 +9,7 @@ const { processAutoPost } = require("./ipc/scheduled-transactions");
 const registerAccountReconciliationsHandlers = require("./ipc/account-reconciliations");
 const registerSettingsHandlers = require("./ipc/settings");
 const registerBackupsHandlers = require("./ipc/backups");
+const registerPayeesHandlers = require("./ipc/payees");
 const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
@@ -69,6 +70,7 @@ app.whenReady().then(async () => {
   registerBackupsHandlers(ipcMain, db, schema, sqlite, dbPath, dialog, () => {
     skipAutoBackup = true;
   });
+  registerPayeesHandlers(ipcMain, db, schema);
 
   await processAutoPost(db, schema);
 

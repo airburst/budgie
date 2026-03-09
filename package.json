@@ -104,7 +104,7 @@
       "category": "public.app-category.developer-tools"
     },
     "win": {
-      "target": "portable"
+      "target": "nsis"
     },
     "linux": {
       "target": "deb"

@@ -17,3 +17,13 @@ Finally, this entire feature should be optional, absed on a setting. We do not h
 ## Reconcilation
 
 Screen is too small; show running totals, etc.
+
+## Distribution and auto-update
+
+https://www.electron.build/auto-update
+
+Create S3 bucket with https
+
+Test with minio
+
+Mac code signing: https://www.electron.build/code-signing

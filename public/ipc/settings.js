@@ -35,10 +35,21 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           sql`COALESCE(json_extract(${schema.settings.preferences}, '$.hideCleared'), 0)`.mapWith(
             Boolean,
           ),
+        autofillPayees:
+          sql`COALESCE(json_extract(${schema.settings.preferences}, '$.autofillPayees'), 1)`.mapWith(
+            Boolean,
+          ),
       })
       .from(schema.settings)
       .where(eq(schema.settings.id, 1))
-      .then((r) => r[0] ?? { hideReconciled: true, hideCleared: false }),
+      .then(
+        (r) =>
+          r[0] ?? {
+            hideReconciled: true,
+            hideCleared: false,
+            autofillPayees: true,
+          },
+      ),
   );
 
   // Upsert the singleton row (id=1) with the full preferences object as JSON.

@@ -65,6 +65,9 @@ const Header = () => {
               <DropdownMenuItem onClick={() => navigate("/categories")}>
                 Categories
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/payees")}>
+                Payees
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setBackupOpen(true)}>
                 Backup...

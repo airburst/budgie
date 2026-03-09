@@ -80,3 +80,11 @@ export const settings = sqliteTable("settings", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   preferences: text("preferences").notNull().default("{}"),
 });
+
+export const payees = sqliteTable("payees", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull().unique(),
+  categoryId: integer("category_id").references(() => categories.id),
+  amount: real("amount"),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+});

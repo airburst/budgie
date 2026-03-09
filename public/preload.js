@@ -66,6 +66,14 @@ const api = {
   chooseBackupFolder: () => ipcRenderer.invoke("backups:chooseFolder"),
   chooseBackupFile: (folder) =>
     ipcRenderer.invoke("backups:chooseFile", folder),
+
+  getPayees: () => ipcRenderer.invoke("payees:getAll"),
+  getPayee: (id) => ipcRenderer.invoke("payees:getById", id),
+  createPayee: (data) => ipcRenderer.invoke("payees:create", data),
+  updatePayee: (id, data) => ipcRenderer.invoke("payees:update", id, data),
+  deletePayee: (id) => ipcRenderer.invoke("payees:delete", id),
+  upsertPayee: (name, categoryId, amount) =>
+    ipcRenderer.invoke("payees:upsert", name, categoryId, amount),
 };
 
 contextBridge.exposeInMainWorld("api", api);
