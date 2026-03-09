@@ -7,6 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useHotkeys } from "@/hooks/useHotkeys";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Preferences } from "@/types/electron";
@@ -64,6 +65,15 @@ export default function AccountTransactions() {
     setEditingId(id);
     setSheetOpen(true);
   }
+
+  useHotkeys(
+    [
+      { key: "f", handler: () => navigate(`/forecast/${accountId}`) },
+      { key: "r", ctrl: true, handler: () => setReconcileOpen(true) },
+      { key: "n", handler: () => openAdd() },
+    ],
+    !sheetOpen && !reconcileOpen,
+  );
 
   return (
     <Layout>

@@ -10,11 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useHotkeys } from "@/hooks/useHotkeys";
 import { useTransactions } from "@/hooks/useTransactions";
 import { formatDate } from "@/lib/utils";
 import { TransactionForm } from "@/pages/AccountTransactions/TransactionForm";
 import { ArrowLeftIcon, PencilIcon, PlusIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import Layout from "../layout";
 
@@ -142,28 +143,15 @@ export default function ReconcilePage() {
     navigate(`/accounts/${accountId}`);
   }
 
-  const handleCancel = useCallback(() => {
-    navigate(`/accounts/${accountId}`);
-  }, [navigate, accountId]);
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      // Don't capture when a dialog/sheet is open or an input is focused
-      const tag = (e.target as HTMLElement).tagName;
-      if (sheetOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-      if (e.key === "Escape") {
-        e.preventDefault();
-        handleCancel();
-      }
-      if (e.key === "Enter" && isBalanced && !reconcile.isPending) {
-        e.preventDefault();
-        handleFinish();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [sheetOpen, isBalanced, reconcile.isPending, handleCancel]);
+  useHotkeys(
+    [
+      { key: "Escape", handler: () => navigate(`/accounts/${accountId}`) },
+      ...(isBalanced && !reconcile.isPending
+        ? [{ key: "Enter", handler: () => handleFinish() }]
+        : []),
+    ],
+    !sheetOpen,
+  );
 
   return (
     <Layout>

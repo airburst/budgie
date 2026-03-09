@@ -1,6 +1,15 @@
 import Header from "@/components/header";
+import { useHotkeys } from "@/hooks/useHotkeys";
+import { useNavigate } from "react-router";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+
+  useHotkeys([
+    { key: "a", handler: () => navigate("/") },
+    { key: "r", handler: () => navigate("/scheduled") },
+  ]);
+
   return (
     <div className="flex h-full w-full flex-col">
       <Header />
