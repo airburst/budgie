@@ -7,8 +7,8 @@ import * as schema from "./schema";
 
 export { schema };
 
-export function setupDatabase() {
-  const dbPath = path.join(app.getPath("home"), "app_database.db");
+export function setupDatabase(customDbPath?: string) {
+  const dbPath = customDbPath ?? path.join(app.getPath("home"), "app_database.db");
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
 

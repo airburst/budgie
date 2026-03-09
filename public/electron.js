@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, session, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { setupDatabase, schema } = require("./db");
 const registerAccountsHandlers = require("./ipc/accounts");
 const registerCategoriesHandlers = require("./ipc/categories");
@@ -59,7 +60,19 @@ app.whenReady().then(async () => {
     });
   });
 
-  const { db, sqlite, dbPath } = setupDatabase();
+  // Read data folder from config file (stored outside DB)
+  const configPath = path.join(app.getPath("userData"), "config.json");
+  let customDbPath;
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    if (config.dataFolder) {
+      customDbPath = path.join(config.dataFolder, "app_database.db");
+    }
+  } catch {
+    // no config file or invalid JSON — use default
+  }
+
+  const { db, sqlite, dbPath } = setupDatabase(customDbPath);
   // Add IPC handlers for database operations
   registerAccountsHandlers(ipcMain, db, schema);
   registerCategoriesHandlers(ipcMain, db, schema);
@@ -71,6 +84,34 @@ app.whenReady().then(async () => {
     skipAutoBackup = true;
   });
   registerPayeesHandlers(ipcMain, db, schema);
+
+  // Data folder handlers
+  ipcMain.handle("settings:getDataFolder", () => path.dirname(dbPath));
+
+  ipcMain.handle("settings:chooseDataFolder", async () => {
+    const result = await dialog.showOpenDialog({
+      title: "Choose Data Folder",
+      properties: ["openDirectory", "createDirectory"],
+      defaultPath: path.dirname(dbPath),
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle("settings:moveDataFolder", async (_, newFolder) => {
+    const newDbPath = path.join(newFolder, "app_database.db");
+    if (newDbPath === dbPath) return;
+    // Ensure destination folder exists
+    fs.mkdirSync(newFolder, { recursive: true });
+    // Copy current DB to new location
+    await sqlite.backup(newDbPath);
+    // Write config file
+    fs.writeFileSync(configPath, JSON.stringify({ dataFolder: newFolder }));
+    // Restart app
+    skipAutoBackup = true;
+    app.relaunch();
+    app.quit();
+  });
 
   await processAutoPost(db, schema);
 

@@ -67,6 +67,11 @@ const api = {
   chooseBackupFile: (folder) =>
     ipcRenderer.invoke("backups:chooseFile", folder),
 
+  getDataFolder: () => ipcRenderer.invoke("settings:getDataFolder"),
+  moveDataFolder: (newFolder) =>
+    ipcRenderer.invoke("settings:moveDataFolder", newFolder),
+  chooseDataFolder: () => ipcRenderer.invoke("settings:chooseDataFolder"),
+
   getPayees: () => ipcRenderer.invoke("payees:getAll"),
   getPayee: (id) => ipcRenderer.invoke("payees:getById", id),
   createPayee: (data) => ipcRenderer.invoke("payees:create", data),

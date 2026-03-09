@@ -62,6 +62,10 @@ const Header = () => {
               <Settings className="size-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => navigate("/settings")}>
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate("/categories")}>
                 Categories
               </DropdownMenuItem>

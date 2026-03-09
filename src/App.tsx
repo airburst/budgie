@@ -15,6 +15,9 @@ const ReconcilePage = lazy(
 const ScheduledTransactions = lazy(
   () => import("@/pages/ScheduledTransactions/ScheduledTransactions"),
 );
+const SettingsPage = lazy(
+  () => import("@/pages/Settings/SettingsPage"),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +47,7 @@ function App() {
             <Route path="/scheduled" element={<ScheduledTransactions />} />
             <Route path="/reconcile/:id" element={<ReconcilePage />} />
             <Route path="/forecast/:id" element={<ForecastPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Suspense>
       </HashRouter>

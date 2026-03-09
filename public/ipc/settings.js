@@ -39,17 +39,29 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           sql`COALESCE(json_extract(${schema.settings.preferences}, '$.autofillPayees'), 1)`.mapWith(
             Boolean,
           ),
+        backupFolder:
+          sql`json_extract(${schema.settings.preferences}, '$.backupFolder')`,
+        backupRetentionDays:
+          sql`json_extract(${schema.settings.preferences}, '$.backupRetentionDays')`.mapWith(
+            Number,
+          ),
       })
       .from(schema.settings)
       .where(eq(schema.settings.id, 1))
-      .then(
-        (r) =>
-          r[0] ?? {
-            hideReconciled: true,
-            hideCleared: false,
-            autofillPayees: true,
-          },
-      ),
+      .then((r) => {
+        const row = r[0] ?? {
+          hideReconciled: true,
+          hideCleared: false,
+          autofillPayees: true,
+          backupFolder: undefined,
+          backupRetentionDays: undefined,
+        };
+        // json_extract returns null for missing keys — convert to undefined
+        if (row.backupFolder === null) row.backupFolder = undefined;
+        if (row.backupRetentionDays === null || isNaN(row.backupRetentionDays))
+          row.backupRetentionDays = undefined;
+        return row;
+      }),
   );
 
   // Upsert the singleton row (id=1) with the full preferences object as JSON.

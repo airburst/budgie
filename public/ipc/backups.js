@@ -13,8 +13,9 @@ function makeBackupPath(folder) {
   return path.join(folder, `${BACKUP_PREFIX}${ts}${BACKUP_EXT}`);
 }
 
-function sweepOldBackups(folder) {
-  const cutoff = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+function sweepOldBackups(folder, retentionDays) {
+  const days = retentionDays ?? RETENTION_DAYS;
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
   let files;
   try {
     files = fs.readdirSync(folder);
@@ -36,7 +37,7 @@ function sweepOldBackups(folder) {
   }
 }
 
-async function createBackupDirect(sqlite, folder) {
+async function createBackupDirect(sqlite, folder, retentionDays) {
   try {
     const stat = fs.statSync(folder);
     if (!stat.isDirectory()) {
@@ -54,7 +55,7 @@ async function createBackupDirect(sqlite, folder) {
   }
   const destPath = makeBackupPath(folder);
   await sqlite.backup(destPath);
-  sweepOldBackups(folder);
+  sweepOldBackups(folder, retentionDays);
   return destPath;
 }
 

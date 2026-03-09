@@ -83,6 +83,7 @@ export function TransactionForm({
   }
 
   function handlePayeeSelect(payee: Payee) {
+    if (!preferences.autofillPayees) return;
     if (payee.categoryId) {
       set("categoryId", String(payee.categoryId));
     }
@@ -117,7 +118,7 @@ export function TransactionForm({
     } else {
       await create.mutateAsync(data);
     }
-    if (preferences.autofillPayees && form.payee.trim()) {
+    if (form.payee.trim()) {
       upsertPayee.mutate({
         name: form.payee.trim(),
         categoryId: data.categoryId ?? null,
@@ -156,24 +157,13 @@ export function TransactionForm({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tx-payee">Payee</Label>
-            {preferences.autofillPayees ? (
-              <PayeeCombobox
-                key={`${editingId ?? "new"}-${String(open)}`}
-                value={form.payee}
-                onValueChange={(v) => set("payee", v)}
-                onPayeeSelect={handlePayeeSelect}
-                autoFocus
-              />
-            ) : (
-              <Input
-                id="tx-payee"
-                placeholder="e.g. Starbucks, Amazon..."
-                value={form.payee}
-                onChange={(e) => set("payee", e.target.value)}
-                required
-                autoFocus
-              />
-            )}
+            <PayeeCombobox
+              key={`${editingId ?? "new"}-${String(open)}`}
+              value={form.payee}
+              onValueChange={(v) => set("payee", v)}
+              onPayeeSelect={handlePayeeSelect}
+              autoFocus
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

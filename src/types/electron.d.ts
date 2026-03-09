@@ -30,6 +30,7 @@ export type Preferences = {
   hideReconciled: boolean;
   hideCleared: boolean;
   backupFolder?: string;
+  backupRetentionDays?: number;
   autofillPayees: boolean;
 };
 
@@ -130,6 +131,10 @@ interface ElectronAPI {
   restoreBackup: (filePath: string) => Promise<void>;
   chooseBackupFolder: () => Promise<string | null>;
   chooseBackupFile: (folder?: string) => Promise<string | null>;
+
+  getDataFolder: () => Promise<string>;
+  moveDataFolder: (newFolder: string) => Promise<void>;
+  chooseDataFolder: () => Promise<string | null>;
 
   getPayees: () => Promise<Payee[]>;
   getPayee: (id: number) => Promise<Payee | null>;
