@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require("electron");
+const { app, BrowserWindow, ipcMain, session, dialog } = require("electron");
 const path = require("path");
 const { setupDatabase, schema } = require("./db");
 const registerAccountsHandlers = require("./ipc/accounts");
@@ -8,9 +8,12 @@ const registerScheduledTransactionsHandlers = require("./ipc/scheduled-transacti
 const { processAutoPost } = require("./ipc/scheduled-transactions");
 const registerAccountReconciliationsHandlers = require("./ipc/account-reconciliations");
 const registerSettingsHandlers = require("./ipc/settings");
+const registerBackupsHandlers = require("./ipc/backups");
+const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
 let mainWindow;
+let skipAutoBackup = false;
 
 function createWindow() {
   // Create the browser window.
@@ -55,7 +58,7 @@ app.whenReady().then(async () => {
     });
   });
 
-  const db = setupDatabase();
+  const { db, sqlite, dbPath } = setupDatabase();
   // Add IPC handlers for database operations
   registerAccountsHandlers(ipcMain, db, schema);
   registerCategoriesHandlers(ipcMain, db, schema);
@@ -63,8 +66,36 @@ app.whenReady().then(async () => {
   registerScheduledTransactionsHandlers(ipcMain, db, schema);
   registerAccountReconciliationsHandlers(ipcMain, db, schema);
   registerSettingsHandlers(ipcMain, db, schema);
+  registerBackupsHandlers(ipcMain, db, schema, sqlite, dbPath, dialog, () => {
+    skipAutoBackup = true;
+  });
 
   await processAutoPost(db, schema);
+
+  // Auto-backup on quit (skip if triggered by a restore)
+  app.on("before-quit", async (event) => {
+    if (skipAutoBackup) return;
+    event.preventDefault();
+    skipAutoBackup = true;
+    try {
+      let backupFolder = DEFAULT_BACKUP_FOLDER;
+      try {
+        const row = sqlite
+          .prepare("SELECT preferences FROM settings WHERE id = 1")
+          .get();
+        if (row) {
+          const prefs = JSON.parse(row.preferences || "{}");
+          if (prefs.backupFolder) backupFolder = prefs.backupFolder;
+        }
+      } catch {
+        // use default folder
+      }
+      await createBackupDirect(sqlite, backupFolder);
+    } catch (e) {
+      console.error("Auto-backup failed:", e);
+    }
+    app.quit();
+  });
 
   createWindow();
 });

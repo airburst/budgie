@@ -27,6 +27,14 @@ export type Settings = InferSelectModel<typeof settings>;
 export type Preferences = {
   hideReconciled: boolean;
   hideCleared: boolean;
+  backupFolder?: string;
+};
+
+export type BackupInfo = {
+  name: string;
+  path: string;
+  size: number;
+  createdAt: string;
 };
 
 interface ElectronAPI {
@@ -111,6 +119,14 @@ interface ElectronAPI {
   deleteSetting: (id: number) => Promise<void>;
   getPreferences: () => Promise<Preferences>;
   setPreferences: (prefs: Preferences) => Promise<Settings[]>;
+
+  getDefaultBackupFolder: () => Promise<string>;
+  createBackup: (folder?: string) => Promise<{ path: string }>;
+  listBackups: (folder?: string) => Promise<BackupInfo[]>;
+  deleteBackup: (filePath: string) => Promise<void>;
+  restoreBackup: (filePath: string) => Promise<void>;
+  chooseBackupFolder: () => Promise<string | null>;
+  chooseBackupFile: (folder?: string) => Promise<string | null>;
 }
 
 declare global {

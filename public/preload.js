@@ -55,7 +55,17 @@ const api = {
   updateSetting: (id, data) => ipcRenderer.invoke("settings:update", id, data),
   deleteSetting: (id) => ipcRenderer.invoke("settings:delete", id),
   getPreferences: () => ipcRenderer.invoke("settings:getPreferences"),
-  setPreferences: (prefs) => ipcRenderer.invoke("settings:setPreferences", prefs),
+  setPreferences: (prefs) =>
+    ipcRenderer.invoke("settings:setPreferences", prefs),
+
+  getDefaultBackupFolder: () => ipcRenderer.invoke("backups:getDefaultFolder"),
+  createBackup: (folder) => ipcRenderer.invoke("backups:create", folder),
+  listBackups: (folder) => ipcRenderer.invoke("backups:list", folder),
+  deleteBackup: (filePath) => ipcRenderer.invoke("backups:delete", filePath),
+  restoreBackup: (filePath) => ipcRenderer.invoke("backups:restore", filePath),
+  chooseBackupFolder: () => ipcRenderer.invoke("backups:chooseFolder"),
+  chooseBackupFile: (folder) =>
+    ipcRenderer.invoke("backups:chooseFile", folder),
 };
 
 contextBridge.exposeInMainWorld("api", api);

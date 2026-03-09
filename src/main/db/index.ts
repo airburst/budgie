@@ -14,12 +14,9 @@ export function setupDatabase() {
 
   const db = drizzle(sqlite, { schema });
 
-  const migrationsPath = path.join(
-    app.getAppPath(),
-    "src/main/db/migrations",
-  );
+  const migrationsPath = path.join(app.getAppPath(), "src/main/db/migrations");
   migrate(db, { migrationsFolder: migrationsPath });
   console.log("Database ready.");
 
-  return db;
+  return { db, sqlite, dbPath };
 }

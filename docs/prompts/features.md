@@ -14,15 +14,6 @@ Also create a page to manage payees similar to categories. This will be accessed
 
 Finally, this entire feature should be optional, absed on a setting. We do not have a settings management page yet, so for now, add a key to the preferences JSON object: { autofillPayees: true }
 
-## Reminders
+## Reconcilation
 
-### Manually recording a scheduled payment
-
-- The scheduled payments page needs a way to "Record" a payment
-- Add an icon button to the end of row, with edit+delete
-- Add a double-click handler on each body row in the scheduled payments table
-- Build a reduced version of the ScheduledPaymentForm which:
-  - does not include the Recurrence section; refactor that section out of the main dialog to make conditional rendering trivial
-  - has a "Record" button at the bottom of form; actions are Cancel, Record, Edit, Delete
-- When a user clicks the "record" icon, or double-clicks a row, show the reduced dialog without recurrence
-- If they click "Edit" then include recurrence in form
+Screen is too small; show running totals, etc.
