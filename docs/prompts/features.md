@@ -16,14 +16,6 @@ Finally, this entire feature should be optional, absed on a setting. We do not h
 
 ## Reminders
 
-### Auto-post payments
-
-Rules
-
-- Any reminder set with auto-post payment, which is due or passed, must be created as a transaction in the relevant account when the app starts.
-- The auto-post checkbox should be augmented with an extra number input inside the border with label "Days in advance". This only shows if checkbox is checked. Use the number of days in advance for calculating whether to record the transaction. Likely needs a new table column; nullable
-- After "recording" a reminder / scheduled payment, the next_due_date must be updated to the next calculated occurrence, and the reminders list sorted correctly
-
 ### Manually recording a scheduled payment
 
 - The scheduled payments page needs a way to "Record" a payment
