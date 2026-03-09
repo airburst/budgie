@@ -101,7 +101,10 @@
       "output": "out"
     },
     "mac": {
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg"
+      ]
     },
     "win": {
       "target": "nsis"
