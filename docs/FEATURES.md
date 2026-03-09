@@ -24,9 +24,9 @@
 
 - Local SQLite database stored as a single file. The folder location defaults to a standard user data directory and can be changed in Settings.
 
-- **TODO:** Backup files on daily basis / defined schedule / on closing app
+- Backup files on daily basis / defined schedule / on closing app
 
-- **TODO:** Ability to import a file and "roll back" to a previous state
+- Ability to import a file and "roll back" to a previous state
 
 - **TODO:** Import downloaded transactions in QIF or CSV format and present a matching view before importing and reconciling
 
@@ -76,8 +76,6 @@ Opens as a modal dialog with the following fields:
 - Top-right **Search** bar to filter scheduled payments by name.
 - Action toolbar: **Record** (mark as done), **Add**, **Edit**, **Delete**.
 
-> **TODO:** Define Add/Edit Scheduled Payment dialog fields (to be specified via database schema and mocked before implementation).
-
 ### Register
 
 Opened by clicking an account in the sidebar. Displays the full transaction list for that account.
@@ -88,10 +86,6 @@ Opened by clicking an account in the sidebar. Displays the full transaction list
 - Selected row highlighted in blue.
 - The **C** column has a checkbox per row to mark individual transactions as cleared during reconciliation.
 - **QuickFill:** The Payee field uses a Combobox autocomplete. Selecting an existing payee auto-fills Category and Amount from the last recorded transaction for that payee.
-
-> **TODO:** Define Add/Edit Transaction dialog fields (to be specified via database schema and mocked before implementation).
-
-> **TODO:** Define Category management UI (create, edit, delete categories and subcategories).
 
 #### Reconcile panel
 
