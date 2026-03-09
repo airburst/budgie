@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/combobox";
 import { usePayees } from "@/hooks/usePayees";
 import type { Payee } from "@/types/electron";
-import { useState } from "react";
+import { useRef } from "react";
 
 type PayeeComboboxProps = {
   value: string;
@@ -22,42 +22,54 @@ export function PayeeCombobox({
   onPayeeSelect,
 }: PayeeComboboxProps) {
   const { payees } = usePayees();
-  const [inputValue, setInputValue] = useState("");
+  // Track whether the input is focused so we can ignore Base UI's blur-reset
+  // (which internally fires onInputValueChange("") when no item is selected)
+  const focusedRef = useRef(false);
 
-  // Derive selected item from the current text value
   const selected = payees.find((p) => p.name === value) ?? null;
 
+  function firstMatch(): Payee | null {
+    if (!value) return null;
+    const lower = value.toLowerCase();
+    return payees.find((p) => p.name.toLowerCase().startsWith(lower)) ?? null;
+  }
+
+  // Clicking an item in the dropdown
   function handleValueChange(payee: Payee | null) {
     if (payee) {
       onValueChange(payee.name);
       onPayeeSelect(payee);
     } else {
+      // Clear button was pressed
       onValueChange("");
     }
   }
 
+  // Only propagate input changes while the field is focused.
+  // When the user blurs and no item is selected, Base UI resets by calling
+  // onInputValueChange("") — we suppress that so typed free-text is preserved.
   function handleInputChange(text: string) {
-    setInputValue(text);
-    onValueChange(text);
+    if (focusedRef.current) {
+      onValueChange(text);
+    }
   }
 
-  // Tab selects the first matching payee suggestion
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key !== "Tab") return;
-    const needle = inputValue.toLowerCase();
-    if (!needle) return;
-    const match = payees.find((p) => p.name.toLowerCase().includes(needle));
-    if (match) {
-      e.preventDefault();
-      onValueChange(match.name);
-      onPayeeSelect(match);
-    }
+    if (e.key !== "Tab" && e.key !== "Enter") return;
+    const match = firstMatch();
+    if (!match) return;
+    // Tab: complete and let focus move naturally to the next field
+    // Enter: complete and prevent form submission
+    if (e.key === "Enter") e.preventDefault();
+    onValueChange(match.name);
+    onPayeeSelect(match);
   }
 
   return (
     <Combobox
       items={payees}
       value={selected}
+      inputValue={value}
       itemToStringLabel={(p: Payee) => p.name}
       onValueChange={(p) => handleValueChange(p as Payee | null)}
       onInputValueChange={handleInputChange}
@@ -65,6 +77,12 @@ export function PayeeCombobox({
       <ComboboxInput
         placeholder="e.g. Starbucks, Amazon..."
         showClear
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+        }}
         onKeyDown={handleKeyDown}
       />
       <ComboboxContent>
@@ -75,11 +93,7 @@ export function PayeeCombobox({
             </ComboboxItem>
           )}
         </ComboboxList>
-        <ComboboxEmpty>
-          <span className="py-2 text-xs text-muted-foreground">
-            No saved payees
-          </span>
-        </ComboboxEmpty>
+        <ComboboxEmpty>No saved payees match</ComboboxEmpty>
       </ComboboxContent>
     </Combobox>
   );

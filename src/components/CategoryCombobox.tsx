@@ -9,7 +9,7 @@ import {
 import { useCategories } from "@/hooks/useCategories";
 import type { Category } from "@/types/electron";
 import { PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type CategoryComboboxProps = {
   value: string;
@@ -22,6 +22,7 @@ export function CategoryCombobox({
 }: CategoryComboboxProps) {
   const { categories, create } = useCategories();
   const [inputValue, setInputValue] = useState("");
+  const focusedRef = useRef(false);
 
   const selected = value
     ? (categories.find((c) => String(c.id) === value) ?? null)
@@ -60,6 +61,27 @@ export function CategoryCombobox({
     }
   }
 
+  function firstMatch(): Category | null {
+    if (!inputValue) return null;
+    const lower = inputValue.toLowerCase();
+    return sorted.find((c) => label(c).toLowerCase().startsWith(lower)) ?? null;
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Tab" && e.key !== "Enter") return;
+    const match = firstMatch();
+    if (match) {
+      if (e.key === "Enter") e.preventDefault();
+      onValueChange(String(match.id));
+      return;
+    }
+    // Enter with no match: create the typed category
+    if (e.key === "Enter" && inputValue.trim()) {
+      e.preventDefault();
+      handleCreate();
+    }
+  }
+
   return (
     <Combobox
       items={sorted}
@@ -68,9 +90,21 @@ export function CategoryCombobox({
       onValueChange={(cat) =>
         onValueChange(cat ? String((cat as Category).id) : "")
       }
-      onInputValueChange={setInputValue}
+      onInputValueChange={(val) => {
+        if (focusedRef.current) setInputValue(val);
+      }}
     >
-      <ComboboxInput placeholder="No category" showClear />
+      <ComboboxInput
+        placeholder="No category"
+        showClear
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+        }}
+        onKeyDown={handleKeyDown}
+      />
       <ComboboxContent>
         <ComboboxList>
           {(cat: Category) => (
