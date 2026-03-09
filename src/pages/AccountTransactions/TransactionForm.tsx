@@ -155,6 +155,7 @@ export function TransactionForm({
                 value={form.payee}
                 onValueChange={(v) => set("payee", v)}
                 onPayeeSelect={handlePayeeSelect}
+                autoFocus
               />
             ) : (
               <Input
@@ -163,6 +164,7 @@ export function TransactionForm({
                 value={form.payee}
                 onChange={(e) => set("payee", e.target.value)}
                 required
+                autoFocus
               />
             )}
           </div>
