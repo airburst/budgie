@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
-import { ChartNoAxesCombinedIcon, Settings } from "lucide-react";
+import { ChartNoAxesCombined, Settings } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 
@@ -27,9 +27,9 @@ const Header = () => {
       <header className="bg-card sticky top-0 z-50 flex h-16 justify-between items-center gap-6 border-b px-4 py-2 sm:px-6 overflow-hidden">
         <Link
           to="/"
-          className="text-foreground text-base font-semibold tracking-tight shrink-0"
+          className="flex flex-row gap-2 items-center text-foreground text-4xl font-semibold tracking-tight shrink-0"
         >
-          <ChartNoAxesCombinedIcon className="inline-block mr-2" />
+          <ChartNoAxesCombined size={32} />
           Budgie
         </Link>
 

@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SearchBox } from "@/components/SearchBox";
 import { useCategories } from "@/hooks/useCategories";
 import {
   CornerDownRightIcon,
@@ -26,6 +27,7 @@ export default function Categories() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newSubParentId, setNewSubParentId] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   function openAdd(parentId?: number) {
     setEditingId(null);
@@ -45,19 +47,28 @@ export default function Categories() {
   }
 
   const { topLevel, childrenMap } = useMemo(() => {
-    const topLevel = categories.filter(
+    const lower = search.toLowerCase();
+    const allTopLevel = categories.filter(
       (c) => c.parentId === null && c.expenseType !== "transfer",
     );
     const childrenMap = new Map<number, typeof categories>();
     for (const c of categories) {
       if (c.parentId !== null) {
-        const arr = childrenMap.get(c.parentId) ?? [];
-        arr.push(c);
-        childrenMap.set(c.parentId, arr);
+        if (!lower || c.name.toLowerCase().includes(lower)) {
+          const arr = childrenMap.get(c.parentId) ?? [];
+          arr.push(c);
+          childrenMap.set(c.parentId, arr);
+        }
       }
     }
+    const topLevel = allTopLevel.filter(
+      (c) =>
+        !lower ||
+        c.name.toLowerCase().includes(lower) ||
+        (childrenMap.get(c.id)?.length ?? 0) > 0,
+    );
     return { topLevel, childrenMap };
-  }, [categories]);
+  }, [categories, search]);
 
   const childrenOf = (id: number) => childrenMap.get(id) ?? [];
 
@@ -71,6 +82,13 @@ export default function Categories() {
             New Category
           </Button>
         </div>
+
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="Search categories…"
+          className="mb-4"
+        />
 
         <div className="border border-border rounded-md">
           <Table>

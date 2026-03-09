@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SearchBox } from "@/components/SearchBox";
 import { useCategories } from "@/hooks/useCategories";
 import { usePayees } from "@/hooks/usePayees";
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
@@ -27,16 +28,19 @@ export default function Payees() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories],
   );
 
-  const sorted = useMemo(
-    () => [...payees].sort((a, b) => a.name.localeCompare(b.name)),
-    [payees],
-  );
+  const sorted = useMemo(() => {
+    const lower = search.toLowerCase();
+    return [...payees]
+      .filter((p) => !lower || p.name.toLowerCase().includes(lower))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [payees, search]);
 
   function openAdd() {
     setEditingId(null);
@@ -58,6 +62,13 @@ export default function Payees() {
             New Payee
           </Button>
         </div>
+
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="Search payees…"
+          className="mb-4"
+        />
 
         <div className="border border-border rounded-md">
           <Table>
