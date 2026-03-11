@@ -133,7 +133,8 @@ describe("buildForecastRows", () => {
         sched({
           id: 1,
           accountId: 1,
-          rrule: "FREQ=WEEKLY;BYDAY=MO;UNTIL=20260401T000000Z",
+          rrule:
+            "DTSTART:20260301T000000Z\nRRULE:FREQ=WEEKLY;BYDAY=MO;UNTIL=20260401T000000Z",
           amount: -45,
         }),
       ],
