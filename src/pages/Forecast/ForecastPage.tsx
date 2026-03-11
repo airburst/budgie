@@ -195,6 +195,7 @@ export default function ForecastPage() {
               />
               <ChartTooltip
                 cursor={false}
+                isAnimationActive={false}
                 content={({ active, payload, label }) => {
                   if (!active || !payload?.length) return null;
                   const value = payload[0]?.value as number | undefined;
