@@ -11,10 +11,12 @@ Add credit card support to the accounts feature: two new nullable schema columns
 ## Sign Convention
 
 Consistent across all account types:
+
 - **Deposits / income** = positive
 - **Withdrawals / expenses** = negative
 
 For credit cards:
+
 - Opening balance owed is user-entered as a positive number (e.g. `500`) but **negated on save** (stored as `-500`)
 - `computedBalance` = negative = current debt
 - **Remaining credit** = `creditLimit + computedBalance`
@@ -33,6 +35,7 @@ ALTER TABLE `accounts` ADD COLUMN `credit_limit` REAL;
 Manual migration file: `0008_credit_card_fields.sql`
 
 In `schema.ts`:
+
 ```ts
 interestRate: real("interest_rate"),
 creditLimit: real("credit_limit"),
@@ -47,7 +50,9 @@ Since `Account = InferSelectModel<typeof accounts>`, both fields appear automati
 1. **Balance label**: `"Opening Balance"` → `"Initial balance owed"` when `type === "credit_card"`
 2. **Balance negation**: on save, negate balance for credit card accounts:
    ```ts
-   balance: form.type === "credit_card" ? -(parseFloat(form.balance) || 0) : (parseFloat(form.balance) || 0)
+   balance: form.type === "credit_card"
+     ? -(parseFloat(form.balance) || 0)
+     : parseFloat(form.balance) || 0;
    ```
 3. **Conditional fields** (shown only when `type === "credit_card"`):
    - Interest Rate (%) — number input, step 0.01
@@ -88,12 +93,12 @@ No changes required. `accounts.js` handler returns all columns via `db.select().
 
 ## Files Changed
 
-| File | Change |
-|---|---|
-| `src/main/db/schema.ts` | Add `interestRate`, `creditLimit` columns |
-| `src/main/db/migrations/0008_credit_card_fields.sql` | `ALTER TABLE` migration |
-| `src/main/db/migrations/meta/_journal.json` | Add entry |
-| `src/main/db/migrations/meta/0008_snapshot.json` | New snapshot |
-| `public/db.js` | Rebuild output |
-| `src/pages/Home/AccountForm.tsx` | Conditional fields, label, save logic |
-| `src/pages/Home/AccountsTable.tsx` | Populate remaining credit cell |
+| File                                                 | Change                                    |
+| ---------------------------------------------------- | ----------------------------------------- |
+| `src/main/db/schema.ts`                              | Add `interestRate`, `creditLimit` columns |
+| `src/main/db/migrations/0008_credit_card_fields.sql` | `ALTER TABLE` migration                   |
+| `src/main/db/migrations/meta/_journal.json`          | Add entry                                 |
+| `src/main/db/migrations/meta/0008_snapshot.json`     | New snapshot                              |
+| `public/db.js`                                       | Rebuild output                            |
+| `src/pages/Home/AccountForm.tsx`                     | Conditional fields, label, save logic     |
+| `src/pages/Home/AccountsTable.tsx`                   | Populate remaining credit cell            |

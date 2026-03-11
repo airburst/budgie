@@ -110,7 +110,9 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
               onValueChange={(v) => set("type", v as string)}
             >
               <SelectTrigger id="acc-type" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {ACCOUNT_TYPES.find((t) => t.value === form.type)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {ACCOUNT_TYPES.map(({ value, label }) => (
