@@ -5,10 +5,22 @@ export type QifTransaction = {
   memo: string | null;
 };
 
-export function parseQif(content: string): QifTransaction[] {
+export type QifAccountType = "bank" | "credit_card";
+
+export type QifParseResult = {
+  accountType: QifAccountType;
+  transactions: QifTransaction[];
+};
+
+export function parseQif(content: string): QifParseResult {
   const lines = content.trim().split(/\r?\n/);
-  if (!lines[0] || !lines[0].trim().startsWith("!Type:Bank")) {
-    throw new Error("Invalid QIF file: expected !Type:Bank header");
+  const header = lines[0]?.trim() ?? "";
+  const isCCard = header.startsWith("!Type:CCard");
+  const isBank = header.startsWith("!Type:Bank");
+  if (!isBank && !isCCard) {
+    throw new Error(
+      "Invalid QIF file: expected !Type:Bank or !Type:CCard header",
+    );
   }
 
   const transactions: QifTransaction[] = [];
@@ -46,10 +58,12 @@ export function parseQif(content: string): QifTransaction[] {
         payee = value;
         hasData = true;
         break;
-      case "T":
-        amount = parseFloat(value.replace(/,/g, ""));
+      case "T": {
+        const parsed = parseFloat(value.replace(/,/g, ""));
+        amount = isCCard ? -parsed : parsed;
         hasData = true;
         break;
+      }
       case "M":
         memo = value;
         break;
@@ -61,7 +75,10 @@ export function parseQif(content: string): QifTransaction[] {
     transactions.push({ date, payee, amount, memo });
   }
 
-  return transactions.sort((a, b) => a.date.localeCompare(b.date));
+  return {
+    accountType: isCCard ? "credit_card" : "bank",
+    transactions: transactions.sort((a, b) => a.date.localeCompare(b.date)),
+  };
 }
 
 function parseQifDate(dateStr: string): string {
