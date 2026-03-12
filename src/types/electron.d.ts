@@ -1,7 +1,11 @@
 import type {
   accountReconciliations,
   accounts,
+  budgetAllocations,
+  budgetTransfers,
   categories,
+  envelopeCategories,
+  envelopes,
   payees,
   scheduledTransactions,
   settings,
@@ -26,6 +30,10 @@ export type ScheduledTransaction = InferSelectModel<
 >;
 export type Settings = InferSelectModel<typeof settings>;
 export type Payee = InferSelectModel<typeof payees>;
+export type Envelope = InferSelectModel<typeof envelopes>;
+export type EnvelopeCategory = InferSelectModel<typeof envelopeCategories>;
+export type BudgetAllocation = InferSelectModel<typeof budgetAllocations>;
+export type BudgetTransfer = InferSelectModel<typeof budgetTransfers>;
 export type Preferences = {
   hideReconciled: boolean;
   hideCleared: boolean;
@@ -152,6 +160,52 @@ interface ElectronAPI {
     categoryId: number | null,
     amount: number | null,
   ) => Promise<Payee[]>;
+
+  // Envelopes
+  getEnvelopes: () => Promise<Envelope[]>;
+  getAllEnvelopesIncludingInactive: () => Promise<Envelope[]>;
+  getEnvelope: (id: number) => Promise<Envelope | null>;
+  createEnvelope: (
+    data: Omit<Envelope, "id" | "createdAt">,
+  ) => Promise<Envelope[]>;
+  updateEnvelope: (
+    id: number,
+    data: Partial<Omit<Envelope, "id" | "createdAt">>,
+  ) => Promise<Envelope[]>;
+  deleteEnvelope: (id: number) => Promise<Envelope[]>;
+
+  // Envelope-category mappings
+  getEnvelopeCategories: () => Promise<EnvelopeCategory[]>;
+  getEnvelopeCategoriesByEnvelope: (
+    envelopeId: number,
+  ) => Promise<EnvelopeCategory[]>;
+  createEnvelopeCategory: (
+    data: Omit<EnvelopeCategory, "id">,
+  ) => Promise<EnvelopeCategory[]>;
+  deleteEnvelopeCategory: (id: number) => Promise<void>;
+  deleteEnvelopeCategoriesByEnvelope: (envelopeId: number) => Promise<void>;
+
+  // Budget allocations
+  getBudgetAllocations: () => Promise<BudgetAllocation[]>;
+  getBudgetAllocationsByMonth: (month: string) => Promise<BudgetAllocation[]>;
+  upsertBudgetAllocation: (
+    envelopeId: number,
+    month: string,
+    assigned: number,
+  ) => Promise<BudgetAllocation[]>;
+  quickFillAllocations: (
+    targetMonth: string,
+    sourceMonth: string,
+  ) => Promise<BudgetAllocation[]>;
+  deleteBudgetAllocation: (id: number) => Promise<void>;
+
+  // Budget transfers
+  getBudgetTransfers: () => Promise<BudgetTransfer[]>;
+  getBudgetTransfersByMonth: (month: string) => Promise<BudgetTransfer[]>;
+  createBudgetTransfer: (
+    data: Omit<BudgetTransfer, "id" | "createdAt">,
+  ) => Promise<BudgetTransfer[]>;
+  deleteBudgetTransfer: (id: number) => Promise<void>;
 }
 
 declare global {

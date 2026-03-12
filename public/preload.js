@@ -82,6 +82,58 @@ const api = {
   deletePayee: (id) => ipcRenderer.invoke("payees:delete", id),
   upsertPayee: (name, categoryId, amount) =>
     ipcRenderer.invoke("payees:upsert", name, categoryId, amount),
+
+  // Envelopes
+  getEnvelopes: () => ipcRenderer.invoke("envelopes:getAll"),
+  getAllEnvelopesIncludingInactive: () =>
+    ipcRenderer.invoke("envelopes:getAllIncludingInactive"),
+  getEnvelope: (id) => ipcRenderer.invoke("envelopes:getById", id),
+  createEnvelope: (data) => ipcRenderer.invoke("envelopes:create", data),
+  updateEnvelope: (id, data) =>
+    ipcRenderer.invoke("envelopes:update", id, data),
+  deleteEnvelope: (id) => ipcRenderer.invoke("envelopes:delete", id),
+
+  // Envelope-category mappings
+  getEnvelopeCategories: () =>
+    ipcRenderer.invoke("envelope_categories:getAll"),
+  getEnvelopeCategoriesByEnvelope: (envelopeId) =>
+    ipcRenderer.invoke("envelope_categories:getByEnvelope", envelopeId),
+  createEnvelopeCategory: (data) =>
+    ipcRenderer.invoke("envelope_categories:create", data),
+  deleteEnvelopeCategory: (id) =>
+    ipcRenderer.invoke("envelope_categories:delete", id),
+  deleteEnvelopeCategoriesByEnvelope: (envelopeId) =>
+    ipcRenderer.invoke("envelope_categories:deleteByEnvelope", envelopeId),
+
+  // Budget allocations
+  getBudgetAllocations: () =>
+    ipcRenderer.invoke("budget_allocations:getAll"),
+  getBudgetAllocationsByMonth: (month) =>
+    ipcRenderer.invoke("budget_allocations:getByMonth", month),
+  upsertBudgetAllocation: (envelopeId, month, assigned) =>
+    ipcRenderer.invoke(
+      "budget_allocations:upsert",
+      envelopeId,
+      month,
+      assigned,
+    ),
+  quickFillAllocations: (targetMonth, sourceMonth) =>
+    ipcRenderer.invoke(
+      "budget_allocations:quickFill",
+      targetMonth,
+      sourceMonth,
+    ),
+  deleteBudgetAllocation: (id) =>
+    ipcRenderer.invoke("budget_allocations:delete", id),
+
+  // Budget transfers
+  getBudgetTransfers: () => ipcRenderer.invoke("budget_transfers:getAll"),
+  getBudgetTransfersByMonth: (month) =>
+    ipcRenderer.invoke("budget_transfers:getByMonth", month),
+  createBudgetTransfer: (data) =>
+    ipcRenderer.invoke("budget_transfers:create", data),
+  deleteBudgetTransfer: (id) =>
+    ipcRenderer.invoke("budget_transfers:delete", id),
 };
 
 contextBridge.exposeInMainWorld("api", api);

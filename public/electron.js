@@ -12,6 +12,10 @@ const registerSettingsHandlers = require("./ipc/settings");
 const registerBackupsHandlers = require("./ipc/backups");
 const registerPayeesHandlers = require("./ipc/payees");
 const registerImportHandlers = require("./ipc/import");
+const registerEnvelopesHandlers = require("./ipc/envelopes");
+const registerEnvelopeCategoriesHandlers = require("./ipc/envelope-categories");
+const registerBudgetAllocationsHandlers = require("./ipc/budget-allocations");
+const registerBudgetTransfersHandlers = require("./ipc/budget-transfers");
 const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
@@ -86,6 +90,10 @@ app.whenReady().then(async () => {
   });
   registerPayeesHandlers(ipcMain, db, schema);
   registerImportHandlers(ipcMain, dialog);
+  registerEnvelopesHandlers(ipcMain, db, schema);
+  registerEnvelopeCategoriesHandlers(ipcMain, db, schema);
+  registerBudgetAllocationsHandlers(ipcMain, db, schema);
+  registerBudgetTransfersHandlers(ipcMain, db, schema);
 
   // Data folder handlers
   ipcMain.handle("settings:getDataFolder", () => path.dirname(dbPath));
