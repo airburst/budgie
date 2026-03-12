@@ -90,3 +90,46 @@ export const payees = sqliteTable("payees", {
   amount: real("amount"),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+export const envelopes = sqliteTable("envelopes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+export const envelopeCategories = sqliteTable("envelope_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  envelopeId: integer("envelope_id")
+    .notNull()
+    .references(() => envelopes.id),
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => categories.id)
+    .unique(),
+});
+
+export const budgetAllocations = sqliteTable("budget_allocations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  envelopeId: integer("envelope_id")
+    .notNull()
+    .references(() => envelopes.id),
+  month: text("month").notNull(),
+  assigned: real("assigned").notNull().default(0),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+export const budgetTransfers = sqliteTable("budget_transfers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fromEnvelopeId: integer("from_envelope_id")
+    .notNull()
+    .references(() => envelopes.id),
+  toEnvelopeId: integer("to_envelope_id")
+    .notNull()
+    .references(() => envelopes.id),
+  month: text("month").notNull(),
+  amount: real("amount").notNull(),
+  notes: text("notes"),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+});

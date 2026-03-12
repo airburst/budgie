@@ -64,6 +64,13 @@
       "when": 1741996800000,
       "tag": "0008_credit_card_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1741996900000,
+      "tag": "0009_envelope_budgeting",
+      "breakpoints": true
     }
   ]
 }
