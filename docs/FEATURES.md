@@ -1,119 +1,88 @@
-# Budgeting app
+# Budgie Features
 
-## Core features
+## Accounts
 
-### Account management
+Multiple account types: bank, credit card, loan, investment, cash. Each tracks balance, currency (default GBP), optional interest rate and credit limit. Accounts appear in the sidebar grouped by type with running balances.
 
-- The Register: A digital version of a paper checkbook register that allows for easy manual entry and reconciliation.
+## Transactions
 
-- Add multiple types of account, e.g. bank, credit card
+Full transaction register per account. Each transaction has: date, payee, amount, category, notes, cleared/reconciled status. Supports:
 
-- Reconciliation with actual amount from statement
+- **Transfers** — linked paired transactions between accounts via `transferTransactionId`. Outgoing creates matching incoming automatically.
+- **Payee auto-complete** — remembers last category and amount per payee.
+- **QIF import** — import transactions from QIF files via file chooser dialog.
 
-- Add scheduled payments and automatically add any due payments to registers for accounts
+## Categories
 
-- Forecast view, taking scheduled payments into account over time. Default to next month, but allow user to change end date on line chart
+Hierarchical (parent → child). Three types: expense, income, transfer. Soft-delete to preserve historical data. Used across transactions, scheduled payments, and budget envelopes.
 
-### Core budgeting and tracking
+## Scheduled Transactions
 
-- Hierarchical Categories: users can create broad categories (like "Utilities") and nest subcategories (like "Electric" or "Water") for granular tracking.
+Recurring payments using RRule (RFC 5545). Features:
 
-- QuickFill: A smart data-entry feature in the Register. The Payee field is a Combobox with autocomplete over previously used payees. When a pre-existing payee is selected, the Category and Amount fields are automatically populated with the values from the last transaction for that payee.
+- **Recurrence patterns** — daily, weekly, monthly with interval/day-of-week/day-of-month controls
+- **Auto-post** — automatically creates transactions N days in advance of due date
+- **Calendar view** — visual upcoming schedule
+- **Record payment** — manually post a single occurrence
+- **Active/inactive** — pause without deleting
 
-### File management
+Auto-post runs at app startup, sweeping all due scheduled transactions.
 
-- Local SQLite database stored as a single file. The folder location defaults to a standard user data directory and can be changed in Settings.
+## Reconciliation
 
-- Backup files on daily basis / defined schedule / on closing app
+Checkpoint-based bank reconciliation:
 
-- Ability to import a file and "roll back" to a previous state
+1. Enter statement balance and date
+2. Mark transactions as cleared
+3. System shows difference between cleared total and statement balance
+4. When balanced, commit — marks cleared transactions as reconciled
 
-- Import downloaded transactions in QIF or CSV format and present a matching view before importing and reconciling
+Historical reconciliation records stored for audit trail.
 
-## UX and layout
+## Envelope Budgeting
 
-### Global layout
+Zero-based budgeting with envelope method:
 
-- Left sidebar with collapsible section: **Accounts** (grouped by type, e.g. Bank Accounts), each showing name and current balance.
-- Top toolbar with icons for: save, open file, tools, settings, and help.
-- Top navigation tabs across the main panel: **Overview**, **Accounts**, **Scheduled Payments**, **Budget**, **Reports**.
-- Active tab is highlighted with a filled button style; others are plain text.
+- **Envelopes** — named budget categories (e.g. Groceries, Rent, Savings)
+- **Category mapping** — assign expense and transfer categories to envelopes (income excluded)
+- **Monthly allocations** — assign budget amounts per envelope per month
+- **Available to Budget (ATB)** — income minus total assigned across all envelopes
+- **Rollover** — unspent amounts carry forward; overspending rolls as negative
+- **Transfers** — move money between envelopes within a month
+- **Underfunded detection** — warns when envelope has negative available balance
+- **Onboarding** — template-based quick setup for common envelope structures
 
-### Overview tab
+Transfer transactions (e.g. bank → savings) correctly reduce the sending envelope without double-counting the receiving side.
 
-- Net Worth displayed prominently in the top-right header with a time period selector (e.g. "This Month").
-- Income / Expense / Difference summary panel on the left showing totals for the selected period.
-- **Expenses by Category** donut chart on the right, with an interactive legend showing category name, amount, and percentage. Hovering/clicking a segment highlights it.
-- **Choose Accounts** and **Choose Categories** filter buttons below the summary to scope the chart and totals.
-- **Bills Due** panel showing total amount due and a scrollable table with columns: Date, Description, Amount, Status (e.g. "Due 3 days"). Rows marked with a green check circle indicate confirmed/scheduled items.
-- **Budget** panel alongside Bills Due showing the current budget total or a "No Budget" state when none is configured.
+## Reports
 
-### Accounts tab
+Financial analysis with interactive charts:
 
-- Page-level action toolbar: **View**, **Add**, **Edit**, **Delete**, **Import** (with a dropdown for format options).
-- Accounts listed in a table grouped by account type (e.g. **Bank Accounts**), with columns: Account, Balance, Cleared Balance, Last Reconcile, Remaining Credit.
-- Group subtotal row shown beneath each group.
-- Positive balances displayed in green.
+- **Spending by category** — donut chart, top 5 + "Other" rollup
+- **Income vs expenses** — grouped monthly bar chart
+- **Net worth trend** — area chart with gradient fill, computed from account balances
+- **Summary stats** — total assets, total debt, monthly surplus, savings rate
 
-#### Add / Edit Account panel
+Filters: date range presets (30/60/90 days, this/last month, this year) and multi-account selection. Charts expand to full screen.
 
-Opens as a modal dialog with the following fields:
+## Forecasting
 
-- **Account name** — text field, focused by default.
-- **Account number** — text field.
-- **Account type** — dropdown (e.g. Bank).
-- **Initial balance** — numeric field, defaults to 0.00.
-- **Website** — text field.
-- **Notes** — multiline text area.
-- **Cancel** and **Save** buttons at the bottom right; a **?** help button at the bottom left.
+Projects future account balance based on scheduled transactions. Shows day-by-day balance projection from current date forward.
 
-### Scheduled Payments tab
+## Backups
 
-- Split layout: monthly **calendar view** on the left showing scheduled payment names on their due dates, and a **list view** on the right.
-- Calendar has previous/next month navigation arrows and shows the month/year as a heading.
-- List view columns: Date, Description, Amount. Rows with a green check circle are confirmed/recorded; unconfirmed rows have no icon.
-- List extends across months, showing upcoming items beyond the current calendar view.
-- Top-right **Search** bar to filter scheduled payments by name.
-- Action toolbar: **Record** (mark as done), **Add**, **Edit**, **Delete**.
+- **Auto-backup** — creates backup on app quit
+- **Manual backup** — create/restore/delete from settings
+- **Configurable folder** — default `~/Documents/Budgie`
+- **30-day retention** — old backups auto-cleaned
+- **Full restore** — replaces database file, handles WAL cleanup
 
-### Register
+## Settings
 
-Opened by clicking an account in the sidebar. Displays the full transaction list for that account.
+- Custom data folder location (move database between directories)
+- Backup folder configuration
+- Dark/light mode (follows system preference)
 
-- Action toolbar: **Add**, **Edit** (dropdown), **Reconcile**, **Forecast**, **Import** (dropdown), **Advanced Find…**
-- Transaction table columns: Date, # (cheque/reference number), Payee, Withdrawal, Deposit, Category, Memo, Balance, **C** (cleared checkbox).
-- Withdrawals shown in red; deposits and running balance in green.
-- Selected row highlighted in blue.
-- The **C** column has a checkbox per row to mark individual transactions as cleared during reconciliation.
-- **QuickFill:** The Payee field uses a Combobox autocomplete. Selecting an existing payee auto-fills Category and Amount from the last recorded transaction for that payee.
+## Dark Mode
 
-#### Reconcile panel
-
-Opens as a modal dialog triggered from the Register toolbar.
-
-- **Last reconcile date** — read-only, shows the date of the previous reconciliation.
-- **Statement end date** — date picker, pre-filled with today's date.
-- **Statement balance** — numeric text field, focused by default; user enters the closing balance from their bank statement.
-- **Cancel** and **Next** buttons at the bottom right; **?** help button at the bottom left.
-
-- Handle imported QIF files. [technical spec](https://github.com/jemmyw/Qif/blob/master/QIF_references)
-
-#### Forecast confirm panel
-
-Small modal dialog triggered from the Register toolbar via the **Forecast** button.
-
-- **Future date** — date picker, defaults to end of current month (e.g. 31/03/2026).
-- **Cancel** and **Next** buttons; **?** help button at the bottom left.
-
-#### Forecast view
-
-Opens as a separate window after confirming the future date.
-
-- Account name and number shown as the window heading.
-- **Line chart** spanning from the current date to the chosen future date:
-  - X-axis: dates, Y-axis: balance amounts.
-  - Green line showing projected running balance.
-  - Red horizontal line at zero for quick visual reference of negative balance risk.
-- **Transaction list** below the chart with columns: Date, Payee, Withdrawal, Deposit, Category, Memo, Balance, and a blue inclusion checkbox per row.
-- Projected transactions from scheduled payments are included automatically.
-- Bottom toolbar: inline **date picker** to change the end date and a **Refresh** button to recalculate; **?** help button at the bottom left.
+System-preference aware with instant paint (inline script sets `.dark` class before React hydration). Full oklch() color palette for both modes.

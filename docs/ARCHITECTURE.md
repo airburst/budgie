@@ -16,55 +16,63 @@ src/                 Renderer (Vite + React)      — all UI code
 
 ---
 
-## Adding an IPC Handler (the full pattern)
+## IPC Pattern
 
-Four files must change together:
+One handler file per entity in `public/ipc/`. Four files change together for each entity:
 
-**1. `src/main/db/index.ts`** — add query function or export if needed, then rebuild:
+| File                      | Purpose                          |
+| ------------------------- | -------------------------------- |
+| `public/ipc/<entity>.js`  | Handler (CJS) — CRUD via Drizzle |
+| `public/electron.js`      | Register handler                 |
+| `public/preload.js`       | Expose on `window.api`           |
+| `src/types/electron.d.ts` | TypeScript interface             |
 
-```
-bun run vite build --config vite.main.config.ts
-```
+Channel naming: `<entity>:<verb>` — e.g. `accounts:getAll`, `transactions:create`.
 
-This writes `public/db.js` (CJS bundle). Any change to `src/main/db/` requires a rebuild.
+### Handler Files
 
-**2. `public/electron.js`** — register handler after `setupDatabase()`:
-
-```js
-ipcMain.handle("channel:name", () => db.select().from(schema.tableName));
-```
-
-**3. `public/preload.js`** — expose to renderer:
-
-```js
-contextBridge.exposeInMainWorld("api", {
-  existingMethod: () => ipcRenderer.invoke("existing:channel"),
-  newMethod: (arg) => ipcRenderer.invoke("channel:name", arg),
-});
-```
-
-**4. `src/types/electron.d.ts`** — extend the interface:
-
-```ts
-interface ElectronAPI {
-  existingMethod: () => Promise<ExistingType[]>;
-  newMethod: (arg: ArgType) => Promise<ReturnType>;
-}
-```
-
-Types use `InferSelectModel<typeof schema.tableName>` from drizzle-orm.
+| File                         | Entity                                             |
+| ---------------------------- | -------------------------------------------------- |
+| `accounts.js`                | Accounts + computed balances                       |
+| `categories.js`              | Categories (hierarchical)                          |
+| `transactions.js`            | Transactions + reconciliation + date-range queries |
+| `scheduled-transactions.js`  | Scheduled transactions + auto-post                 |
+| `account-reconciliations.js` | Reconciliation checkpoints                         |
+| `settings.js`                | Preferences                                        |
+| `backups.js`                 | Backup/restore + folder management                 |
+| `payees.js`                  | Payees + upsert                                    |
+| `import.js`                  | QIF file import                                    |
+| `envelopes.js`               | Envelopes (active/inactive)                        |
+| `envelope-categories.js`     | Envelope↔category mappings                         |
+| `budget-allocations.js`      | Monthly budget allocations + quickFill             |
+| `budget-transfers.js`        | Budget transfers between envelopes                 |
 
 ---
 
 ## Database
 
-- File: `~/app_database.db` (`app.getPath("home")`)
-- WAL mode enabled (`sqlite.pragma("journal_mode = WAL")`)
+- File: `~/app_database.db` (configurable via `config.json`)
+- WAL mode enabled
 - Schema: `src/main/db/schema.ts` — Drizzle `sqliteTable` definitions
 - Migrations: `src/main/db/migrations/` — generated with `bun run db:migrate`
-- Drizzle instance (`db`) and `schema` namespace are both exported from `src/main/db/index.ts`
 
-**To add a table:** edit `schema.ts`, run `bun run db:migrate`, then rebuild `db.js`.
+### Tables
+
+| Table                    | Purpose                                                         |
+| ------------------------ | --------------------------------------------------------------- |
+| `accounts`               | Bank, credit card, loan, investment, cash accounts              |
+| `categories`             | Hierarchical categories (parent/child, expense/income/transfer) |
+| `transactions`           | All transactions; linked transfers via `transferTransactionId`  |
+| `accountReconciliations` | Reconciliation checkpoint records                               |
+| `scheduledTransactions`  | Recurring transactions (RRule-based)                            |
+| `settings`               | User preferences (JSON blob)                                    |
+| `payees`                 | Payee auto-complete with default category/amount                |
+| `envelopes`              | Budget envelopes                                                |
+| `envelopeCategories`     | Maps categories → envelopes                                     |
+| `budgetAllocations`      | Monthly assigned amounts per envelope                           |
+| `budgetTransfers`        | Transfers between envelopes within a month                      |
+
+To add a table: edit `schema.ts`, run `bun run db:migrate`, rebuild `public/db.js` with `bun run vite build --config vite.main.config.ts`.
 
 ---
 
@@ -72,80 +80,94 @@ Types use `InferSelectModel<typeof schema.tableName>` from drizzle-orm.
 
 ```
 src/
-  index.html        Inline script sets .dark class before paint
-  index.tsx         createRoot, StrictMode
-  App.tsx           QueryClientProvider → HashRouter → Routes, dark mode listener
+  App.tsx           QueryClientProvider → HashRouter → Routes
   pages/
-    Home.tsx        Currently: proof-of-concept tasks query
+    Home/           Dashboard — account overview
+    AccountTransactions/  Transaction register, import, reconciliation
+    Budget/         Envelope budgeting
+    Reports/        Charts and financial stats
+    Categories/     Category management
+    Payees/         Payee management
+    ScheduledTransactions/  Scheduled payments + calendar
+    Reconcile/      Bank reconciliation workflow
+    Forecast/       Balance projection
+    Settings/       Preferences + backup/restore
   components/
-    layout.tsx      SidebarProvider + SideMenu + sticky header + <main>
-    side-menu.tsx   Left nav rail, account list (stub)
-    ui/             shadcn components (@base-ui/react primitives)
+    layout.tsx      Sidebar + header + main content
+    side-menu.tsx   Left nav, account list
+    ui/             shadcn components (Base UI variants)
+  hooks/            TanStack Query wrappers + business logic
   types/
     electron.d.ts   window.api type declarations
-  index.css         All Tailwind config, design tokens, dark mode variables
 ```
 
-### Routing
+### Routes
 
-`HashRouter` (required — works with `file://` in production). Add routes in `App.tsx`.
+| Path             | Page                     |
+| ---------------- | ------------------------ |
+| `/`              | Home (account dashboard) |
+| `/accounts/:id`  | Account transactions     |
+| `/categories`    | Category management      |
+| `/payees`        | Payee management         |
+| `/scheduled`     | Scheduled transactions   |
+| `/reconcile/:id` | Bank reconciliation      |
+| `/forecast/:id`  | Balance forecast         |
+| `/budget`        | Envelope budgeting       |
+| `/reports`       | Financial reports        |
+| `/settings`      | Settings                 |
 
-Current routes:
-
-```
-/   →   pages/Home.tsx
-```
-
-Planned: Overview, Accounts, Transaction Register, Scheduled Payments, Budget, Reports.
+`HashRouter` — required for `file://` in production builds.
 
 ---
 
-## Data Fetching Pattern
+## Data Fetching
 
-TanStack Query v5. `queryClient` is a module-level singleton in `App.tsx`.
+TanStack Query v5. No global state library. Server state in query cache, UI state in component-local `useState`.
 
-```ts
-// Read
-const { data = [] } = useQuery({
-  queryKey: ["tableName"],
-  queryFn: () => window.api.getItems(),
-});
-
-// Write
-const mutation = useMutation({
-  mutationFn: (payload) => window.api.createItem(payload),
-  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tableName"] }),
-});
-```
-
-No global state library. Server state lives in TanStack Query. UI state is component-local `useState`.
+Each entity has a custom hook in `src/hooks/` wrapping queries and mutations. Mutations invalidate relevant query keys on success.
 
 ---
 
 ## Styling
 
-Tailwind v4 — no `tailwind.config.ts`. All config in `src/index.css`.
+Tailwind v4 — all config in `src/index.css`, no `tailwind.config.ts`.
 
-- Design tokens: `oklch()` color space, defined in `:root` and `.dark`
-- Dark mode: `.dark` class on `<html>`. Applied by inline script in `index.html` on load; kept in sync by `useEffect` in `App.tsx` listening to `prefers-color-scheme`
-- Theme mapped into Tailwind via `@theme inline` block — use `bg-background`, `text-foreground`, `text-primary` etc.
-- Font: Noto Sans Variable (`font-sans`)
-- Chart palette: `--chart-1` through `--chart-5` (blue range)
-- Border radius: `--radius: 0.45rem`; steps: `rounded-sm/md/lg/xl/2xl/3xl/4xl`
+- Design tokens: `oklch()` color space in `:root` / `.dark`
+- Dark mode: `.dark` class on `<html>`, synced to system preference
+- Font: Noto Sans Variable
+- Chart palette: `--chart-1` through `--chart-5`
+- UI primitives: shadcn component registry (Base UI variants, not Radix)
 
 ---
 
 ## Build
 
-```
-bun run start          Dev: Vite on :3000 + Electron (wait-on)
-bun run build          Prod: vite build → vite build (db) → electron-builder → out/
-bun run db:migrate     Generate migration SQL from schema changes
-bun run check-types    tsc --noEmit
-bun run lint           eslint --fix
-```
+| Command              | What it does                                            |
+| -------------------- | ------------------------------------------------------- |
+| `bun run start`      | Vite dev server on :3000 + Electron (wait-on)           |
+| `bun run build`      | Vite renderer build → Vite DB build → electron-builder  |
+| `bun run db:migrate` | `drizzle-kit generate` — SQL migration from schema diff |
 
 Two Vite builds:
 
-- `vite.config.ts` — renderer: `src/` → `build/`, `base: "./"` for `file://` compat
-- `vite.main.config.ts` — DB module: `src/main/db/index.ts` → `public/db.js` (CJS, externalises electron/better-sqlite3/drizzle-orm)
+- `vite.config.ts` — renderer: `src/` → `build/`, `base: "./"` for `file://`
+- `vite.main.config.ts` — DB module: `src/main/db/index.ts` → `public/db.js` (CJS)
+
+---
+
+## Testing
+
+Vitest. 255+ tests across integration and unit suites.
+
+```
+src/tests/
+  integration/     IPC handlers against in-memory SQLite
+  unit/            Pure function tests (budget computations, forecasting)
+```
+
+Key patterns:
+
+- `createTestDb()` — in-memory SQLite with all migrations
+- `createMockIpc()` — loads real CJS handlers, bypasses Electron
+- System time pinned to `2026-03-07` in integration tests
+- Sequential stateful tests — each `it` block builds on prior DB state
