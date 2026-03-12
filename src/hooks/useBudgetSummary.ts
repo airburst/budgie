@@ -77,6 +77,11 @@ export function useBudgetSummary(month: string) {
     },
   );
 
+  // Exclude the receiving side of transfers to avoid double-counting
+  const budgetTransactions = allTransactions.filter(
+    (t) => !(t.transferTransactionId && t.amount > 0),
+  );
+
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
   const mappedCategoryIds = new Set(mappings.map((m) => m.categoryId));
 
@@ -84,7 +89,7 @@ export function useBudgetSummary(month: string) {
   const incomeCategories = new Set(
     categories.filter((c) => c.expenseType === "income").map((c) => c.id),
   );
-  const totalIncome = allTransactions
+  const totalIncome = budgetTransactions
     .filter(
       (t) =>
         t.categoryId &&
@@ -107,7 +112,7 @@ export function useBudgetSummary(month: string) {
     prior,
     allAllocations,
     allTransfers,
-    allTransactions,
+    budgetTransactions,
     mappings,
   );
 
@@ -127,14 +132,14 @@ export function useBudgetSummary(month: string) {
       startMonth,
       allAllocations,
       allTransfers,
-      allTransactions,
+      budgetTransactions,
       categoryIds,
     );
 
     const alloc = monthAllocations.find((a) => a.envelopeId === env.id);
     const assigned = alloc?.assigned ?? 0;
 
-    const activity = allTransactions
+    const activity = budgetTransactions
       .filter(
         (t) =>
           t.categoryId &&
@@ -179,14 +184,14 @@ export function useBudgetSummary(month: string) {
     };
   });
 
-  // Unbudgeted spending
-  const expenseCategories = new Set(
-    categories.filter((c) => c.expenseType === "expense").map((c) => c.id),
+  // Unbudgeted spending (expenses + transfers, not income)
+  const budgetableCategoryIds = new Set(
+    categories.filter((c) => c.expenseType !== "income").map((c) => c.id),
   );
-  const unbudgetedTxns = allTransactions.filter(
+  const unbudgetedTxns = budgetTransactions.filter(
     (t) =>
       t.categoryId &&
-      expenseCategories.has(t.categoryId) &&
+      budgetableCategoryIds.has(t.categoryId) &&
       !mappedCategoryIds.has(t.categoryId) &&
       toMonth(t.date) === month,
   );

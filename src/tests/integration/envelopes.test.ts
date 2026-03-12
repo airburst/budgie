@@ -104,7 +104,7 @@ describe("envelopes IPC", () => {
     ).rejects.toThrow();
   });
 
-  it("reject mapping transfer category to envelope", async () => {
+  it("allow mapping transfer category to envelope", async () => {
     const cats =
       await invoke<{ id: number; name: string; expenseType: string }[]>(
         "categories:getAll",
@@ -118,12 +118,11 @@ describe("envelopes IPC", () => {
       transferCat = { ...rows[0], name: "Test Transfer" };
     }
 
-    await expect(
-      invoke("envelope_categories:create", {
-        envelopeId: groceriesId,
-        categoryId: transferCat.id,
-      }),
-    ).rejects.toThrow("Only expense-type categories");
+    const rows = await invoke<{ id: number }[]>(
+      "envelope_categories:create",
+      { envelopeId: groceriesId, categoryId: transferCat.id },
+    );
+    expect(rows).toHaveLength(1);
   });
 
   it("reject mapping income category to envelope", async () => {
@@ -139,7 +138,7 @@ describe("envelopes IPC", () => {
         envelopeId: groceriesId,
         categoryId: salary!.id,
       }),
-    ).rejects.toThrow("Only expense-type categories");
+    ).rejects.toThrow("Income categories cannot be mapped");
   });
 
   it("getByEnvelope returns mappings", async () => {
@@ -147,7 +146,7 @@ describe("envelopes IPC", () => {
       "envelope_categories:getByEnvelope",
       groceriesId,
     );
-    expect(rows.length).toBe(1);
+    expect(rows.length).toBe(2);
   });
 
   it("delete mapping", async () => {
@@ -156,6 +155,6 @@ describe("envelopes IPC", () => {
       "envelope_categories:getByEnvelope",
       groceriesId,
     );
-    expect(rows.length).toBe(0);
+    expect(rows.length).toBe(1);
   });
 });

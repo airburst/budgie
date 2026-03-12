@@ -14,8 +14,8 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
   const { create: createEnvelope } = useEnvelopes();
   const { create: createMapping } = useEnvelopeCategories();
 
-  const expenseCategories = categories.filter(
-    (c) => c.expenseType === "expense" && !c.deleted,
+  const budgetableCategories = categories.filter(
+    (c) => c.expenseType !== "income" && !c.deleted,
   );
 
   const matchCategories = (patterns: string[]): number[] => {
@@ -23,14 +23,14 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
     for (const pattern of patterns) {
       const lowerPattern = pattern.toLowerCase();
       // Match by name (case-insensitive), including children of matched parents
-      for (const cat of expenseCategories) {
+      for (const cat of budgetableCategories) {
         if (
           cat.name.toLowerCase() === lowerPattern &&
           !matched.includes(cat.id)
         ) {
           matched.push(cat.id);
           // Also include children
-          for (const child of expenseCategories) {
+          for (const child of budgetableCategories) {
             if (child.parentId === cat.id && !matched.includes(child.id)) {
               matched.push(child.id);
             }

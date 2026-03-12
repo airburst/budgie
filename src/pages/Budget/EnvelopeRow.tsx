@@ -3,6 +3,11 @@ import {
   ProgressIndicator,
   ProgressTrack,
 } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 import { useRef, useState } from "react";
@@ -15,6 +20,7 @@ type Props = {
   underfunded: boolean;
   categoryNames: string[];
   onAssignedChange: (value: number) => void;
+  editButton?: React.ReactNode;
 };
 
 function indicatorColor(pct: number): string {
@@ -31,6 +37,7 @@ export function EnvelopeRow({
   underfunded,
   categoryNames,
   onAssignedChange,
+  editButton,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(assigned));
@@ -58,17 +65,22 @@ export function EnvelopeRow({
   return (
     <div className="bg-card rounded-lg border p-4">
       <div className="flex items-center gap-4">
-        <div className="min-w-[140px]">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{name}</span>
-            {underfunded && <AlertTriangle className="size-4 text-amber-500" />}
-          </div>
-          <p className="text-muted-foreground text-xs">
-            {categoryNames.join(" · ") || "No categories"}
-          </p>
+        <div className="flex items-center gap-2 min-w-[140px]">
+          <Tooltip>
+            <TooltipTrigger className="font-medium cursor-default">
+              {name}
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="start">
+              {categoryNames.length > 0
+                ? categoryNames.join(" · ")
+                : "No categories"}
+            </TooltipContent>
+          </Tooltip>
+          {underfunded && <AlertTriangle className="size-4 text-amber-500" />}
+          {editButton}
         </div>
 
-        <div className="flex items-center gap-1 min-w-[120px]">
+        <div className="flex items-center gap-1 min-w-[140px]">
           <span className="text-muted-foreground text-xs">Assigned:</span>
           {editing ? (
             <input
@@ -79,7 +91,7 @@ export function EnvelopeRow({
               onChange={(e) => setDraft(e.target.value)}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              className="w-20 rounded border bg-background px-1 py-0.5 text-sm"
+              className="w-24 h-6 rounded border bg-background px-2 text-sm"
               autoFocus
             />
           ) : (
@@ -88,7 +100,7 @@ export function EnvelopeRow({
                 setDraft(String(assigned));
                 setEditing(true);
               }}
-              className="text-sm font-medium hover:underline"
+              className="w-24 h-6 text-left text-sm font-medium hover:underline px-2"
             >
               £{assigned.toFixed(2)}
             </button>

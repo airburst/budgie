@@ -21,9 +21,9 @@ module.exports = function registerEnvelopeCategoriesHandlers(
       .where(eq(schema.categories.id, data.categoryId))
       .then((r) => r[0] ?? null);
     if (!cat) throw new Error("Category not found");
-    if (cat.expenseType !== "expense") {
+    if (cat.expenseType === "income") {
       throw new Error(
-        "Only expense-type categories can be mapped to envelopes",
+        "Income categories cannot be mapped to envelopes",
       );
     }
     return db.insert(schema.envelopeCategories).values(data).returning();

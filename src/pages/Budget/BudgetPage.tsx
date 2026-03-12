@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { useState } from "react";
 import { BudgetOnboarding } from "./BudgetOnboarding";
-import { EnvelopeFormDialog } from "./EnvelopeFormDialog";
+import { EnvelopeEditButton, EnvelopeFormDialog } from "./EnvelopeFormDialog";
 import { EnvelopeRow } from "./EnvelopeRow";
 import { MonthSelector } from "./MonthSelector";
 import { MoveMoneyDialog } from "./MoveMoneyDialog";
@@ -29,6 +29,7 @@ export default function BudgetPage() {
   const { mappings } = useEnvelopeCategories();
 
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const envelopeMap = new Map(envelopes.map((e) => [e.id, e]));
 
   const prevMonthStr = (() => {
     const parts = month.split("-").map(Number);
@@ -92,6 +93,7 @@ export default function BudgetPage() {
               const catNames = env.categoryIds
                 .map((id) => categoryMap.get(id)?.name)
                 .filter(Boolean) as string[];
+              const envelope = envelopeMap.get(env.envelopeId);
               return (
                 <EnvelopeRow
                   key={env.envelopeId}
@@ -106,6 +108,15 @@ export default function BudgetPage() {
                       envelopeId: env.envelopeId,
                       assigned: value,
                     })
+                  }
+                  editButton={
+                    envelope ? (
+                      <EnvelopeEditButton
+                        envelope={envelope}
+                        categories={categories}
+                        allMappings={mappings}
+                      />
+                    ) : undefined
                   }
                 />
               );

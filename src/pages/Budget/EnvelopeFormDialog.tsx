@@ -48,8 +48,8 @@ export function EnvelopeFormDialog({
     }
   }, [open, envelope, allMappings]);
 
-  const expenseCategories = categories.filter(
-    (c) => c.expenseType === "expense" && !c.deleted,
+  const budgetableCategories = categories.filter(
+    (c) => c.expenseType !== "income" && !c.deleted,
   );
 
   const mappedByOthers = new Set(
@@ -58,9 +58,9 @@ export function EnvelopeFormDialog({
       .map((m) => m.categoryId),
   );
 
-  const parentCategories = expenseCategories.filter((c) => !c.parentId);
+  const parentCategories = budgetableCategories.filter((c) => !c.parentId);
   const childrenOf = (parentId: number) =>
-    expenseCategories.filter((c) => c.parentId === parentId);
+    budgetableCategories.filter((c) => c.parentId === parentId);
 
   const toggleCategory = (id: number) => {
     setSelectedCategoryIds((prev) => {
