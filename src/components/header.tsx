@@ -16,6 +16,7 @@ const navLinks = [
   { to: "/", label: "Accounts", end: true },
   { to: "/scheduled", label: "Reminders", end: false },
   { to: "/budget", label: "Budget", end: false },
+  { to: "/reports", label: "Reports", end: false },
 ];
 
 const Header = () => {

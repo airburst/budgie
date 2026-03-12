@@ -1,4 +1,4 @@
-const { and, asc, eq, inArray } = require("drizzle-orm");
+const { and, asc, eq, gte, inArray, lte } = require("drizzle-orm");
 
 module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
   ipcMain.handle("transactions:getAll", () =>
@@ -17,6 +17,24 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
       .from(schema.transactions)
       .where(eq(schema.transactions.accountId, accountId))
       .orderBy(asc(schema.transactions.date), asc(schema.transactions.createdAt)),
+  );
+
+  ipcMain.handle(
+    "transactions:getByDateRange",
+    (_, startDate, endDate, accountIds) => {
+      const conditions = [
+        gte(schema.transactions.date, startDate),
+        lte(schema.transactions.date, endDate),
+      ];
+      if (accountIds?.length) {
+        conditions.push(inArray(schema.transactions.accountId, accountIds));
+      }
+      return db
+        .select()
+        .from(schema.transactions)
+        .where(and(...conditions))
+        .orderBy(asc(schema.transactions.date));
+    },
   );
 
   ipcMain.handle("transactions:create", async (_, data) => {

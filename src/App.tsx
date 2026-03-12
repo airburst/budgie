@@ -19,6 +19,7 @@ const SettingsPage = lazy(
   () => import("@/pages/Settings/SettingsPage"),
 );
 const BudgetPage = lazy(() => import("@/pages/Budget/BudgetPage"));
+const ReportsPage = lazy(() => import("@/pages/Reports/ReportsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,7 @@ function App() {
             <Route path="/forecast/:id" element={<ForecastPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/budget" element={<BudgetPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
           </Routes>
         </Suspense>
       </HashRouter>

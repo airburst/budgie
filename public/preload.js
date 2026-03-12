@@ -18,6 +18,13 @@ const api = {
   getTransaction: (id) => ipcRenderer.invoke("transactions:getById", id),
   getTransactionsByAccount: (accountId) =>
     ipcRenderer.invoke("transactions:getByAccount", accountId),
+  getTransactionsByDateRange: (startDate, endDate, accountIds) =>
+    ipcRenderer.invoke(
+      "transactions:getByDateRange",
+      startDate,
+      endDate,
+      accountIds,
+    ),
   createTransaction: (data) => ipcRenderer.invoke("transactions:create", data),
   updateTransaction: (id, data) =>
     ipcRenderer.invoke("transactions:update", id, data),

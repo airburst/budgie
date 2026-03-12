@@ -91,6 +91,11 @@ interface ElectronAPI {
   getTransactions: () => Promise<Transaction[]>;
   getTransaction: (id: number) => Promise<Transaction | null>;
   getTransactionsByAccount: (accountId: number) => Promise<Transaction[]>;
+  getTransactionsByDateRange: (
+    startDate: string,
+    endDate: string,
+    accountIds?: number[],
+  ) => Promise<Transaction[]>;
   createTransaction: (
     data: Omit<
       Transaction,
