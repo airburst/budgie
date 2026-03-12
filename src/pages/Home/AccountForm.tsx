@@ -27,10 +27,12 @@ type AccountFormProps = {
 const empty = {
   name: "",
   number: "",
-  type: "bank" as const,
+  type: "bank" as string,
   balance: "0",
   currency: "GBP",
   notes: "",
+  interestRate: "",
+  creditLimit: "",
 };
 
 const ACCOUNT_TYPES: { value: string; label: string }[] = [
@@ -55,6 +57,7 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
   }
 
   async function save() {
+    const isCreditCard = form.type === "credit_card";
     await create.mutateAsync({
       name: form.name,
       number: form.number || null,
@@ -64,9 +67,13 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
         | "loan"
         | "investment"
         | "cash",
-      balance: parseFloat(form.balance) || 0,
+      balance: isCreditCard
+        ? -(parseFloat(form.balance) || 0)
+        : parseFloat(form.balance) || 0,
       currency: form.currency || "GBP",
       notes: form.notes || null,
+      interestRate: form.interestRate ? parseFloat(form.interestRate) : null,
+      creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
     });
     handleClose();
   }
@@ -103,7 +110,9 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
               onValueChange={(v) => set("type", v as string)}
             >
               <SelectTrigger id="acc-type" className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {ACCOUNT_TYPES.find((t) => t.value === form.type)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {ACCOUNT_TYPES.map(({ value, label }) => (
@@ -126,7 +135,11 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="acc-balance">Opening Balance</Label>
+            <Label htmlFor="acc-balance">
+              {form.type === "credit_card"
+                ? "Initial balance owed"
+                : "Opening Balance"}
+            </Label>
             <Input
               id="acc-balance"
               type="number"
@@ -135,6 +148,34 @@ export function AccountForm({ open, onOpenChange }: AccountFormProps) {
               onChange={(e) => set("balance", e.target.value)}
             />
           </div>
+
+          {form.type === "credit_card" && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="acc-credit-limit">Credit Limit</Label>
+                <Input
+                  id="acc-credit-limit"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 5000"
+                  value={form.creditLimit}
+                  onChange={(e) => set("creditLimit", e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="acc-interest-rate">Interest Rate (%)</Label>
+                <Input
+                  id="acc-interest-rate"
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 19.9"
+                  value={form.interestRate}
+                  onChange={(e) => set("interestRate", e.target.value)}
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="acc-currency">Currency</Label>

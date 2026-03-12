@@ -28,7 +28,7 @@
 
 - Ability to import a file and "roll back" to a previous state
 
-- **TODO:** Import downloaded transactions in QIF or CSV format and present a matching view before importing and reconciling
+- Import downloaded transactions in QIF or CSV format and present a matching view before importing and reconciling
 
 ## UX and layout
 
@@ -96,7 +96,7 @@ Opens as a modal dialog triggered from the Register toolbar.
 - **Statement balance** — numeric text field, focused by default; user enters the closing balance from their bank statement.
 - **Cancel** and **Next** buttons at the bottom right; **?** help button at the bottom left.
 
-- TODO: Handle imported QIF files. [technical spec](https://github.com/jemmyw/Qif/blob/master/QIF_references)
+- Handle imported QIF files. [technical spec](https://github.com/jemmyw/Qif/blob/master/QIF_references)
 
 #### Forecast confirm panel
 

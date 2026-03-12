@@ -85,7 +85,14 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                     ? formatDate(account.lastReconcileDate)
                     : "Never"}
                 </TableCell>
-                <TableCell className="text-right"></TableCell>
+                <TableCell className="text-right">
+                  {account.type === "credit_card" &&
+                  account.creditLimit != null ? (
+                    <Amount
+                      value={account.creditLimit + account.computedBalance}
+                    />
+                  ) : null}
+                </TableCell>
                 <TableCell
                   className="text-right"
                   onClick={(e) => e.stopPropagation()}

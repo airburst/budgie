@@ -10,6 +10,8 @@ function withBalances(db, schema) {
       balance: schema.accounts.balance,
       currency: schema.accounts.currency,
       notes: schema.accounts.notes,
+      interestRate: schema.accounts.interestRate,
+      creditLimit: schema.accounts.creditLimit,
       createdAt: schema.accounts.createdAt,
       computedBalance: sql`COALESCE(
         ${schema.accounts.balance} + SUM(${schema.transactions.amount}),

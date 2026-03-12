@@ -44,10 +44,22 @@ export function ImportDialog({
 
   const [checkedIndexes, setCheckedIndexes] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const results = useMemo(() => {
     try {
-      const qifTxs = parseQif(qifContent);
+      const { accountType: qifType, transactions: qifTxs } =
+        parseQif(qifContent);
+      const appType = account?.type ?? "bank";
+      const qifExpectsType = qifType === "credit_card" ? "credit_card" : "bank";
+      if (qifExpectsType !== appType) {
+        const label = qifType === "credit_card" ? "Credit Card" : "Bank";
+        setParseError(
+          `QIF file is type ${label} but this is a ${appType === "credit_card" ? "Credit Card" : "Bank"} account`,
+        );
+        return [];
+      }
+      setParseError(null);
       const matched = matchQifTransactions(
         qifTxs,
         transactions,
@@ -63,7 +75,7 @@ export function ImportDialog({
     } catch {
       return [];
     }
-  }, [qifContent, transactions, account?.lastReconcileDate]);
+  }, [qifContent, transactions, account?.lastReconcileDate, account?.type]);
 
   const checkedCount = checkedIndexes.size;
   const newCount = results.filter((r) => r.status === "new").length;
@@ -132,6 +144,10 @@ export function ImportDialog({
         <DialogHeader>
           <DialogTitle>Import — {filename}</DialogTitle>
         </DialogHeader>
+
+        {parseError && (
+          <p className="text-sm text-destructive">{parseError}</p>
+        )}
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
