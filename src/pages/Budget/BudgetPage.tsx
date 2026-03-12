@@ -1,14 +1,18 @@
 import { useBudgetAllocations } from "@/hooks/useBudgetAllocations";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useCategories } from "@/hooks/useCategories";
+import { useEnvelopeCategories } from "@/hooks/useEnvelopeCategories";
 import { useEnvelopes } from "@/hooks/useEnvelopes";
 import { cn } from "@/lib/utils";
 import Layout from "@/pages/layout";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { useState } from "react";
+import { BudgetOnboarding } from "./BudgetOnboarding";
+import { EnvelopeFormDialog } from "./EnvelopeFormDialog";
 import { EnvelopeRow } from "./EnvelopeRow";
 import { MonthSelector } from "./MonthSelector";
+import { MoveMoneyDialog } from "./MoveMoneyDialog";
 import { UnbudgetedSection } from "./UnbudgetedSection";
 
 function currentMonth(): string {
@@ -22,6 +26,8 @@ export default function BudgetPage() {
   const { envelopes } = useEnvelopes();
   const { upsert, quickFill } = useBudgetAllocations(month);
   const { categories } = useCategories();
+  const { mappings } = useEnvelopeCategories();
+
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
   const prevMonthStr = (() => {
@@ -36,40 +42,50 @@ export default function BudgetPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Budget</h1>
-            <p className="text-muted-foreground text-sm">
-              Available to Budget:{" "}
-              <span
-                className={cn(
-                  "font-medium",
-                  summary.availableToBudget < 0
-                    ? "text-destructive"
-                    : summary.availableToBudget === 0
-                      ? "text-green-600"
-                      : "text-foreground",
-                )}
+            {envelopes.length > 0 && (
+              <p className="text-muted-foreground text-sm">
+                Available to Budget:{" "}
+                <span
+                  className={cn(
+                    "font-medium",
+                    summary.availableToBudget < 0
+                      ? "text-destructive"
+                      : summary.availableToBudget === 0
+                        ? "text-green-600"
+                        : "text-foreground",
+                  )}
+                >
+                  £{summary.availableToBudget.toFixed(2)}
+                </span>
+              </p>
+            )}
+          </div>
+          {envelopes.length > 0 && (
+            <div className="flex items-center gap-2">
+              <EnvelopeFormDialog
+                categories={categories}
+                allMappings={mappings}
+              />
+              <MoveMoneyDialog month={month} envelopes={envelopes} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => quickFill.mutate(prevMonthStr)}
+                disabled={quickFill.isPending}
               >
-                £{summary.availableToBudget.toFixed(2)}
-              </span>
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => quickFill.mutate(prevMonthStr)}
-              disabled={quickFill.isPending}
-            >
-              <Copy className="size-4 mr-1" />
-              Fill from last month
-            </Button>
-            <MonthSelector month={month} onChange={setMonth} />
-          </div>
+                <Copy className="size-4 mr-1" />
+                Fill from last month
+              </Button>
+              <MonthSelector month={month} onChange={setMonth} />
+            </div>
+          )}
         </div>
 
         {envelopes.length === 0 ? (
-          <div className="text-muted-foreground text-center py-12">
-            No envelopes yet. Create one to start budgeting.
-          </div>
+          <BudgetOnboarding
+            categories={categories}
+            allMappings={mappings}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {summary.envelopes.map((env) => {
@@ -97,10 +113,12 @@ export default function BudgetPage() {
           </div>
         )}
 
-        <UnbudgetedSection
-          total={summary.unbudgetedActivity}
-          categories={summary.unbudgetedCategories}
-        />
+        {envelopes.length > 0 && (
+          <UnbudgetedSection
+            total={summary.unbudgetedActivity}
+            categories={summary.unbudgetedCategories}
+          />
+        )}
       </div>
     </Layout>
   );
