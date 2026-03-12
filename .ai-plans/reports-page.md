@@ -4,7 +4,7 @@
 
 Add a `/reports` route showing financial health at a glance: spending by category (donut), income vs expenses (bar), net worth trend (area), and four stat cards. Charts are maximisable to full-screen with 150ms animated transition.
 
-**Correlation with budgeting**: both features need date-ranged transaction queries. Plan uses a shared `transactions:getByDateRange` IPC handler (more flexible than budgeting's `getByMonth` — budgeting can use it too). Spending chart can optionally colour by `budgetClass` once that lands.
+**Correlation with budgeting**: both features need date-ranged transaction queries. Plan uses a shared `transactions:getByDateRange` IPC handler. Envelope budgeting is now implemented — a "Budget vs Actual" chart (per-envelope assigned vs spent by month) is a natural v2 addition.
 
 ---
 
@@ -181,7 +181,7 @@ Empty state: centred muted text per chart card when no transactions. Stat cards 
 
 ## Resolved Decisions
 
-- Saving Rate: `(income - expenses) / income * 100` — no dependency on budgetClass
+- Saving Rate: `(income - expenses) / income * 100`
 - Transfer-type transactions excluded from all charts (spending, income vs expenses)
 - Shared `getByDateRange` IPC used by both reports and budgeting features
 - Currency assumed GBP throughout
