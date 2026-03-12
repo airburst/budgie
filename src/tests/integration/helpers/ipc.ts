@@ -39,4 +39,8 @@ export function registerAllHandlers(
   require("../../../../public/ipc/categories.js")(ipcMain, db, schema);
   require("../../../../public/ipc/scheduled-transactions.js")(ipcMain, db, schema);
   require("../../../../public/ipc/account-reconciliations.js")(ipcMain, db, schema);
+  require("../../../../public/ipc/envelopes.js")(ipcMain, db, schema);
+  require("../../../../public/ipc/envelope-categories.js")(ipcMain, db, schema);
+  require("../../../../public/ipc/budget-allocations.js")(ipcMain, db, schema);
+  require("../../../../public/ipc/budget-transfers.js")(ipcMain, db, schema);
 }

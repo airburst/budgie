@@ -271,3 +271,13 @@ export const RECONCILE_FEB = {
   date: "2026-02-28",
   balance: 4702.2,
 } as const;
+
+// ─── Envelope fixtures ────────────────────────────────────────────────────────
+
+export const ENVELOPE_GROCERIES = {
+  name: "Groceries",
+};
+
+export const ENVELOPE_BILLS = {
+  name: "Bills",
+};
