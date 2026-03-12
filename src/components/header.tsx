@@ -15,6 +15,7 @@ import { Link, NavLink, useNavigate } from "react-router";
 const navLinks = [
   { to: "/", label: "Accounts", end: true },
   { to: "/scheduled", label: "Reminders", end: false },
+  { to: "/budget", label: "Budget", end: false },
 ];
 
 const Header = () => {
