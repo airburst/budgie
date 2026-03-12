@@ -61,13 +61,12 @@ export function ChartCard({ title, badge, children }: Props) {
 
   if (maximised) {
     return createPortal(
-      <div
-        className="fixed inset-0 z-50 flex flex-col bg-background transition-opacity duration-150"
-        style={{ opacity: 1 }}
-      >
-        <Card className="flex-1 rounded-none border-0 ring-0">
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <Card className="flex-1 flex flex-col rounded-none border-0 ring-0 h-full">
           {header}
-          <CardContent className="flex-1">{children}</CardContent>
+          <CardContent className="flex-1 min-h-0 [&_[data-slot=chart]]:aspect-auto [&_[data-slot=chart]]:max-h-none [&_[data-slot=chart]]:h-full">
+            {children}
+          </CardContent>
         </Card>
       </div>,
       document.body,
