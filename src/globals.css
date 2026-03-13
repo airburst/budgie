@@ -2,3 +2,26 @@
   height: 100vh;
   width: 100vw;
 }
+
+/* View Transitions API fade animation */
+@supports (view-transition-name: auto) {
+  ::view-transition-old(root) {
+    animation: fadeOut 250ms ease-out forwards;
+  }
+
+  ::view-transition-new(root) {
+    animation: fadeIn 250ms ease-in forwards;
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+  }
+}
