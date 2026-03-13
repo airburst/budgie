@@ -27,6 +27,17 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    minWidth: 960,
+    minHeight: 600,
+    center: true,
+    // remove the default titlebar
+    titleBarStyle: "hidden",
+    // expose window controls in Windows/Linux
+    ...(process.platform !== "darwin" ? { titleBarOverlay: true } : {}),
+    // add padding around macOS traffic lights
+    ...(process.platform === "darwin"
+      ? { trafficLightPosition: { x: 16, y: 16 } }
+      : {}),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

@@ -126,7 +126,4 @@
   html {
     @apply font-sans;
   }
-  #root {
-    @apply h-screen w-screen;
-  }
 }

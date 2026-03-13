@@ -36,7 +36,7 @@ export default function ScheduledTransactions() {
   return (
     <Layout>
       <div className="grid grid-cols-[minmax(18rem,1fr)_3fr] h-full">
-        <div className="shrink-0 border-r border-border p-4 flex flex-col gap-4 overflow-y-auto">
+        <div className="shrink-0 bg-sidebar p-4 flex flex-col gap-4 overflow-y-auto">
           <ScheduledCalendar scheduledTransactions={scheduled} />
           <ScheduledSummaryCard scheduledTransactions={scheduled} />
         </div>

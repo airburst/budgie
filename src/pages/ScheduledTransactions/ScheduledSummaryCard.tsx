@@ -25,7 +25,7 @@ export function ScheduledSummaryCard({
   }, [scheduledTransactions]);
 
   return (
-    <div className="rounded-lg border border-border bg-primary/5 p-4 flex flex-col gap-3">
+    <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
       <div>
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
           Total Scheduled

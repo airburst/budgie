@@ -76,7 +76,7 @@ export function ScheduledCalendar({
   };
 
   return (
-    <div className="rounded-lg border border-border p-3 select-none">
+    <div className="rounded-lg bg-card border border-border p-3 select-none">
       <div className="flex items-center justify-between mb-3">
         <Button variant="ghost" size="icon-sm" onClick={prevMonth}>
           <ChevronLeftIcon />

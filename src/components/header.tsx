@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
-import { ChartNoAxesCombined, Settings } from "lucide-react";
-import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router";
+import { Settings } from "lucide-react";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router";
 
 const navLinks = [
   { to: "/", label: "Accounts", end: true },
@@ -23,19 +23,25 @@ const Header = () => {
   const navigate = useNavigate();
   const [backupOpen, setBackupOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.userAgent));
+  }, []);
 
   return (
     <>
-      <header className="bg-card sticky top-0 z-50 flex h-16 justify-between items-center gap-6 border-b px-4 py-2 sm:px-6 overflow-hidden">
-        <Link
-          to="/"
-          className="flex flex-row gap-2 items-center text-foreground text-4xl font-semibold tracking-tight shrink-0"
+      <header
+        className={`bg-sidebar dark:bg-card sticky top-0 z-50 grid grid-cols-3 h-12 items-center gap-6 py-2 overflow-hidden ${
+          isMac ? "pl-20 pr-4 sm:pr-6" : "px-4 sm:px-6"
+        }`}
+        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      >
+        <div />
+        <nav
+          className="flex items-center gap-2"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
-          <ChartNoAxesCombined size={32} />
-          Budgie
-        </Link>
-
-        <nav className="flex items-center gap-2">
           {navLinks.map(({ to, label, end }) => (
             <NavLink
               key={to}
@@ -54,7 +60,10 @@ const Header = () => {
           ))}
         </nav>
 
-        <div>
+        <div
+          className="justify-self-end"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        >
           <DropdownMenu>
             <DropdownMenuTrigger
               render={

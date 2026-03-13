@@ -18,11 +18,11 @@ export default function AccountsMenu() {
   const [formOpen, setFormOpen] = useState(false);
 
   return (
-    <nav className="bg-sidebar border-sidebar-border flex w-56 shrink-0 flex-col border-r px-2 py-4">
+    <nav className="bg-sidebar flex w-64 shrink-0 flex-col p-4">
       <p className="text-sidebar-foreground/50 px-2 pb-1 text-xs font-medium tracking-wider uppercase">
         Accounts
       </p>
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-1">
         {accounts.map(({ id, name, computedBalance }) => (
           <li key={id}>
             <AccountButton
