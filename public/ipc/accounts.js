@@ -12,6 +12,7 @@ function withBalances(db, schema) {
       notes: schema.accounts.notes,
       interestRate: schema.accounts.interestRate,
       creditLimit: schema.accounts.creditLimit,
+      deleted: schema.accounts.deleted,
       createdAt: schema.accounts.createdAt,
       computedBalance: sql`COALESCE(
         ${schema.accounts.balance} + SUM(${schema.transactions.amount}),
@@ -36,6 +37,7 @@ function withBalances(db, schema) {
       )`.mapWith(Number),
     })
     .from(schema.accounts)
+    .where(eq(schema.accounts.deleted, false))
     .leftJoin(
       schema.transactions,
       eq(schema.transactions.accountId, schema.accounts.id),
@@ -102,6 +104,19 @@ module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
           );
       }
     }
-    return db.delete(schema.accounts).where(eq(schema.accounts.id, id));
+    try {
+      // Try hard delete first (works if no FK constraints)
+      return await db.delete(schema.accounts).where(eq(schema.accounts.id, id));
+    } catch (err) {
+      // If FK constraint blocks deletion, soft delete instead
+      if (err && err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+        return db
+          .update(schema.accounts)
+          .set({ deleted: true })
+          .where(eq(schema.accounts.id, id))
+          .returning();
+      }
+      throw err;
+    }
   });
 };

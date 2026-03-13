@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { usePayees } from "@/hooks/usePayees";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
-import type { Payee, Transaction } from "@/types/electron";
+import type { Account, Payee, Transaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 
 type TransactionSheetProps = {
@@ -24,6 +24,7 @@ type TransactionSheetProps = {
   onOpenChange: (open: boolean) => void;
   editingId: number | null;
   accountId: number;
+  account?: Account;
   defaultDate?: string;
   defaultCleared?: boolean;
 };
@@ -45,12 +46,16 @@ export function TransactionForm({
   onOpenChange,
   editingId,
   accountId,
+  account,
   defaultDate,
   defaultCleared,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
   const { upsert: upsertPayee } = usePayees();
   const { preferences } = usePreferences();
+
+  const isAssumedNegative =
+    account?.type === "credit_card" || account?.type === "loan";
 
   const [form, setForm] = useState(makeEmpty);
 
@@ -60,23 +65,40 @@ export function TransactionForm({
 
   useEffect(() => {
     if (editing) {
-      setForm({
-        date: editing.date,
-        payee: editing.payee,
-        withdrawal:
-          editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
-        deposit: editing.amount > 0 ? editing.amount.toFixed(2) : "",
-        categoryId: editing.categoryId ? String(editing.categoryId) : "",
-        notes: editing.notes ?? "",
-        cleared: editing.cleared ?? false,
-      });
+      if (isAssumedNegative) {
+        // For credit cards/loans: negate the display logic
+        // negative amount (owed) displays in "deposit", positive (repaid) in "withdrawal"
+        setForm({
+          date: editing.date,
+          payee: editing.payee,
+          withdrawal:
+            editing.amount > 0 ? Math.abs(editing.amount).toFixed(2) : "",
+          deposit:
+            editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
+          categoryId: editing.categoryId ? String(editing.categoryId) : "",
+          notes: editing.notes ?? "",
+          cleared: editing.cleared ?? false,
+        });
+      } else {
+        // Normal logic: negative (withdrawal) and positive (deposit)
+        setForm({
+          date: editing.date,
+          payee: editing.payee,
+          withdrawal:
+            editing.amount < 0 ? Math.abs(editing.amount).toFixed(2) : "",
+          deposit: editing.amount > 0 ? editing.amount.toFixed(2) : "",
+          categoryId: editing.categoryId ? String(editing.categoryId) : "",
+          notes: editing.notes ?? "",
+          cleared: editing.cleared ?? false,
+        });
+      }
     } else {
       const empty = makeEmpty();
       if (defaultDate) empty.date = defaultDate;
       if (defaultCleared) empty.cleared = true;
       setForm(empty);
     }
-  }, [editingId, open]);
+  }, [editingId, open, isAssumedNegative]);
 
   function set(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -88,19 +110,42 @@ export function TransactionForm({
       set("categoryId", String(payee.categoryId));
     }
     if (payee.amount !== null && payee.amount !== undefined) {
-      if (payee.amount < 0) {
-        set("withdrawal", Math.abs(payee.amount).toFixed(2));
-        set("deposit", "");
-      } else if (payee.amount > 0) {
-        set("deposit", payee.amount.toFixed(2));
-        set("withdrawal", "");
+      if (isAssumedNegative) {
+        // For credit cards/loans: negate the display logic
+        if (payee.amount > 0) {
+          // Payment should go in withdrawal
+          set("withdrawal", Math.abs(payee.amount).toFixed(2));
+          set("deposit", "");
+        } else if (payee.amount < 0) {
+          // Amount owed goes in deposit
+          set("deposit", Math.abs(payee.amount).toFixed(2));
+          set("withdrawal", "");
+        }
+      } else {
+        // Normal logic
+        if (payee.amount < 0) {
+          set("withdrawal", Math.abs(payee.amount).toFixed(2));
+          set("deposit", "");
+        } else if (payee.amount > 0) {
+          set("deposit", payee.amount.toFixed(2));
+          set("withdrawal", "");
+        }
       }
     }
   }
 
   async function save() {
-    const amount =
-      (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
+    let amount: number;
+    if (isAssumedNegative) {
+      // For credit cards/loans: deposit is money owed (negative), withdrawal is payment (positive)
+      amount =
+        (parseFloat(form.withdrawal) || 0) - (parseFloat(form.deposit) || 0);
+    } else {
+      // Normal: withdrawal is negative, deposit is positive
+      amount =
+        (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
+    }
+
     const data: Omit<
       Transaction,
       "id" | "createdAt" | "reconciled" | "transferTransactionId"
@@ -176,7 +221,9 @@ export function TransactionForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tx-withdrawal">Withdrawal</Label>
+              <Label htmlFor="tx-withdrawal">
+                {isAssumedNegative ? "Payment" : "Withdrawal"}
+              </Label>
               <Input
                 id="tx-withdrawal"
                 type="number"
@@ -192,7 +239,9 @@ export function TransactionForm({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="tx-deposit">Deposit</Label>
+              <Label htmlFor="tx-deposit">
+                {isAssumedNegative ? "Amount Borrowed" : "Deposit"}
+              </Label>
               <Input
                 id="tx-deposit"
                 type="number"

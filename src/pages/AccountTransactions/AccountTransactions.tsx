@@ -196,6 +196,7 @@ export default function AccountTransactions() {
         onOpenChange={setSheetOpen}
         editingId={editingId}
         accountId={accountId}
+        account={account}
       />
       {account && (
         <ReconciliationDialog

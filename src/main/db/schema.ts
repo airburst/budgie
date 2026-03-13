@@ -14,6 +14,7 @@ export const accounts = sqliteTable("accounts", {
   notes: text("notes"),
   interestRate: real("interest_rate"),
   creditLimit: real("credit_limit"),
+  deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 

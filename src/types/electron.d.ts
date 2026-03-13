@@ -53,11 +53,11 @@ interface ElectronAPI {
   getAccounts: () => Promise<AccountWithBalances[]>;
   getAccount: (id: number) => Promise<AccountWithBalances | null>;
   createAccount: (
-    data: Omit<Account, "id" | "createdAt">,
+    data: Omit<Account, "id" | "createdAt" | "deleted">,
   ) => Promise<Account[]>;
   updateAccount: (
     id: number,
-    data: Partial<Omit<Account, "id" | "createdAt">>,
+    data: Partial<Omit<Account, "id" | "createdAt" | "deleted">>,
   ) => Promise<Account[]>;
   deleteAccount: (id: number) => Promise<void>;
 

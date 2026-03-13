@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { formatDate } from "@/lib/utils";
 import type { AccountWithBalances } from "@/types/electron";
-import { CheckCircle2Icon, PlusIcon } from "lucide-react";
+import { CheckCircle2Icon, EditIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ReconciliationDialog } from "../AccountTransactions/ReconciliationDialog";
@@ -24,8 +24,12 @@ type AccountsTableProps = {
 export function AccountsTable({ accounts }: AccountsTableProps) {
   const navigate = useNavigate();
   const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [reconcileAccount, setReconcileAccount] =
     useState<AccountWithBalances | null>(null);
+
+  const editingAccount =
+    editingId != null ? accounts.find((a) => a.id === editingId) : null;
 
   if (accounts.length === 0) {
     return (
@@ -97,14 +101,24 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
                   className="text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Reconcile"
-                    onClick={() => setReconcileAccount(account)}
-                  >
-                    <CheckCircle2Icon className="size-4" />
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Edit"
+                      onClick={() => setEditingId(account.id)}
+                    >
+                      <EditIcon className="size-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Reconcile"
+                      onClick={() => setReconcileAccount(account)}
+                    >
+                      <CheckCircle2Icon className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -128,6 +142,20 @@ export function AccountsTable({ accounts }: AccountsTableProps) {
           onOpenChange={(open) => !open && setReconcileAccount(null)}
         />
       )}
+
+      <AccountForm
+        open={formOpen || editingId != null}
+        onOpenChange={(o) => {
+          if (!o) {
+            setFormOpen(false);
+            setEditingId(null);
+          } else {
+            setFormOpen(true);
+          }
+        }}
+        editingId={editingId}
+        account={editingAccount}
+      />
     </>
   );
 }
