@@ -51,7 +51,7 @@ Channel naming: `<entity>:<verb>` — e.g. `accounts:getAll`, `transactions:crea
 
 ## Database
 
-- File: `~/app_database.db` (configurable via `config.json`)
+- File: `~/budgie.db` (configurable via `config.json`)
 - WAL mode enabled
 - Schema: `src/main/db/schema.ts` — Drizzle `sqliteTable` definitions
 - Migrations: `src/main/db/migrations/` — generated with `bun run db:migrate`

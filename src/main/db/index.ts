@@ -8,7 +8,7 @@ import * as schema from "./schema";
 export { schema };
 
 export function setupDatabase(customDbPath?: string) {
-  const dbPath = customDbPath ?? path.join(app.getPath("home"), "app_database.db");
+  const dbPath = customDbPath ?? path.join(app.getPath("home"), "budgie.db");
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
 

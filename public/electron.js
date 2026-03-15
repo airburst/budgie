@@ -82,7 +82,7 @@ app.whenReady().then(async () => {
   try {
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     if (config.dataFolder) {
-      customDbPath = path.join(config.dataFolder, "app_database.db");
+      customDbPath = path.join(config.dataFolder, "budgie.db");
     }
   } catch {
     // no config file or invalid JSON — use default
@@ -120,7 +120,7 @@ app.whenReady().then(async () => {
   });
 
   ipcMain.handle("settings:moveDataFolder", async (_, newFolder) => {
-    const newDbPath = path.join(newFolder, "app_database.db");
+    const newDbPath = path.join(newFolder, "budgie.db");
     if (newDbPath === dbPath) return;
     // Ensure destination folder exists
     fs.mkdirSync(newFolder, { recursive: true });
