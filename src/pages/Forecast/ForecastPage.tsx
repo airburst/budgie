@@ -88,9 +88,34 @@ export default function ForecastPage() {
     return opening + posted;
   }, [account, transactions, today]);
 
+  // Resolve missing transferToAccountId from the transfer-category naming convention
+  // (Transfer sub-category name == destination account name) so that existing
+  // scheduled transfers — created before the explicit column was added — still
+  // appear as incoming on the receiving account's forecast.
+  const resolvedScheduled = useMemo(() => {
+    const accountByName = new Map(accounts.map((a) => [a.name, a.id]));
+    const categoryById = new Map(categories.map((c) => [c.id, c]));
+    return scheduled.map((s) => {
+      if (s.transferToAccountId != null || s.categoryId == null) return s;
+      const cat = categoryById.get(s.categoryId);
+      if (cat?.expenseType === "transfer" && cat.parentId != null) {
+        const destId = accountByName.get(cat.name) ?? null;
+        if (destId != null) return { ...s, transferToAccountId: destId };
+      }
+      return s;
+    });
+  }, [scheduled, accounts, categories]);
+
   const rows = useMemo(
-    () => buildForecastRows(transactions, scheduled, accountId, today, endDate),
-    [transactions, scheduled, accountId, today, endDate],
+    () =>
+      buildForecastRows(
+        transactions,
+        resolvedScheduled,
+        accountId,
+        today,
+        endDate,
+      ),
+    [transactions, resolvedScheduled, accountId, today, endDate],
   );
 
   // Reset exclusions when the row set changes (new end date / fresh data)
