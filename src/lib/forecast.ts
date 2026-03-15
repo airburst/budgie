@@ -65,12 +65,20 @@ export function buildForecastRows(
     // For the receiving side of a transfer, flip to a positive (incoming) amount
     const rowAmount = isDestination && !isSource ? -s.amount : s.amount;
     try {
-      // Use nextDueDate as the rule's DTSTART so the day-of-month and interval
-      // are anchored correctly (e.g. every-3-months from Apr 20, not from today).
-      const dtstart = s.nextDueDate
-        ? new Date(s.nextDueDate + "T00:00:00Z")
-        : fromDate;
-      const rule = new RRule({ ...RRule.parseString(s.rrule), dtstart });
+      // Only override DTSTART when the rrule has none embedded.
+      // Rules with an explicit DTSTART (e.g. COUNT-bounded schedules) must keep
+      // their original anchor; the nextDueDate guard below handles the lower bound.
+      let rule: RRule;
+      if (s.rrule.includes("DTSTART:")) {
+        rule = RRule.fromString(s.rrule);
+      } else {
+        // Anchor to nextDueDate so the day-of-month and interval cadence are
+        // correct (e.g. every-3-months from Apr 20, not from today).
+        const dtstart = s.nextDueDate
+          ? new Date(s.nextDueDate + "T00:00:00Z")
+          : fromDate;
+        rule = new RRule({ ...RRule.parseString(s.rrule), dtstart });
+      }
       const occurrences = rule.between(fromDate, toDate, true);
       for (const d of occurrences) {
         const dateStr = [
