@@ -188,7 +188,7 @@ describe("buildForecastRows", () => {
   });
 
   it("respects nextDueDate — skips occurrences before the schedule starts", () => {
-    // Schedule starts 2026-04-20, but rrule would otherwise produce 2026-03-20
+    // Schedule starts 2026-04-20, but rrule without DTSTART would produce 2026-03-20
     const rows = buildForecastRows(
       [],
       [
@@ -208,6 +208,33 @@ describe("buildForecastRows", () => {
     expect(dates).not.toContain("2026-03-20");
     expect(dates).toContain("2026-04-20");
     expect(dates).toContain("2026-05-20");
+  });
+
+  it("anchors 3-month interval from nextDueDate, not from today", () => {
+    // FREQ=MONTHLY;INTERVAL=3 without BYMONTHDAY: day-of-month comes from DTSTART.
+    // Without the fix, DTSTART defaults to today (Mar 7) → occurrences Jun 7, Sep 7...
+    // With nextDueDate=Apr 20 as DTSTART → occurrences must be Apr 20, Jul 20...
+    const rows = buildForecastRows(
+      [],
+      [
+        sched({
+          id: 1,
+          accountId: 1,
+          rrule: "FREQ=MONTHLY;INTERVAL=3",
+          amount: -200,
+          nextDueDate: "2026-04-20",
+        }),
+      ],
+      1,
+      TODAY,
+      "2026-12-31",
+    );
+    const dates = rows.map((r) => r.date);
+    expect(dates).toContain("2026-04-20");
+    expect(dates).toContain("2026-07-20");
+    expect(dates).toContain("2026-10-20");
+    expect(dates).not.toContain("2026-06-07");
+    expect(dates).not.toContain("2026-03-07");
   });
 
   it("mirrors transfer to receiving account with positive amount", () => {

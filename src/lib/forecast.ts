@@ -65,7 +65,12 @@ export function buildForecastRows(
     // For the receiving side of a transfer, flip to a positive (incoming) amount
     const rowAmount = isDestination && !isSource ? -s.amount : s.amount;
     try {
-      const rule = RRule.fromString(s.rrule);
+      // Use nextDueDate as the rule's DTSTART so the day-of-month and interval
+      // are anchored correctly (e.g. every-3-months from Apr 20, not from today).
+      const dtstart = s.nextDueDate
+        ? new Date(s.nextDueDate + "T00:00:00Z")
+        : fromDate;
+      const rule = new RRule({ ...RRule.parseString(s.rrule), dtstart });
       const occurrences = rule.between(fromDate, toDate, true);
       for (const d of occurrences) {
         const dateStr = [
