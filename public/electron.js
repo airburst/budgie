@@ -25,8 +25,8 @@ let skipAutoBackup = false;
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1440,
+    height: 1080,
     minWidth: 960,
     minHeight: 600,
     center: true,
