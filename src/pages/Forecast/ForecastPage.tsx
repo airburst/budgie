@@ -27,7 +27,7 @@ import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { buildForecastRows } from "@/lib/forecast";
 import { formatDate } from "@/lib/utils";
-import { addMonths, format } from "date-fns";
+import { addMonths, endOfMonth, format } from "date-fns";
 import { ArrowLeftIcon, HelpCircleIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -67,7 +67,7 @@ export default function ForecastPage() {
   const navigate = useNavigate();
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const defaultEndDate = format(addMonths(new Date(), 3), "yyyy-MM-dd");
+  const defaultEndDate = format(endOfMonth(addMonths(new Date(), 3)), "yyyy-MM-dd");
 
   const [endDate, setEndDate] = useState(defaultEndDate);
   const [draftEndDate, setDraftEndDate] = useState(defaultEndDate);
@@ -169,9 +169,9 @@ export default function ForecastPage() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full overflow-y-auto pb-20">
+      <div className="flex flex-col h-full overflow-hidden">
         {/* Page header */}
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-2 shrink-0">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -191,7 +191,7 @@ export default function ForecastPage() {
         </div>
 
         {/* Chart */}
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 shrink-0">
           <ChartContainer config={chartConfig} className="h-64 w-full">
             <LineChart
               data={chartData}
@@ -262,7 +262,7 @@ export default function ForecastPage() {
         </div>
 
         {/* Transaction list */}
-        <div className="px-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-20">
           <div className="border border-border rounded-md">
             <Table>
               <TableHeader>
