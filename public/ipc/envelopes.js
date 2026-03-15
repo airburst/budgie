@@ -35,4 +35,12 @@ module.exports = function registerEnvelopesHandlers(ipcMain, db, schema) {
       .where(eq(schema.envelopes.id, id))
       .returning(),
   );
+  ipcMain.handle("envelopes:reorder", async (_, updates) => {
+    for (const { id, sortOrder } of updates) {
+      await db
+        .update(schema.envelopes)
+        .set({ sortOrder })
+        .where(eq(schema.envelopes.id, id));
+    }
+  });
 };

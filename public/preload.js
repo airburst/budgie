@@ -99,10 +99,11 @@ const api = {
   updateEnvelope: (id, data) =>
     ipcRenderer.invoke("envelopes:update", id, data),
   deleteEnvelope: (id) => ipcRenderer.invoke("envelopes:delete", id),
+  reorderEnvelopes: (updates) =>
+    ipcRenderer.invoke("envelopes:reorder", updates),
 
   // Envelope-category mappings
-  getEnvelopeCategories: () =>
-    ipcRenderer.invoke("envelope_categories:getAll"),
+  getEnvelopeCategories: () => ipcRenderer.invoke("envelope_categories:getAll"),
   getEnvelopeCategoriesByEnvelope: (envelopeId) =>
     ipcRenderer.invoke("envelope_categories:getByEnvelope", envelopeId),
   createEnvelopeCategory: (data) =>
@@ -113,8 +114,7 @@ const api = {
     ipcRenderer.invoke("envelope_categories:deleteByEnvelope", envelopeId),
 
   // Budget allocations
-  getBudgetAllocations: () =>
-    ipcRenderer.invoke("budget_allocations:getAll"),
+  getBudgetAllocations: () => ipcRenderer.invoke("budget_allocations:getAll"),
   getBudgetAllocationsByMonth: (month) =>
     ipcRenderer.invoke("budget_allocations:getByMonth", month),
   upsertBudgetAllocation: (envelopeId, month, assigned) =>

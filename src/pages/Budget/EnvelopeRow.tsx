@@ -9,10 +9,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { AlertTriangle } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { AlertTriangle, GripVertical } from "lucide-react";
 import { useRef, useState } from "react";
 
 type Props = {
+  envelopeId: number;
   name: string;
   assigned: number;
   activity: number;
@@ -30,6 +33,7 @@ function indicatorColor(pct: number): string {
 }
 
 export function EnvelopeRow({
+  envelopeId,
   name,
   assigned,
   activity,
@@ -42,6 +46,10 @@ export function EnvelopeRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(assigned));
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: envelopeId });
+  const style = { transform: CSS.Transform.toString(transform), transition };
 
   const spent = Math.abs(activity);
   const pct = assigned > 0 ? (spent / assigned) * 100 : activity < 0 ? 100 : 0;
@@ -63,9 +71,13 @@ export function EnvelopeRow({
   };
 
   return (
-    <div className="bg-card rounded-lg border p-4">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="bg-card rounded-lg border p-4"
+    >
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 min-w-[140px]">
+        <div className="flex items-center gap-2 min-w-35">
           <Tooltip>
             <TooltipTrigger className="font-medium cursor-default">
               {name}
@@ -80,7 +92,7 @@ export function EnvelopeRow({
           {editButton}
         </div>
 
-        <div className="flex items-center gap-1 min-w-[140px]">
+        <div className="flex items-center gap-1 min-w-35">
           <span className="text-muted-foreground text-xs">Assigned:</span>
           {editing ? (
             <input
@@ -110,18 +122,20 @@ export function EnvelopeRow({
         <div className="flex-1">
           <Progress value={Math.min(pct, 100)}>
             <ProgressTrack className="h-2">
-              <ProgressIndicator className={cn("h-full", indicatorColor(pct))} />
+              <ProgressIndicator
+                className={cn("h-full", indicatorColor(pct))}
+              />
             </ProgressTrack>
           </Progress>
         </div>
 
-        <div className="text-right min-w-[100px]">
+        <div className="text-right min-w-25">
           <span className="text-sm">
             £{spent.toFixed(2)} / £{assigned.toFixed(2)}
           </span>
         </div>
 
-        <div className="text-right min-w-[80px]">
+        <div className="text-right min-w-20">
           <span
             className={cn(
               "text-sm font-medium",
@@ -131,6 +145,15 @@ export function EnvelopeRow({
             £{available.toFixed(2)}
           </span>
         </div>
+
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical className="size-4" />
+        </button>
       </div>
     </div>
   );

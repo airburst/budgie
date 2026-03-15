@@ -31,5 +31,11 @@ export function useEnvelopes() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["envelopes"] }),
   });
 
-  return { envelopes, create, update, remove };
+  const reorder = useMutation({
+    mutationFn: (updates: Array<{ id: number; sortOrder: number }>) =>
+      window.api.reorderEnvelopes(updates),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["envelopes"] }),
+  });
+
+  return { envelopes, create, update, remove, reorder };
 }

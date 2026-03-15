@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useBudgetAllocations } from "@/hooks/useBudgetAllocations";
 import { useBudgetSummary } from "@/hooks/useBudgetSummary";
 import { useCategories } from "@/hooks/useCategories";
@@ -5,9 +6,22 @@ import { useEnvelopeCategories } from "@/hooks/useEnvelopeCategories";
 import { useEnvelopes } from "@/hooks/useEnvelopes";
 import { cn } from "@/lib/utils";
 import Layout from "@/pages/layout";
-import { Button } from "@/components/ui/button";
+import type { Envelope } from "@/types/electron";
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Copy } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BudgetOnboarding } from "./BudgetOnboarding";
 import { EnvelopeEditButton, EnvelopeFormDialog } from "./EnvelopeFormDialog";
 import { EnvelopeRow } from "./EnvelopeRow";
@@ -23,19 +37,37 @@ function currentMonth(): string {
 export default function BudgetPage() {
   const [month, setMonth] = useState(currentMonth);
   const summary = useBudgetSummary(month);
-  const { envelopes } = useEnvelopes();
+  const { envelopes, reorder } = useEnvelopes();
   const { upsert, quickFill } = useBudgetAllocations(month);
   const { categories } = useCategories();
   const { mappings } = useEnvelopeCategories();
 
+  const [orderedEnvelopes, setOrderedEnvelopes] =
+    useState<Envelope[]>(envelopes);
+  useEffect(() => {
+    setOrderedEnvelopes(envelopes);
+  }, [envelopes]);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
-  const envelopeMap = new Map(envelopes.map((e) => [e.id, e]));
+  const summaryMap = new Map(summary.envelopes.map((e) => [e.envelopeId, e]));
 
   const prevMonthStr = (() => {
     const parts = month.split("-").map(Number);
     const d = new Date(parts[0]!, parts[1]! - 2, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   })();
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = orderedEnvelopes.findIndex((e) => e.id === active.id);
+    const newIndex = orderedEnvelopes.findIndex((e) => e.id === over.id);
+    const newItems = arrayMove(orderedEnvelopes, oldIndex, newIndex);
+    setOrderedEnvelopes(newItems);
+    reorder.mutate(newItems.map((e, idx) => ({ id: e.id, sortOrder: idx })));
+  };
 
   return (
     <Layout>
@@ -83,45 +115,53 @@ export default function BudgetPage() {
         </div>
 
         {envelopes.length === 0 ? (
-          <BudgetOnboarding
-            categories={categories}
-            allMappings={mappings}
-          />
+          <BudgetOnboarding categories={categories} allMappings={mappings} />
         ) : (
-          <div className="flex flex-col gap-2">
-            {summary.envelopes.map((env) => {
-              const catNames = env.categoryIds
-                .map((id) => categoryMap.get(id)?.name)
-                .filter(Boolean) as string[];
-              const envelope = envelopeMap.get(env.envelopeId);
-              return (
-                <EnvelopeRow
-                  key={env.envelopeId}
-                  name={env.name}
-                  assigned={env.assigned}
-                  activity={env.activity}
-                  available={env.available}
-                  underfunded={env.underfunded}
-                  categoryNames={catNames}
-                  onAssignedChange={(value) =>
-                    upsert.mutate({
-                      envelopeId: env.envelopeId,
-                      assigned: value,
-                    })
-                  }
-                  editButton={
-                    envelope ? (
-                      <EnvelopeEditButton
-                        envelope={envelope}
-                        categories={categories}
-                        allMappings={mappings}
-                      />
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={orderedEnvelopes.map((e) => e.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col gap-2">
+                {orderedEnvelopes.map((envelope) => {
+                  const env = summaryMap.get(envelope.id);
+                  if (!env) return null;
+                  const catNames = env.categoryIds
+                    .map((id) => categoryMap.get(id)?.name)
+                    .filter(Boolean) as string[];
+                  return (
+                    <EnvelopeRow
+                      key={envelope.id}
+                      envelopeId={envelope.id}
+                      name={env.name}
+                      assigned={env.assigned}
+                      activity={env.activity}
+                      available={env.available}
+                      underfunded={env.underfunded}
+                      categoryNames={catNames}
+                      onAssignedChange={(value) =>
+                        upsert.mutate({
+                          envelopeId: env.envelopeId,
+                          assigned: value,
+                        })
+                      }
+                      editButton={
+                        <EnvelopeEditButton
+                          envelope={envelope}
+                          categories={categories}
+                          allMappings={mappings}
+                        />
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         {envelopes.length > 0 && (

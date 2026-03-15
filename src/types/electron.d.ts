@@ -178,6 +178,9 @@ interface ElectronAPI {
     data: Partial<Omit<Envelope, "id" | "createdAt">>,
   ) => Promise<Envelope[]>;
   deleteEnvelope: (id: number) => Promise<Envelope[]>;
+  reorderEnvelopes: (
+    updates: Array<{ id: number; sortOrder: number }>,
+  ) => Promise<void>;
 
   // Envelope-category mappings
   getEnvelopeCategories: () => Promise<EnvelopeCategory[]>;
