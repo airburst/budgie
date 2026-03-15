@@ -31,6 +31,7 @@
   --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.45rem;
   --sidebar: oklch(0.986 0.002 67.8);
+  /* --sidebar: oklch(92.9% 0.013 255.508);  tapue-50 -> slate-200 */
   --sidebar-foreground: oklch(0.147 0.004 49.3);
   --sidebar-primary: oklch(0.546 0.245 262.881);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
