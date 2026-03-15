@@ -231,7 +231,10 @@ export function TransactionForm({
                 min="0"
                 placeholder="0.00"
                 value={form.withdrawal}
-                onChange={(e) => set("withdrawal", e.target.value)}
+                onChange={(e) => {
+                  set("withdrawal", e.target.value);
+                  if (e.target.value) set("deposit", "");
+                }}
                 onBlur={(e) => {
                   const val = parseFloat(e.target.value);
                   if (!isNaN(val)) set("withdrawal", val.toFixed(2));
@@ -249,7 +252,10 @@ export function TransactionForm({
                 min="0"
                 placeholder="0.00"
                 value={form.deposit}
-                onChange={(e) => set("deposit", e.target.value)}
+                onChange={(e) => {
+                  set("deposit", e.target.value);
+                  if (e.target.value) set("withdrawal", "");
+                }}
                 onBlur={(e) => {
                   const val = parseFloat(e.target.value);
                   if (!isNaN(val)) set("deposit", val.toFixed(2));
