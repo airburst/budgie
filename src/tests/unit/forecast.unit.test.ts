@@ -28,6 +28,8 @@ function sched(
     active: true,
     categoryId: null,
     notes: null,
+    nextDueDate: null,
+    transferToAccountId: null,
     ...overrides,
   };
 }
@@ -183,5 +185,72 @@ describe("buildForecastRows", () => {
         END_3M,
       ),
     ).not.toThrow();
+  });
+
+  it("respects nextDueDate — skips occurrences before the schedule starts", () => {
+    // Schedule starts 2026-04-20, but rrule would otherwise produce 2026-03-20
+    const rows = buildForecastRows(
+      [],
+      [
+        sched({
+          id: 1,
+          accountId: 1,
+          rrule: "FREQ=MONTHLY;BYMONTHDAY=20",
+          amount: -100,
+          nextDueDate: "2026-04-20",
+        }),
+      ],
+      1,
+      TODAY,
+      END_3M,
+    );
+    const dates = rows.map((r) => r.date);
+    expect(dates).not.toContain("2026-03-20");
+    expect(dates).toContain("2026-04-20");
+    expect(dates).toContain("2026-05-20");
+  });
+
+  it("mirrors transfer to receiving account with positive amount", () => {
+    // Account 2 is the transfer destination
+    const rows = buildForecastRows(
+      [],
+      [
+        sched({
+          id: 1,
+          accountId: 1, // source
+          transferToAccountId: 2, // destination
+          rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+          amount: -500, // withdrawal from source
+          nextDueDate: "2026-04-01",
+        }),
+      ],
+      2, // forecasting for account 2 (receiving)
+      TODAY,
+      END_3M,
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r) => r.amount === 500)).toBe(true);
+    expect(rows.every((r) => r.isScheduled)).toBe(true);
+  });
+
+  it("does not include transfer source rows in receiving account", () => {
+    // Should NOT appear in source account forecast when viewing destination
+    const rows = buildForecastRows(
+      [],
+      [
+        sched({
+          id: 1,
+          accountId: 1,
+          transferToAccountId: 2,
+          rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+          amount: -500,
+          nextDueDate: "2026-04-01",
+        }),
+      ],
+      3, // unrelated account
+      TODAY,
+      END_3M,
+    );
+    expect(rows).toHaveLength(0);
   });
 });

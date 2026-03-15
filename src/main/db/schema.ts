@@ -76,6 +76,9 @@ export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   daysInAdvance: integer("days_in_advance"),
   notes: text("notes"),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
+  transferToAccountId: integer("transfer_to_account_id").references(
+    () => accounts.id,
+  ),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 

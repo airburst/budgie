@@ -39,6 +39,7 @@ function makeEmpty() {
     deposit: "",
     categoryId: "",
     accountId: "",
+    transferToAccountId: "",
     startDate: new Date().toISOString().slice(0, 10),
     recurrence: DEFAULT_RECURRENCE_CONFIG,
     autoPost: false,
@@ -53,7 +54,8 @@ export function ScheduledPaymentDialog({
   onOpenChange,
   editingId,
 }: ScheduledPaymentDialogProps) {
-  const { scheduled, accounts, create, update } = useScheduledTransactions();
+  const { scheduled, accounts, categories, create, update } =
+    useScheduledTransactions();
 
   const [form, setForm] = useState(makeEmpty);
 
@@ -68,6 +70,9 @@ export function ScheduledPaymentDialog({
         deposit: editing.amount > 0 ? editing.amount.toFixed(2) : "",
         categoryId: editing.categoryId ? String(editing.categoryId) : "",
         accountId: String(editing.accountId),
+        transferToAccountId: editing.transferToAccountId
+          ? String(editing.transferToAccountId)
+          : "",
         startDate: editing.nextDueDate ?? new Date().toISOString().slice(0, 10),
         recurrence: parseRRule(editing.rrule),
         autoPost: editing.autoPost ?? false,
@@ -107,11 +112,20 @@ export function ScheduledPaymentDialog({
       (parseFloat(form.deposit as string) || 0) -
       (parseFloat(form.withdrawal as string) || 0);
 
+    const selectedCategory = form.categoryId
+      ? categories.find((c) => c.id === parseInt(form.categoryId))
+      : null;
+    const isTransfer = selectedCategory?.expenseType === "transfer";
+
     const data: Omit<ScheduledTransaction, "id" | "createdAt"> = {
       payee: form.payee,
       amount,
       accountId: parseInt(form.accountId),
       categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+      transferToAccountId:
+        isTransfer && form.transferToAccountId
+          ? parseInt(form.transferToAccountId)
+          : null,
       rrule: rruleStr,
       nextDueDate,
       autoPost: form.autoPost,
@@ -132,6 +146,11 @@ export function ScheduledPaymentDialog({
   }
 
   const isPending = create.isPending || update.isPending;
+  const isTransferCategory =
+    form.categoryId
+      ? categories.find((c) => c.id === parseInt(form.categoryId))
+          ?.expenseType === "transfer"
+      : false;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,9 +205,48 @@ export function ScheduledPaymentDialog({
               <Label>Category</Label>
               <CategoryCombobox
                 value={form.categoryId}
-                onValueChange={(v) => set("categoryId", v)}
+                onValueChange={(v) => {
+                  set("categoryId", v);
+                  // Clear transfer destination if no longer a transfer category
+                  const cat = v
+                    ? categories.find((c) => c.id === parseInt(v))
+                    : null;
+                  if (cat?.expenseType !== "transfer") {
+                    set("transferToAccountId", "");
+                  }
+                }}
               />
             </div>
+
+            {/* Transfer destination — only visible for transfer categories */}
+            {isTransferCategory && (
+              <div className="flex flex-col gap-1.5">
+                <Label>Transfer to account</Label>
+                <Select
+                  value={form.transferToAccountId}
+                  onValueChange={(v) => set("transferToAccountId", v ?? "")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select destination account">
+                      {(v: string | null) =>
+                        v
+                          ? accounts.find((a) => a.id === Number(v))?.name
+                          : undefined
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter((a) => String(a.id) !== form.accountId)
+                      .map((a) => (
+                        <SelectItem key={a.id} value={String(a.id)}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Row 3: Withdrawal | Deposit */}
             <div className="grid grid-cols-2 gap-3">

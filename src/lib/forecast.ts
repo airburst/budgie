@@ -22,8 +22,10 @@ export type ForecastTransaction = {
 export type ForecastScheduled = {
   id: number;
   accountId: number;
+  transferToAccountId: number | null;
   active: number | boolean;
   rrule: string;
+  nextDueDate: string | null;
   payee: string;
   amount: number;
   categoryId: number | null;
@@ -55,7 +57,13 @@ export function buildForecastRows(
   const toDate = new Date(endDate + "T23:59:59Z");
 
   for (const s of scheduled) {
-    if (!s.active || s.accountId !== accountId) continue;
+    if (!s.active) continue;
+    const isSource = s.accountId === accountId;
+    const isDestination =
+      s.transferToAccountId != null && s.transferToAccountId === accountId;
+    if (!isSource && !isDestination) continue;
+    // For the receiving side of a transfer, flip to a positive (incoming) amount
+    const rowAmount = isDestination && !isSource ? -s.amount : s.amount;
     try {
       const rule = RRule.fromString(s.rrule);
       const occurrences = rule.between(fromDate, toDate, true);
@@ -66,11 +74,13 @@ export function buildForecastRows(
           String(d.getUTCDate()).padStart(2, "0"),
         ].join("-");
         if (dateStr <= today) continue;
+        // Respect the schedule's start date — skip occurrences before nextDueDate
+        if (s.nextDueDate && dateStr < s.nextDueDate) continue;
         scheduledRows.push({
-          key: `sched-${s.id}-${dateStr}`,
+          key: `sched-${s.id}-${dateStr}${isDestination && !isSource ? "-in" : ""}`,
           date: dateStr,
           payee: s.payee,
-          amount: s.amount,
+          amount: rowAmount,
           categoryId: s.categoryId,
           notes: s.notes,
           isScheduled: true,
