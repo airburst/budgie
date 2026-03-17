@@ -146,6 +146,42 @@ bun run vite build --config vite.main.config.ts
 
 ---
 
+## Changesets (Versioning & Changelog)
+
+This project uses [changesets](https://github.com/changesets/changesets) for version management.
+**Every PR or push to main that includes user-facing changes MUST include a changeset.**
+
+### Adding a changeset
+
+Run `bunx changeset` and follow the prompts — pick `patch`, `minor`, or `major` and write a
+short summary of the change. This creates a markdown file in `.changeset/`.
+
+- **patch** — bug fixes, cosmetic tweaks
+- **minor** — new features, non-breaking enhancements
+- **major** — breaking changes
+
+### Before release
+
+```
+bun run version        # consumes changesets, bumps package.json, appends CHANGELOG.md
+```
+
+### Rules for agents
+
+- If your work changes any user-facing behavior, **add a changeset before finishing**.
+  Run `bunx changeset` interactively, or create a `.changeset/<short-name>.md` file directly:
+  ```md
+  ---
+  "budgie": patch
+  ---
+
+  Short description of the change
+  ```
+- Do **not** run `bun run version` — the maintainer does this at release time.
+- Do **not** skip the changeset even if the change seems small. When in doubt, add one.
+
+---
+
 ## UI Components
 
 All UI components must come from the shadcn component registry at **https://ui.shadcn.com/docs/components**.
