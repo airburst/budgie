@@ -6,6 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AboutDialog } from "@/pages/Settings/AboutDialog";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
 import { Settings } from "lucide-react";
@@ -23,6 +24,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [backupOpen, setBackupOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
@@ -90,6 +92,10 @@ const Header = () => {
               <DropdownMenuItem onClick={() => setRestoreOpen(true)}>
                 Restore...
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setAboutOpen(true)}>
+                About Budgie
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -97,6 +103,7 @@ const Header = () => {
 
       <BackupDialog open={backupOpen} onOpenChange={setBackupOpen} />
       <RestoreDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>
   );
 };

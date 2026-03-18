@@ -67,6 +67,7 @@ const eslintConfig = [
       globals: {
         ...globals.browser,
         React: "readonly",
+        __APP_VERSION__: "readonly",
       },
     },
     rules: {

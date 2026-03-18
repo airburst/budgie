@@ -1,5 +1,11 @@
 # budgie
 
+## 0.5.0
+
+### Minor Changes
+
+- Add about in settings and use/store payees in reminders form
+
 ## 0.4.0
 
 ### Minor Changes

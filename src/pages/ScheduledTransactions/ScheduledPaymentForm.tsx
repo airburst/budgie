@@ -1,4 +1,5 @@
 import { CategoryCombobox } from "@/components/CategoryCombobox";
+import { PayeeCombobox } from "@/components/PayeeCombobox";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,8 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { usePayees } from "@/hooks/usePayees";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
-import type { ScheduledTransaction } from "@/types/electron";
+import type { Payee, ScheduledTransaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 import { buildRRule, computeNextDueDate } from "./recurrence/buildRRule";
 import { parseRRule } from "./recurrence/parseRRule";
@@ -56,6 +58,7 @@ export function ScheduledPaymentDialog({
 }: ScheduledPaymentDialogProps) {
   const { scheduled, accounts, categories, create, update } =
     useScheduledTransactions();
+  const { upsert: upsertPayee } = usePayees();
 
   const [form, setForm] = useState(makeEmpty);
 
@@ -104,8 +107,32 @@ export function ScheduledPaymentDialog({
     }));
   }
 
+  function handlePayeeSelect(payee: Payee) {
+    if (payee.categoryId) {
+      set("categoryId", String(payee.categoryId));
+    }
+    if (payee.amount !== null && payee.amount !== undefined) {
+      if (payee.amount < 0) {
+        set("withdrawal", Math.abs(payee.amount).toFixed(2));
+        set("deposit", "");
+      } else if (payee.amount > 0) {
+        set("deposit", payee.amount.toFixed(2));
+        set("withdrawal", "");
+      }
+    }
+  }
+
+  function isValid() {
+    return (
+      form.payee.trim() !== "" &&
+      form.accountId !== "" &&
+      (parseFloat(form.withdrawal) > 0 || parseFloat(form.deposit) > 0)
+    );
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isValid()) return;
     const rruleStr = buildRRule(form.recurrence);
     const nextDueDate = computeNextDueDate(rruleStr, form.startDate);
     const amount =
@@ -141,6 +168,13 @@ export function ScheduledPaymentDialog({
       await update.mutateAsync({ id: editing.id, data });
     } else {
       await create.mutateAsync(data);
+    }
+    if (form.payee.trim()) {
+      upsertPayee.mutate({
+        name: form.payee.trim(),
+        categoryId: data.categoryId ?? null,
+        amount: amount !== 0 ? amount : null,
+      });
     }
     onOpenChange(false);
   }
@@ -190,12 +224,11 @@ export function ScheduledPaymentDialog({
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="sp-payee">Payee</Label>
-                <Input
-                  id="sp-payee"
-                  placeholder="e.g. Netflix, Rent..."
+                <PayeeCombobox
+                  key={`${editingId ?? "new"}-${String(open)}`}
                   value={form.payee}
-                  onChange={(e) => set("payee", e.target.value)}
-                  required
+                  onValueChange={(v) => set("payee", v)}
+                  onPayeeSelect={handlePayeeSelect}
                 />
               </div>
             </div>
@@ -345,6 +378,14 @@ export function ScheduledPaymentDialog({
               />
             </div>
           </div>
+          {/* Hidden submit button so pressing Enter in any input triggers onSubmit */}
+          <button
+            aria-label="save scheduled payment"
+            type="submit"
+            className="sr-only"
+            aria-hidden
+            tabIndex={-1}
+          />
         </form>
 
         <DialogFooter>
@@ -353,7 +394,7 @@ export function ScheduledPaymentDialog({
           </Button>
           <Button
             onClick={handleSubmit as never}
-            disabled={isPending || !form.accountId}
+            disabled={isPending || !isValid()}
           >
             {editing ? "Save Schedule" : "Add Schedule"}
           </Button>
