@@ -19,6 +19,8 @@ import { useTransactions } from "@/hooks/useTransactions";
 import type { Account, Payee, Transaction } from "@/types/electron";
 import { useEffect, useState } from "react";
 
+type FormErrors = { payee?: string; amount?: string };
+
 type TransactionSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,6 +60,7 @@ export function TransactionForm({
     account?.type === "credit_card" || account?.type === "loan";
 
   const [form, setForm] = useState(makeEmpty);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const editing = editingId
     ? transactions.find((t) => t.id === editingId)
@@ -98,6 +101,7 @@ export function TransactionForm({
       if (defaultCleared) empty.cleared = true;
       setForm(empty);
     }
+    setErrors({});
   }, [editingId, open, isAssumedNegative]);
 
   function set(field: string, value: string | boolean) {
@@ -134,7 +138,18 @@ export function TransactionForm({
     }
   }
 
+  function validate(): boolean {
+    const e: FormErrors = {};
+    if (!form.payee.trim()) e.payee = "Payee is required.";
+    const hasAmount =
+      parseFloat(form.withdrawal) > 0 || parseFloat(form.deposit) > 0;
+    if (!hasAmount) e.amount = "Enter a withdrawal or deposit amount.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
   async function save() {
+    if (!validate()) return;
     let amount: number;
     if (isAssumedNegative) {
       // For credit cards/loans: deposit is money owed (negative), withdrawal is payment (positive)
@@ -205,10 +220,16 @@ export function TransactionForm({
             <PayeeCombobox
               key={`${editingId ?? "new"}-${String(open)}`}
               value={form.payee}
-              onValueChange={(v) => set("payee", v)}
+              onValueChange={(v) => {
+                set("payee", v);
+                if (v.trim()) setErrors((e) => ({ ...e, payee: undefined }));
+              }}
               onPayeeSelect={handlePayeeSelect}
               autoFocus
             />
+            {errors.payee && (
+              <p className="text-sm text-destructive">{errors.payee}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -234,6 +255,8 @@ export function TransactionForm({
                 onChange={(e) => {
                   set("withdrawal", e.target.value);
                   if (e.target.value) set("deposit", "");
+                  if (parseFloat(e.target.value) > 0)
+                    setErrors((err) => ({ ...err, amount: undefined }));
                 }}
                 onBlur={(e) => {
                   const val = parseFloat(e.target.value);
@@ -255,6 +278,8 @@ export function TransactionForm({
                 onChange={(e) => {
                   set("deposit", e.target.value);
                   if (e.target.value) set("withdrawal", "");
+                  if (parseFloat(e.target.value) > 0)
+                    setErrors((err) => ({ ...err, amount: undefined }));
                 }}
                 onBlur={(e) => {
                   const val = parseFloat(e.target.value);
@@ -263,6 +288,9 @@ export function TransactionForm({
               />
             </div>
           </div>
+          {errors.amount && (
+            <p className="-mt-2 text-sm text-destructive">{errors.amount}</p>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tx-notes">Notes</Label>
@@ -285,6 +313,14 @@ export function TransactionForm({
             />
             <Label htmlFor="tx-cleared">Cleared</Label>
           </div>
+          {/* Hidden submit button so pressing Enter in any input triggers onSubmit */}
+          <button
+            aria-label="save transaction"
+            type="submit"
+            className="sr-only"
+            aria-hidden
+            tabIndex={-1}
+          />
         </form>
 
         <DialogFooter>

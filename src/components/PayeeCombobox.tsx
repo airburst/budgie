@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/combobox";
 import { usePayees } from "@/hooks/usePayees";
 import type { Payee } from "@/types/electron";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 type PayeeComboboxProps = {
   value: string;
@@ -27,6 +27,8 @@ export function PayeeCombobox({
   // Track whether the input is focused so we can ignore Base UI's blur-reset
   // (which internally fires onInputValueChange("") when no item is selected)
   const focusedRef = useRef(false);
+  // Track whether the dropdown popup is open
+  const [popupOpen, setPopupOpen] = useState(false);
 
   const selected = payees.find((p) => p.name === value) ?? null;
 
@@ -58,6 +60,13 @@ export function PayeeCombobox({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key !== "Tab" && e.key !== "Enter") return;
+    // When the dropdown is open, let Base UI handle item selection.
+    // Prevent Enter from also submitting the form while the combobox is active.
+    if (popupOpen) {
+      if (e.key === "Enter") e.preventDefault();
+      return;
+    }
+    // Popup is closed: apply inline prefix-completion if there's a match
     const match = firstMatch();
     if (!match) return;
     // Tab: complete and let focus move naturally to the next field
@@ -75,6 +84,7 @@ export function PayeeCombobox({
       itemToStringLabel={(p: Payee) => p.name}
       onValueChange={(p) => handleValueChange(p as Payee | null)}
       onInputValueChange={handleInputChange}
+      onOpenChange={setPopupOpen}
     >
       <ComboboxInput
         placeholder="e.g. Starbucks, Amazon..."

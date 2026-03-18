@@ -46,8 +46,7 @@ export default function ReconcilePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const eligibleTransactions = useMemo(
-    () =>
-      transactions.filter((t) => !t.reconciled && t.date <= statementDate),
+    () => transactions.filter((t) => !t.reconciled && t.date <= statementDate),
     [transactions, statementDate],
   );
 
@@ -145,6 +144,7 @@ export default function ReconcilePage() {
 
   useHotkeys(
     [
+      { key: "n", handler: () => openAdd() },
       { key: "Escape", handler: () => navigate(`/accounts/${accountId}`) },
       ...(isBalanced && !reconcile.isPending
         ? [{ key: "Enter", handler: () => handleFinish() }]

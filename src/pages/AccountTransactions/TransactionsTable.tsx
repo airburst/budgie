@@ -46,7 +46,7 @@ export function TransactionsTable({
   );
 
   const today = new Date().toISOString().slice(0, 10);
-  const futureBoundaryIndex = transactions.findIndex((tx) => tx.date >= today);
+  const futureBoundaryIndex = transactions.findIndex((tx) => tx.date > today);
 
   const headers = (
     <TableRow className="hover:bg-transparent">
