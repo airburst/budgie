@@ -249,7 +249,7 @@ export default function ReconcilePage() {
                     return (
                       <TableRow
                         key={tx.id}
-                        className="cursor-pointer"
+                        className={`cursor-pointer${checked ? " bg-primary/25" : ""}`}
                         onClick={() => toggleChecked(tx.id)}
                       >
                         <TableCell className="text-center">
