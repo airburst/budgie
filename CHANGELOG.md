@@ -1,5 +1,11 @@
 # budgie
 
+## 0.8.0
+
+### Minor Changes
+
+- Auto-update: check for new versions on launch, notify via toast, backup and restart to install
+
 ## 0.7.0
 
 ### Minor Changes

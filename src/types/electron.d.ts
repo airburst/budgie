@@ -209,6 +209,10 @@ interface ElectronAPI {
   ) => Promise<BudgetAllocation[]>;
   deleteBudgetAllocation: (id: number) => Promise<void>;
 
+  // Auto-update
+  onUpdateDownloaded: (callback: (version: string) => void) => void;
+  restartToUpdate: () => void;
+
   // Budget transfers
   getBudgetTransfers: () => Promise<BudgetTransfer[]>;
   getBudgetTransfersByMonth: (month: string) => Promise<BudgetTransfer[]>;

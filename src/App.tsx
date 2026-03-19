@@ -1,8 +1,10 @@
 import RouterContent from "@/components/RouterContent";
+import { Toaster } from "@/components/ui/sonner";
 import { usePreferences } from "@/hooks/usePreferences";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { HashRouter } from "react-router";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,13 +38,30 @@ function ThemeApplier() {
   return null;
 }
 
+function UpdateListener() {
+  useEffect(() => {
+    window.api.onUpdateDownloaded((version) => {
+      toast.info(`Version ${version} available`, {
+        duration: Infinity,
+        action: {
+          label: "Restart",
+          onClick: () => window.api.restartToUpdate(),
+        },
+      });
+    });
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <HashRouter>
         <ThemeApplier />
+        <UpdateListener />
         <RouterContent />
       </HashRouter>
+      <Toaster position="bottom-right" />
     </QueryClientProvider>
   );
 }

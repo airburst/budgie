@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run electron-rebuild -f -w better-sqlite3
+      - run: bunx vite build
+      - run: bunx vite build --config vite.main.config.ts
+      - run: bunx electron-builder --mac --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run electron-rebuild -f -w better-sqlite3
+      - run: bunx vite build
+      - run: bunx vite build --config vite.main.config.ts
+      - run: bunx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # build-linux:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: oven-sh/setup-bun@v2
+  #     - run: bun install
+  #     - run: bun run electron-rebuild -f -w better-sqlite3
+  #     - run: bunx vite build
+  #     - run: bunx vite build --config vite.main.config.ts
+  #     - run: bunx electron-builder --linux --publish always
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

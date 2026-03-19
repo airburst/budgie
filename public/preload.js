@@ -133,6 +133,12 @@ const api = {
   deleteBudgetAllocation: (id) =>
     ipcRenderer.invoke("budget_allocations:delete", id),
 
+  // Auto-update
+  onUpdateDownloaded: (callback) => {
+    ipcRenderer.on("update-downloaded", (_, version) => callback(version));
+  },
+  restartToUpdate: () => ipcRenderer.send("restart-to-update"),
+
   // Budget transfers
   getBudgetTransfers: () => ipcRenderer.invoke("budget_transfers:getAll"),
   getBudgetTransfersByMonth: (month) =>

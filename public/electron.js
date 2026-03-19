@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, session, dialog } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 const { setupDatabase, schema } = require("./db");
@@ -159,6 +160,40 @@ app.whenReady().then(async () => {
       console.error("Auto-backup failed:", e);
     }
     app.quit();
+  });
+
+  // Auto-update (production only)
+  if (!isDev) {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.checkForUpdates();
+
+    autoUpdater.on("update-downloaded", (info) => {
+      mainWindow?.webContents.send("update-downloaded", info.version);
+    });
+  }
+
+  ipcMain.on("restart-to-update", async () => {
+    // Backup before installing update
+    try {
+      let backupFolder = DEFAULT_BACKUP_FOLDER;
+      try {
+        const row = sqlite
+          .prepare("SELECT preferences FROM settings WHERE id = 1")
+          .get();
+        if (row) {
+          const prefs = JSON.parse(row.preferences || "{}");
+          if (prefs.backupFolder) backupFolder = prefs.backupFolder;
+        }
+      } catch {
+        // use default folder
+      }
+      await createBackupDirect(sqlite, backupFolder);
+    } catch (e) {
+      console.error("Pre-update backup failed:", e);
+    }
+    skipAutoBackup = true;
+    autoUpdater.quitAndInstall();
   });
 
   createWindow();
