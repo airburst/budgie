@@ -1,5 +1,12 @@
 # budgie
 
+## 0.6.0
+
+### Minor Changes
+
+- Add theme (light/dark/auto) settings
+- Add startup page settings
+
 ## 0.5.0
 
 ### Minor Changes

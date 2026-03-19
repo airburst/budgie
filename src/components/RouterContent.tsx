@@ -1,5 +1,6 @@
+import { usePreferences } from "@/hooks/usePreferences";
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { Route, Routes, useLocation } from "react-router";
+import { Route, Routes, useLocation, useNavigate } from "react-router";
 
 const AccountTransactions = lazy(
   () => import("@/pages/AccountTransactions/AccountTransactions"),
@@ -15,6 +16,26 @@ const ScheduledTransactions = lazy(
   () => import("@/pages/ScheduledTransactions/ScheduledTransactions"),
 );
 const SettingsPage = lazy(() => import("@/pages/Settings/SettingsPage"));
+
+function StartupNavigator() {
+  const { preferences } = usePreferences();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const navigated = useRef(false);
+
+  useEffect(() => {
+    if (
+      !navigated.current &&
+      preferences.startupPage &&
+      location.pathname === "/"
+    ) {
+      navigated.current = true;
+      navigate(preferences.startupPage, { replace: true });
+    }
+  }, [preferences.startupPage, location.pathname, navigate]);
+
+  return null;
+}
 
 function RouterContent() {
   const location = useLocation();
@@ -38,6 +59,7 @@ function RouterContent() {
 
   return (
     <Suspense>
+      <StartupNavigator />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/accounts/:id" element={<AccountTransactions />} />
@@ -55,4 +77,3 @@ function RouterContent() {
 }
 
 export default RouterContent;
-

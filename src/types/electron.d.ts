@@ -40,6 +40,8 @@ export type Preferences = {
   backupFolder?: string;
   backupRetentionDays?: number;
   autofillPayees: boolean;
+  theme?: "light" | "dark" | "auto";
+  startupPage?: string;
 };
 
 export type BackupInfo = {

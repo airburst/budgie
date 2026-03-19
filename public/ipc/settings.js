@@ -39,12 +39,13 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           sql`COALESCE(json_extract(${schema.settings.preferences}, '$.autofillPayees'), 1)`.mapWith(
             Boolean,
           ),
-        backupFolder:
-          sql`json_extract(${schema.settings.preferences}, '$.backupFolder')`,
+        backupFolder: sql`json_extract(${schema.settings.preferences}, '$.backupFolder')`,
         backupRetentionDays:
           sql`json_extract(${schema.settings.preferences}, '$.backupRetentionDays')`.mapWith(
             Number,
           ),
+        theme: sql`json_extract(${schema.settings.preferences}, '$.theme')`,
+        startupPage: sql`json_extract(${schema.settings.preferences}, '$.startupPage')`,
       })
       .from(schema.settings)
       .where(eq(schema.settings.id, 1))
@@ -55,11 +56,15 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           autofillPayees: true,
           backupFolder: undefined,
           backupRetentionDays: undefined,
+          theme: undefined,
+          startupPage: undefined,
         };
         // json_extract returns null for missing keys — convert to undefined
         if (row.backupFolder === null) row.backupFolder = undefined;
         if (row.backupRetentionDays === null || isNaN(row.backupRetentionDays))
           row.backupRetentionDays = undefined;
+        if (row.theme === null) row.theme = undefined;
+        if (row.startupPage === null) row.startupPage = undefined;
         return row;
       }),
   );
