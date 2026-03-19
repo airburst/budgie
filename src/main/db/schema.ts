@@ -16,6 +16,8 @@ export const accounts = sqliteTable("accounts", {
   creditLimit: real("credit_limit"),
   deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+  pendingReconcileBalance: real("pending_reconcile_balance"),
+  pendingReconcileDate: text("pending_reconcile_date"),
 });
 
 export const categories = sqliteTable("categories", {

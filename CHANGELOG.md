@@ -1,5 +1,11 @@
 # budgie
 
+## 0.7.0
+
+### Minor Changes
+
+- Reconciliation sessions now persist across interruptions: cleared checkboxes are written to the database immediately on each toggle (so navigating away and back preserves progress), and the statement date/balance entered in the dialog are saved to the account so they are pre-filled when you re-open it. The pending target is cleared once reconciliation is finished and balanced.
+
 ## 0.6.0
 
 ### Minor Changes

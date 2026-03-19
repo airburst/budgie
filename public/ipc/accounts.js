@@ -14,6 +14,8 @@ function withBalances(db, schema) {
       creditLimit: schema.accounts.creditLimit,
       deleted: schema.accounts.deleted,
       createdAt: schema.accounts.createdAt,
+      pendingReconcileBalance: schema.accounts.pendingReconcileBalance,
+      pendingReconcileDate: schema.accounts.pendingReconcileDate,
       computedBalance: sql`COALESCE(
         ${schema.accounts.balance} + SUM(${schema.transactions.amount}),
         ${schema.accounts.balance}

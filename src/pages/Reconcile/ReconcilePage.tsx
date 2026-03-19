@@ -37,9 +37,6 @@ export default function ReconcilePage() {
   const { transactions, categories, reconcile } = useTransactions(accountId);
 
   const [checkedIds, setCheckedIds] = useState<Set<number>>(new Set());
-  const [originallyCleared, setOriginallyCleared] = useState<Set<number>>(
-    new Set(),
-  );
   const initialized = useRef(false);
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -61,7 +58,6 @@ export default function ReconcilePage() {
         eligibleTransactions.filter((t) => t.cleared).map((t) => t.id),
       );
       setCheckedIds(cleared);
-      setOriginallyCleared(cleared);
       knownIds.current = new Set(eligibleTransactions.map((t) => t.id));
       initialized.current = true;
     } else {
@@ -106,12 +102,15 @@ export default function ReconcilePage() {
   }
 
   function toggleChecked(txId: number) {
+    const nowChecked = !checkedIds.has(txId);
     setCheckedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(txId)) next.delete(txId);
-      else next.add(txId);
+      if (nowChecked) next.add(txId);
+      else next.delete(txId);
       return next;
     });
+    // Persist cleared state immediately so it survives navigation away and back
+    window.api.updateTransaction(txId, { cleared: nowChecked });
   }
 
   function openAdd() {
@@ -126,18 +125,19 @@ export default function ReconcilePage() {
 
   async function handleFinish() {
     if (!isBalanced) return;
-    const toUnclear = [...originallyCleared].filter(
-      (txId) => !checkedIds.has(txId),
-    );
     await reconcile.mutateAsync({
       toReconcile: [...checkedIds],
-      toUnclear,
+      toUnclear: [],
       checkpoint: {
         accountId,
         date: statementDate,
         balance: statementBalance,
         notes: null,
       },
+    });
+    await window.api.updateAccount(accountId, {
+      pendingReconcileBalance: null,
+      pendingReconcileDate: null,
     });
     navigate(`/accounts/${accountId}`);
   }
@@ -216,7 +216,6 @@ export default function ReconcilePage() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-center bg-accent w-10" />
                   <TableHead className="bg-accent">Date</TableHead>
                   <TableHead className="bg-accent">Payee</TableHead>
                   <TableHead className="text-right bg-accent">
@@ -227,6 +226,7 @@ export default function ReconcilePage() {
                   </TableHead>
                   <TableHead className="bg-accent">Category</TableHead>
                   <TableHead className="bg-accent">Notes</TableHead>
+                  <TableHead className="text-center bg-accent w-10" />
                   <TableHead className="bg-accent" />
                 </TableRow>
               </TableHeader>
@@ -252,15 +252,6 @@ export default function ReconcilePage() {
                         className={`cursor-pointer${checked ? " bg-primary/25" : ""}`}
                         onClick={() => toggleChecked(tx.id)}
                       >
-                        <TableCell className="text-center">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleChecked(tx.id)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="cursor-pointer accent-blue-500 size-4"
-                          />
-                        </TableCell>
                         <TableCell>{formatDate(tx.date)}</TableCell>
                         <TableCell>{tx.payee}</TableCell>
                         <TableCell className="text-right">
@@ -280,6 +271,15 @@ export default function ReconcilePage() {
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
                           {tx.notes ?? ""}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleChecked(tx.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="cursor-pointer accent-blue-500 size-4"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

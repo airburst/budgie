@@ -31,23 +31,35 @@ export function ReconciliationDialog({
 }: ReconciliationDialogProps) {
   const navigate = useNavigate();
 
+  const hasPendingSession =
+    account.pendingReconcileBalance !== null &&
+    account.pendingReconcileBalance !== undefined;
+
   const [statementDate, setStatementDate] = useState(
-    () => new Date().toISOString().slice(0, 10),
+    () => account.pendingReconcileDate ?? new Date().toISOString().slice(0, 10),
   );
-  const [statementBalanceStr, setStatementBalanceStr] = useState("");
+  const [statementBalanceStr, setStatementBalanceStr] = useState(
+    () => account.pendingReconcileBalance?.toString() ?? "",
+  );
 
   const parsedBalance = parseFloat(statementBalanceStr);
   const hasValidBalance = statementBalanceStr !== "" && !isNaN(parsedBalance);
   const canAdvance = !!statementDate && hasValidBalance;
 
   function handleClose() {
-    setStatementDate(new Date().toISOString().slice(0, 10));
-    setStatementBalanceStr("");
+    setStatementDate(
+      account.pendingReconcileDate ?? new Date().toISOString().slice(0, 10),
+    );
+    setStatementBalanceStr(account.pendingReconcileBalance?.toString() ?? "");
     onOpenChange(false);
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (!canAdvance) return;
+    await window.api.updateAccount(account.id, {
+      pendingReconcileBalance: parsedBalance,
+      pendingReconcileDate: statementDate,
+    });
     onOpenChange(false);
     navigate(
       `/reconcile/${account.id}?date=${statementDate}&balance=${parsedBalance}`,
@@ -68,6 +80,12 @@ export function ReconciliationDialog({
           }}
         >
           <div className="flex flex-col gap-4">
+            {hasPendingSession && (
+              <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+                Continuing a previous session. Update the values below if
+                needed.
+              </div>
+            )}
             {account.lastReconcileDate && (
               <div className="text-sm text-muted-foreground">
                 Last reconciled:{" "}
@@ -94,7 +112,7 @@ export function ReconciliationDialog({
                 placeholder="0.00"
                 value={statementBalanceStr}
                 onChange={(e) => setStatementBalanceStr(e.target.value)}
-                autoFocus
+                autoFocus={!hasPendingSession}
               />
             </div>
           </div>

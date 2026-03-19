@@ -85,6 +85,13 @@
       "when": 1773600000000,
       "tag": "0011_scheduled_transfer_account",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1773686400000,
+      "tag": "0012_accounts_pending_reconcile",
+      "breakpoints": true
     }
   ]
 }
