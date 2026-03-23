@@ -127,3 +127,171 @@ describe("transactions IPC", () => {
     expect(map.get(lastTx.id)).toBeCloseTo(running, 2);
   });
 });
+
+describe("transfer category change on update", () => {
+  const { db, schema, teardown } = createTestDb();
+  const { ipcMain, invoke } = createMockIpc();
+  registerAllHandlers(ipcMain, db, schema);
+
+  afterAll(() => teardown());
+
+  let accountAId: number;
+  let accountBId: number;
+  let transferCategoryId: number; // Transfer > Savings Account (target = B)
+
+  it("set up two accounts", async () => {
+    const [a] = await invoke<{ id: number }[]>("accounts:create", ACCOUNT_A);
+    accountAId = a.id;
+    const [b] = await invoke<{ id: number }[]>("accounts:create", ACCOUNT_B);
+    accountBId = b.id;
+
+    // Find the Transfer > Savings Account sub-category (created when account B is added)
+    const cats =
+      await invoke<{ id: number; name: string; parentId: number | null }[]>(
+        "categories:getAll",
+      );
+    const tc = cats.find(
+      (c) => c.name === ACCOUNT_B.name && c.parentId !== null,
+    );
+    expect(tc).toBeDefined();
+    transferCategoryId = tc!.id;
+  });
+
+  it("updating a past transaction's category to a transfer creates a mirror in the target account", async () => {
+    // Create a plain transaction in account A (no category / not a transfer)
+    const [tx] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:create", {
+      accountId: accountAId,
+      date: "2026-01-15",
+      payee: "Old Expense",
+      amount: -200,
+      cleared: true,
+      notes: null,
+    });
+    expect(tx.transferTransactionId).toBeNull();
+
+    // Change the category to a transfer sub-category
+    const [updated] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:update", tx.id, { categoryId: transferCategoryId });
+
+    expect(updated.transferTransactionId).not.toBeNull();
+
+    // A mirror transaction should now appear in account B
+    const txnsB = await invoke<
+      {
+        id: number;
+        accountId: number;
+        amount: number;
+        transferTransactionId: number | null;
+      }[]
+    >("transactions:getByAccount", accountBId);
+
+    const mirror = txnsB.find((t) => t.transferTransactionId === updated.id);
+    expect(mirror).toBeDefined();
+    expect(mirror!.accountId).toBe(accountBId);
+    expect(mirror!.amount).toBeCloseTo(200, 2); // negated
+    expect(updated.transferTransactionId).toBe(mirror!.id);
+  });
+
+  it("updating a transfer transaction's category to a different transfer moves the mirror", async () => {
+    // Create a third account so we can switch the transfer destination
+    const accountC = {
+      name: "Third Account",
+      type: "bank" as const,
+      balance: 0,
+    };
+    const [c] = await invoke<{ id: number }[]>("accounts:create", accountC);
+    const accountCId = c.id;
+
+    // Find Transfer > Third Account sub-category
+    const cats =
+      await invoke<{ id: number; name: string; parentId: number | null }[]>(
+        "categories:getAll",
+      );
+    const tcC = cats.find(
+      (cat) => cat.name === accountC.name && cat.parentId !== null,
+    );
+    expect(tcC).toBeDefined();
+    const transferToCId = tcC!.id;
+
+    // Create a transfer transaction from A → B
+    const [tx] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:create", {
+      accountId: accountAId,
+      categoryId: transferCategoryId,
+      date: "2026-02-01",
+      payee: "Transfer",
+      amount: -100,
+      cleared: false,
+      notes: null,
+    });
+    expect(tx.transferTransactionId).not.toBeNull();
+    const oldMirrorId = tx.transferTransactionId!;
+
+    // Switch the transfer destination to account C
+    const [updated] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:update", tx.id, { categoryId: transferToCId });
+
+    // Old mirror in B should be gone
+    const txnsB = await invoke<{ id: number }[]>(
+      "transactions:getByAccount",
+      accountBId,
+    );
+    expect(txnsB.find((t) => t.id === oldMirrorId)).toBeUndefined();
+
+    // New mirror should exist in C
+    const txnsC = await invoke<
+      { id: number; accountId: number; transferTransactionId: number | null }[]
+    >("transactions:getByAccount", accountCId);
+    const newMirror = txnsC.find((t) => t.transferTransactionId === updated.id);
+    expect(newMirror).toBeDefined();
+    expect(updated.transferTransactionId).toBe(newMirror!.id);
+  });
+
+  it("updating a transfer transaction's category to a non-transfer removes the mirror", async () => {
+    // Find a non-transfer category
+    const cats =
+      await invoke<
+        {
+          id: number;
+          name: string;
+          expenseType: string;
+          parentId: number | null;
+        }[]
+      >("categories:getAll");
+    const expenseCat = cats.find(
+      (c) => c.expenseType === "expense" && c.parentId !== null,
+    );
+    expect(expenseCat).toBeDefined();
+
+    // Create a transfer transaction from A → B
+    const [tx] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:create", {
+      accountId: accountAId,
+      categoryId: transferCategoryId,
+      date: "2026-02-10",
+      payee: "Transfer To Remove",
+      amount: -50,
+      cleared: false,
+      notes: null,
+    });
+    expect(tx.transferTransactionId).not.toBeNull();
+    const mirrorId = tx.transferTransactionId!;
+
+    // Change category to a regular expense
+    const [updated] = await invoke<
+      { id: number; transferTransactionId: number | null }[]
+    >("transactions:update", tx.id, { categoryId: expenseCat!.id });
+
+    expect(updated.transferTransactionId).toBeNull();
+
+    // Mirror should no longer exist
+    const mirror = await invoke<unknown>("transactions:getById", mirrorId);
+    expect(mirror).toBeNull();
+  });
+});

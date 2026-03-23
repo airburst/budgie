@@ -62,8 +62,16 @@ export function PayeeCombobox({
     if (e.key !== "Tab" && e.key !== "Enter") return;
     // When the dropdown is open, let Base UI handle item selection.
     // Prevent Enter from also submitting the form while the combobox is active.
+    // Tab: select the first match and let focus move naturally to the next field.
     if (popupOpen) {
       if (e.key === "Enter") e.preventDefault();
+      if (e.key === "Tab") {
+        const match = firstMatch();
+        if (match) {
+          onValueChange(match.name);
+          onPayeeSelect(match);
+        }
+      }
       return;
     }
     // Popup is closed: apply inline prefix-completion if there's a match

@@ -117,6 +117,9 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
   });
 
   ipcMain.handle("transactions:update", async (_, id, data) => {
+    // Strip transferTransactionId — managed internally.
+    const { transferTransactionId: _ignored, ...updateData } = data;
+
     const existing = await db
       .select()
       .from(schema.transactions)
@@ -129,18 +132,153 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
       );
     }
 
+    const categoryIsChanging =
+      updateData.categoryId !== undefined &&
+      updateData.categoryId !== existing.categoryId;
+
+    // Look up the new category when it's changing.
+    let newCategory = null;
+    if (categoryIsChanging && updateData.categoryId) {
+      newCategory = await db
+        .select()
+        .from(schema.categories)
+        .where(eq(schema.categories.id, updateData.categoryId))
+        .then((r) => r[0] ?? null);
+    }
+
+    const isNowTransfer =
+      newCategory &&
+      newCategory.expenseType === "transfer" &&
+      newCategory.parentId !== null;
+
+    // Case: category is changing to a transfer sub-category.
+    if (categoryIsChanging && isNowTransfer) {
+      const [targetAccount, sourceAccount] = await Promise.all([
+        db
+          .select()
+          .from(schema.accounts)
+          .where(eq(schema.accounts.name, newCategory.name))
+          .then((r) => r[0] ?? null),
+        db
+          .select()
+          .from(schema.accounts)
+          .where(eq(schema.accounts.id, existing.accountId))
+          .then((r) => r[0] ?? null),
+      ]);
+
+      if (targetAccount && sourceAccount) {
+        const counterCategory = await db
+          .select()
+          .from(schema.categories)
+          .where(
+            and(
+              eq(schema.categories.parentId, newCategory.parentId),
+              eq(schema.categories.name, sourceAccount.name),
+            ),
+          )
+          .then((r) => r[0] ?? null);
+
+        const txDate = updateData.date ?? existing.date;
+        const txPayee = updateData.payee ?? existing.payee;
+        const txAmount = updateData.amount ?? existing.amount;
+        const txNotes =
+          updateData.notes !== undefined ? updateData.notes : existing.notes;
+        const txCleared =
+          updateData.cleared !== undefined
+            ? updateData.cleared
+            : existing.cleared;
+
+        return db.transaction(() => {
+          // Delete the old counter transaction if one exists.
+          if (existing.transferTransactionId !== null) {
+            // Clear both FK references before deleting (mirrors delete handler pattern).
+            db.update(schema.transactions)
+              .set({ transferTransactionId: null })
+              .where(eq(schema.transactions.id, existing.transferTransactionId))
+              .run();
+            db.update(schema.transactions)
+              .set({ transferTransactionId: null })
+              .where(eq(schema.transactions.id, id))
+              .run();
+            db.delete(schema.transactions)
+              .where(eq(schema.transactions.id, existing.transferTransactionId))
+              .run();
+          }
+
+          const [updated] = db
+            .update(schema.transactions)
+            .set({ ...updateData, transferTransactionId: null })
+            .where(eq(schema.transactions.id, id))
+            .returning()
+            .all();
+
+          const [counter] = db
+            .insert(schema.transactions)
+            .values({
+              accountId: targetAccount.id,
+              categoryId: counterCategory?.id ?? null,
+              date: txDate,
+              payee: txPayee,
+              amount: -txAmount,
+              notes: txNotes ?? null,
+              cleared: txCleared ?? false,
+              transferTransactionId: updated.id,
+            })
+            .returning()
+            .all();
+
+          db.update(schema.transactions)
+            .set({ transferTransactionId: counter.id })
+            .where(eq(schema.transactions.id, updated.id))
+            .run();
+
+          return [{ ...updated, transferTransactionId: counter.id }];
+        });
+      }
+    }
+
+    // Case: category is changing away from a transfer.
+    if (
+      categoryIsChanging &&
+      !isNowTransfer &&
+      existing.transferTransactionId !== null
+    ) {
+      const counterId = existing.transferTransactionId;
+      return db.transaction(() => {
+        // Clear both FK references before deleting (mirrors delete handler pattern).
+        db.update(schema.transactions)
+          .set({ transferTransactionId: null })
+          .where(eq(schema.transactions.id, counterId))
+          .run();
+        db.update(schema.transactions)
+          .set({ transferTransactionId: null })
+          .where(eq(schema.transactions.id, id))
+          .run();
+        db.delete(schema.transactions)
+          .where(eq(schema.transactions.id, counterId))
+          .run();
+        return db
+          .update(schema.transactions)
+          .set({ ...updateData, transferTransactionId: null })
+          .where(eq(schema.transactions.id, id))
+          .returning()
+          .all();
+      });
+    }
+
+    // Default: apply the update, then propagate field changes to an existing counter.
     const updated = await db
       .update(schema.transactions)
-      .set(data)
+      .set(updateData)
       .where(eq(schema.transactions.id, id))
       .returning();
 
     if (existing.transferTransactionId !== null) {
       const propagate = {};
-      if (data.amount !== undefined) propagate.amount = -data.amount;
-      if (data.date !== undefined) propagate.date = data.date;
-      if (data.payee !== undefined) propagate.payee = data.payee;
-      if (data.notes !== undefined) propagate.notes = data.notes;
+      if (updateData.amount !== undefined) propagate.amount = -updateData.amount;
+      if (updateData.date !== undefined) propagate.date = updateData.date;
+      if (updateData.payee !== undefined) propagate.payee = updateData.payee;
+      if (updateData.notes !== undefined) propagate.notes = updateData.notes;
 
       if (Object.keys(propagate).length > 0) {
         const counter = await db

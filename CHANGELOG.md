@@ -1,5 +1,13 @@
 # budgie
 
+## 0.8.1
+
+### Patch Changes
+
+- Payee combobox: pressing Tab while the dropdown is open now selects the first matching option and moves focus to the next field.
+
+- Fix: changing a transaction's category to a transfer now correctly creates a mirror transaction in the target account. Previously this only worked when creating a new transaction; editing an existing one would leave the other account untouched. Also handles changing from one transfer destination to another (moves the mirror) and changing away from a transfer (removes the mirror).
+
 ## 0.8.0
 
 ### Minor Changes
