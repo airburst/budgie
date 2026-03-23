@@ -1,6 +1,6 @@
+import type { ScheduledTransaction } from "@/types/electron";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { ScheduledTransaction } from "@/types/electron";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
 
 function makeTx(
@@ -39,8 +39,8 @@ describe("ScheduledSummaryCard", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
-            makeTx({ id: 1, amount: -200 }),
-            makeTx({ id: 2, amount: -300 }),
+            makeTx({ id: 1, amount: -200, nextDueDate: isoDateOffset(1) }),
+            makeTx({ id: 2, amount: -300, nextDueDate: isoDateOffset(3) }),
           ]}
         />,
       );
@@ -51,8 +51,8 @@ describe("ScheduledSummaryCard", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
-            makeTx({ id: 1, amount: 1000 }),
-            makeTx({ id: 2, amount: 500 }),
+            makeTx({ id: 1, amount: 1000, nextDueDate: isoDateOffset(1) }),
+            makeTx({ id: 2, amount: 500, nextDueDate: isoDateOffset(3) }),
           ]}
         />,
       );
@@ -63,8 +63,8 @@ describe("ScheduledSummaryCard", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
-            makeTx({ id: 1, amount: 2000 }),
-            makeTx({ id: 2, amount: -800 }),
+            makeTx({ id: 1, amount: 2000, nextDueDate: isoDateOffset(1) }),
+            makeTx({ id: 2, amount: -800, nextDueDate: isoDateOffset(3) }),
           ]}
         />,
       );
@@ -75,8 +75,13 @@ describe("ScheduledSummaryCard", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
-            makeTx({ id: 1, amount: -500 }),
-            makeTx({ id: 2, amount: -300, active: false }),
+            makeTx({ id: 1, amount: -500, nextDueDate: isoDateOffset(1) }),
+            makeTx({
+              id: 2,
+              amount: -300,
+              active: false,
+              nextDueDate: isoDateOffset(1),
+            }),
           ]}
         />,
       );

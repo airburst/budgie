@@ -1,5 +1,11 @@
 # budgie
 
+## 0.8.3
+
+### Patch Changes
+
+- Reminders card now shows the net amount due in the next 7 days instead of the total of all active scheduled transactions
+
 ## 0.8.2
 
 ### Patch Changes

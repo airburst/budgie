@@ -15,12 +15,13 @@ export function ScheduledSummaryCard({
     const in7 = new Date(today);
     in7.setDate(today.getDate() + 7);
     const active = scheduledTransactions.filter((s) => s.active);
-    const total = active.reduce((acc, s) => acc + s.amount, 0);
-    const dueSoon = active.filter((s) => {
+    const dueSoonItems = active.filter((s) => {
       if (!s.nextDueDate) return false;
       const d = new Date(s.nextDueDate);
       return d >= today && d <= in7;
-    }).length;
+    });
+    const total = dueSoonItems.reduce((acc, s) => acc + s.amount, 0);
+    const dueSoon = dueSoonItems.length;
     return { total, dueSoon };
   }, [scheduledTransactions]);
 
@@ -28,14 +29,14 @@ export function ScheduledSummaryCard({
     <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
       <div>
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-          Total Scheduled
+          Due in next 7 days
         </p>
         <Amount value={total} />
       </div>
       <div className="border-t border-border/50 pt-3">
         <p className="text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">{dueSoon}</span> due
-          in next 7 days
+          <span className="font-semibold text-foreground">{dueSoon}</span>{" "}
+          transactions
         </p>
       </div>
     </div>
