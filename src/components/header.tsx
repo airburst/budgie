@@ -74,7 +74,7 @@ const Header = () => {
             >
               <Settings className="size-5" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="min-w-48">
               <DropdownMenuItem onClick={() => navigate("/settings")}>
                 Settings
               </DropdownMenuItem>
@@ -93,6 +93,11 @@ const Header = () => {
                 Restore...
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => void window.api.checkForUpdates()}
+              >
+                Check for updates
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setAboutOpen(true)}>
                 About Budgie
               </DropdownMenuItem>

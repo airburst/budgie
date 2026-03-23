@@ -40,6 +40,20 @@ function ThemeApplier() {
 
 function UpdateListener() {
   useEffect(() => {
+    window.api.onUpdateAvailable((version) => {
+      toast.info(`Version ${version} available`, {
+        duration: Infinity,
+        action: {
+          label: "Download",
+          onClick: () => {
+            void window.api.openExternal(
+              "https://github.com/airburst/budgie/releases/latest",
+            );
+          },
+        },
+      });
+    });
+
     window.api.onUpdateDownloaded((version) => {
       toast.info(`Version ${version} available`, {
         duration: Infinity,
@@ -48,6 +62,10 @@ function UpdateListener() {
           onClick: () => window.api.restartToUpdate(),
         },
       });
+    });
+
+    window.api.onUpdateNotAvailable(() => {
+      toast.success("Budgie is up to date");
     });
   }, []);
   return null;

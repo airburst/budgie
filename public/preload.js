@@ -134,10 +134,18 @@ const api = {
     ipcRenderer.invoke("budget_allocations:delete", id),
 
   // Auto-update
+  onUpdateAvailable: (callback) => {
+    ipcRenderer.on("update-available", (_, version) => callback(version));
+  },
   onUpdateDownloaded: (callback) => {
     ipcRenderer.on("update-downloaded", (_, version) => callback(version));
   },
+  onUpdateNotAvailable: (callback) => {
+    ipcRenderer.on("update-not-available", () => callback());
+  },
+  checkForUpdates: () => ipcRenderer.invoke("updater:check"),
   restartToUpdate: () => ipcRenderer.send("restart-to-update"),
+  openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
 
   // Budget transfers
   getBudgetTransfers: () => ipcRenderer.invoke("budget_transfers:getAll"),

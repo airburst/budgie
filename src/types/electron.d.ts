@@ -210,8 +210,12 @@ interface ElectronAPI {
   deleteBudgetAllocation: (id: number) => Promise<void>;
 
   // Auto-update
+  onUpdateAvailable: (callback: (version: string) => void) => void;
   onUpdateDownloaded: (callback: (version: string) => void) => void;
+  onUpdateNotAvailable: (callback: () => void) => void;
+  checkForUpdates: () => Promise<void>;
   restartToUpdate: () => void;
+  openExternal: (url: string) => Promise<void>;
 
   // Budget transfers
   getBudgetTransfers: () => Promise<BudgetTransfer[]>;

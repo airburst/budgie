@@ -1,5 +1,11 @@
 # budgie
 
+## 0.8.2
+
+### Patch Changes
+
+- Fix auto-update on macOS: skip auto-download (requires code signing) and instead show a toast with a link to the GitHub releases page. Windows keeps the full auto-download and install flow.
+
 ## 0.8.1
 
 ### Patch Changes
