@@ -1,5 +1,13 @@
 # budgie
 
+## 0.8.4
+
+### Patch Changes
+
+- Fix reconcile dialog showing wrong opening balance when an account has been reconciled multiple times on the same date
+
+- Fix reconcile dialog showing wrong opening balance when multiple reconciliations exist for the same date
+
 ## 0.8.3
 
 ### Patch Changes

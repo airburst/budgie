@@ -30,13 +30,13 @@ function withBalances(db, schema) {
       lastReconcileDate: sql`(
         SELECT "date" FROM "account_reconciliations"
         WHERE "account_id" = ${schema.accounts.id}
-        ORDER BY "date" DESC LIMIT 1
+        ORDER BY "date" DESC, "id" DESC LIMIT 1
       )`,
       lastReconcileBalance: sql`(
         SELECT "balance" FROM "account_reconciliations"
         WHERE "account_id" = ${schema.accounts.id}
-        ORDER BY "date" DESC LIMIT 1
-      )`.mapWith(Number),
+        ORDER BY "date" DESC, "id" DESC LIMIT 1
+      )`,
     })
     .from(schema.accounts)
     .where(eq(schema.accounts.deleted, false))
