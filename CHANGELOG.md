@@ -1,5 +1,11 @@
 # budgie
 
+## 0.8.5
+
+### Patch Changes
+
+- Fix auto-update by publishing GitHub releases (were stuck as drafts) and auto-publishing after CI builds
+
 ## 0.8.4
 
 ### Patch Changes

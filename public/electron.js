@@ -1,4 +1,11 @@
-const { app, BrowserWindow, ipcMain, session, dialog, shell } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  session,
+  dialog,
+  shell,
+} = require("electron");
 const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
@@ -172,49 +179,34 @@ app.whenReady().then(async () => {
 
     let manualCheckPending = false;
 
-    autoUpdater.on("checking-for-update", () => {
-      console.log("[updater] Checking for update…");
-    });
-    autoUpdater.on("update-not-available", (info) => {
-      console.log("[updater] Already up to date:", info.version);
+    autoUpdater.on("update-not-available", () => {
       if (manualCheckPending) {
         manualCheckPending = false;
         mainWindow?.webContents.send("update-not-available");
       }
     });
-    autoUpdater.on("error", (err) => {
-      console.error("[updater] Error:", err.message);
+    autoUpdater.on("error", () => {
       manualCheckPending = false;
     });
 
     if (isMac) {
       autoUpdater.on("update-available", (info) => {
-        console.log("[updater] Update available:", info.version);
         manualCheckPending = false;
         mainWindow?.webContents.send("update-available", info.version);
       });
     } else {
-      autoUpdater.on("download-progress", (progress) => {
-        console.log(
-          `[updater] Download progress: ${Math.round(progress.percent)}%`,
-        );
-      });
       autoUpdater.on("update-downloaded", (info) => {
-        console.log("[updater] Update downloaded:", info.version);
         manualCheckPending = false;
         mainWindow?.webContents.send("update-downloaded", info.version);
       });
     }
 
-    autoUpdater.checkForUpdates().catch((err) => {
-      console.error("[updater] checkForUpdates failed:", err.message);
-    });
+    autoUpdater.checkForUpdates().catch(() => {});
 
     ipcMain.handle("updater:check", () => {
       manualCheckPending = true;
-      return autoUpdater.checkForUpdates().catch((err) => {
+      return autoUpdater.checkForUpdates().catch(() => {
         manualCheckPending = false;
-        console.error("[updater] Manual check failed:", err.message);
       });
     });
   } else {

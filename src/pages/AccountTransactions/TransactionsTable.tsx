@@ -52,8 +52,8 @@ export function TransactionsTable({
     <TableRow className="hover:bg-transparent">
       <TableHead className="bg-accent">Date</TableHead>
       <TableHead className="bg-accent">Payee</TableHead>
-      <TableHead className="text-right bg-accent">Withdrawal</TableHead>
-      <TableHead className="text-right bg-accent">Deposit</TableHead>
+      <TableHead className="text-right bg-accent">In</TableHead>
+      <TableHead className="text-right bg-accent">Out</TableHead>
       <TableHead className="bg-accent">Category</TableHead>
       <TableHead className="bg-accent">Notes</TableHead>
       <TableHead className="text-right bg-accent">Balance</TableHead>
@@ -111,10 +111,10 @@ export function TransactionsTable({
                   <TableCell>{formatDate(tx.date)}</TableCell>
                   <TableCell>{tx.payee}</TableCell>
                   <TableCell className="text-right">
-                    {tx.amount < 0 ? <Amount value={tx.amount} /> : null}
+                    {tx.amount > 0 ? <Amount value={tx.amount} /> : null}
                   </TableCell>
                   <TableCell className="text-right">
-                    {tx.amount > 0 ? <Amount value={tx.amount} /> : null}
+                    {tx.amount < 0 ? <Amount value={tx.amount} /> : null}
                   </TableCell>
                   <TableCell>
                     {category ? (
