@@ -34,6 +34,10 @@ bun run start        # dev: Vite on :3000 + Electron
 | `bun run check-types` | TypeScript type check                  |
 | `bun run db:migrate`  | Generate migration from schema changes |
 
+## Convert PNG to icns
+
+https://www.aconvert.com/image/jpg-to-icns/
+
 ## Docs
 
 - [Architecture](docs/ARCHITECTURE.md)
