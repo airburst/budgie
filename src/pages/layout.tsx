@@ -7,7 +7,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
   useHotkeys([
     { key: "a", handler: () => navigate("/") },
-    { key: "r", handler: () => navigate("/scheduled") },
+    { key: "s", handler: () => navigate("/scheduled") },
   ]);
 
   return (

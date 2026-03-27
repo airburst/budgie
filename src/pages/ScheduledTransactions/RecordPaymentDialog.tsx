@@ -274,8 +274,8 @@ export function RecordPaymentDialog({
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
-        title="Delete reminder?"
-        description="This will permanently delete this reminder. This action cannot be undone."
+        title="Delete subscription?"
+        description="This will permanently delete this subscription. This action cannot be undone."
         onConfirm={() => {
           remove.mutate(sched.id);
           onOpenChange(false);

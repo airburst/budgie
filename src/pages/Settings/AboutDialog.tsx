@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,19 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         <p className="text-sm text-muted-foreground">
           Version {__APP_VERSION__}
         </p>
+        <div className="mt-2 border-t pt-3">
+          <Button
+            variant="link"
+            className="h-auto px-0"
+            onClick={() =>
+              void window.api.openExternal(
+                "https://github.com/airburst/budgie/blob/main/CHANGELOG.md",
+              )
+            }
+          >
+            See what's changed in this version
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

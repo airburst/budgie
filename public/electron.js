@@ -38,8 +38,8 @@ function createWindow() {
     minWidth: 960,
     minHeight: 600,
     center: true,
-    // remove the default titlebar
-    titleBarStyle: "hidden",
+    // remove the default titlebar on macOS only
+    ...(process.platform === "darwin" ? { titleBarStyle: "hidden" } : {}),
     // expose window controls in Windows/Linux
     ...(process.platform !== "darwin" ? { titleBarOverlay: true } : {}),
     // add padding around macOS traffic lights

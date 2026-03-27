@@ -65,7 +65,7 @@ export function ScheduledTable({
                 colSpan={6}
                 className="text-center text-muted-foreground py-12"
               >
-                No reminders yet.
+                No subscriptions yet.
               </TableCell>
             </TableRow>
           </TableBody>
@@ -157,8 +157,8 @@ export function ScheduledTable({
       <ConfirmDialog
         open={pendingDeleteId !== null}
         onOpenChange={(open) => !open && setPendingDeleteId(null)}
-        title="Delete reminder?"
-        description="This will permanently delete this reminder. This action cannot be undone."
+        title="Delete subscription?"
+        description="This will permanently delete this subscription. This action cannot be undone."
         onConfirm={() => onDelete(pendingDeleteId!)}
       />
     </>

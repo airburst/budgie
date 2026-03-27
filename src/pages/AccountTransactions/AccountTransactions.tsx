@@ -83,7 +83,7 @@ export default function AccountTransactions() {
   useHotkeys(
     [
       { key: "f", handler: () => navigate(`/forecast/${accountId}`) },
-      { key: "r", ctrl: true, handler: () => setReconcileOpen(true) },
+      { key: "r", handler: () => setReconcileOpen(true) },
       { key: "n", handler: () => openAdd() },
     ],
     !sheetOpen && !reconcileOpen,

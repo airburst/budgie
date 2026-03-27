@@ -44,14 +44,16 @@ export default function ScheduledTransactions() {
         <div className="overflow-y-auto p-4 sm:p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Reminders</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Subscriptions
+              </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
                 Manage your recurring bills and upcoming transfers.
               </p>
             </div>
             <Button onClick={openAdd} size="sm">
               <PlusIcon />
-              Add Reminder
+              Add Subscription
             </Button>
           </div>
 
