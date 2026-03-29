@@ -23,19 +23,107 @@ async function processAutoPost(db, schema) {
     threshold.setDate(threshold.getDate() + daysInAdvance);
     const thresholdStr = threshold.toISOString().slice(0, 10);
 
+    // Resolve transfer metadata once per item (outside the date loop).
+    let transferMeta = null;
+    if (item.categoryId) {
+      const category = await db
+        .select()
+        .from(schema.categories)
+        .where(eq(schema.categories.id, item.categoryId))
+        .then((r) => r[0] ?? null);
+
+      if (
+        category &&
+        category.expenseType === "transfer" &&
+        category.parentId !== null
+      ) {
+        const [targetAccount, sourceAccount] = await Promise.all([
+          db
+            .select()
+            .from(schema.accounts)
+            .where(eq(schema.accounts.name, category.name))
+            .then((r) => r[0] ?? null),
+          db
+            .select()
+            .from(schema.accounts)
+            .where(eq(schema.accounts.id, item.accountId))
+            .then((r) => r[0] ?? null),
+        ]);
+
+        if (targetAccount && sourceAccount) {
+          const counterCategory = await db
+            .select()
+            .from(schema.categories)
+            .where(
+              and(
+                eq(schema.categories.parentId, category.parentId),
+                eq(schema.categories.name, sourceAccount.name),
+              ),
+            )
+            .then((r) => r[0] ?? null);
+
+          transferMeta = {
+            targetAccountId: targetAccount.id,
+            counterCategoryId: counterCategory?.id ?? null,
+          };
+        }
+      }
+    }
+
     let nextDue = item.nextDueDate;
 
     while (nextDue && nextDue <= thresholdStr) {
-      await db.insert(schema.transactions).values({
-        accountId: item.accountId,
-        categoryId: item.categoryId,
-        date: nextDue,
-        payee: item.payee,
-        amount: item.amount,
-        notes: item.notes,
-        cleared: false,
-        reconciled: false,
-      });
+      if (transferMeta) {
+        db.transaction(() => {
+          const [primary] = db
+            .insert(schema.transactions)
+            .values({
+              accountId: item.accountId,
+              categoryId: item.categoryId,
+              date: nextDue,
+              payee: item.payee,
+              amount: item.amount,
+              notes: item.notes,
+              cleared: false,
+              reconciled: false,
+              transferTransactionId: null,
+            })
+            .returning()
+            .all();
+
+          const [counter] = db
+            .insert(schema.transactions)
+            .values({
+              accountId: transferMeta.targetAccountId,
+              categoryId: transferMeta.counterCategoryId,
+              date: nextDue,
+              payee: item.payee,
+              amount: -item.amount,
+              notes: item.notes ?? null,
+              cleared: false,
+              reconciled: false,
+              transferTransactionId: primary.id,
+            })
+            .returning()
+            .all();
+
+          db.update(schema.transactions)
+            .set({ transferTransactionId: counter.id })
+            .where(eq(schema.transactions.id, primary.id))
+            .run();
+        });
+      } else {
+        await db.insert(schema.transactions).values({
+          accountId: item.accountId,
+          categoryId: item.categoryId,
+          date: nextDue,
+          payee: item.payee,
+          amount: item.amount,
+          notes: item.notes,
+          cleared: false,
+          reconciled: false,
+        });
+      }
 
       const dtstart = new Date(nextDue + "T12:00:00Z");
       const rule = new RRule({ ...RRule.parseString(item.rrule), dtstart });

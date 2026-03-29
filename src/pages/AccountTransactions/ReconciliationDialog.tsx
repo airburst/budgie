@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDate } from "@/lib/utils";
 import type { AccountWithBalances } from "@/types/electron";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 type ReconciliationDialogProps = {
@@ -41,6 +41,20 @@ export function ReconciliationDialog({
   const [statementBalanceStr, setStatementBalanceStr] = useState(
     () => account.pendingReconcileBalance?.toString() ?? "",
   );
+
+  useEffect(() => {
+    if (open) {
+      setStatementDate(
+        account.pendingReconcileDate ?? new Date().toISOString().slice(0, 10),
+      );
+      setStatementBalanceStr(account.pendingReconcileBalance?.toString() ?? "");
+    }
+  }, [
+    open,
+    account.id,
+    account.pendingReconcileDate,
+    account.pendingReconcileBalance,
+  ]);
 
   const parsedBalance = parseFloat(statementBalanceStr);
   const hasValidBalance = statementBalanceStr !== "" && !isNaN(parsedBalance);

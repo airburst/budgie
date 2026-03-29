@@ -3,13 +3,17 @@ import { afterAll, describe, expect, it } from "vitest";
 import { createTestDb } from "./helpers/db";
 
 const require = createRequire(import.meta.url);
-const { processAutoPost } = require("../../../public/ipc/scheduled-transactions.js") as {
-  processAutoPost: (db: unknown, schema: unknown) => Promise<void>;
-};
+const { processAutoPost } =
+  require("../../../public/ipc/scheduled-transactions.js") as {
+    processAutoPost: (db: unknown, schema: unknown) => Promise<void>;
+  };
 
 // System time is pinned to 2026-03-07T00:00:00.000Z by setup.ts
 
-async function seedAccount(db: ReturnType<typeof createTestDb>["db"], schema: ReturnType<typeof createTestDb>["schema"]) {
+async function seedAccount(
+  db: ReturnType<typeof createTestDb>["db"],
+  schema: ReturnType<typeof createTestDb>["schema"],
+) {
   const [row] = await db
     .insert(schema.accounts)
     .values({ name: "Test Account", type: "bank", balance: 0 })
@@ -144,7 +148,9 @@ describe("processAutoPost — daysInAdvance threshold", () => {
     await processAutoPost(db, schema);
 
     const txns = await db.select().from(schema.transactions);
-    const hit = txns.find((t: { payee: string }) => t.payee === "Boundary Post");
+    const hit = txns.find(
+      (t: { payee: string }) => t.payee === "Boundary Post",
+    );
     expect(hit).toBeDefined();
   });
 
@@ -163,7 +169,9 @@ describe("processAutoPost — daysInAdvance threshold", () => {
     await processAutoPost(db, schema);
 
     const txns = await db.select().from(schema.transactions);
-    const hit = txns.find((t: { payee: string }) => t.payee === "Just Outside Window");
+    const hit = txns.find(
+      (t: { payee: string }) => t.payee === "Just Outside Window",
+    );
     expect(hit).toBeUndefined();
   });
 });
@@ -227,48 +235,60 @@ describe("processAutoPost — nextDueDate advancement", () => {
   it("setup account and seed scheduled transactions", async () => {
     accountId = await seedAccount(db, schema);
 
-    const [m] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Monthly Bill",
-      amount: -50,
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
-      nextDueDate: "2026-03-05",
-      autoPost: true,
-      active: true,
-    }).returning();
+    const [m] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Monthly Bill",
+        amount: -50,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=5",
+        nextDueDate: "2026-03-05",
+        autoPost: true,
+        active: true,
+      })
+      .returning();
     monthlyId = m.id;
 
-    const [w] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Weekly Sub",
-      amount: -10,
-      rrule: "FREQ=WEEKLY;BYDAY=WE",
-      nextDueDate: "2026-03-04",
-      autoPost: true,
-      active: true,
-    }).returning();
+    const [w] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Weekly Sub",
+        amount: -10,
+        rrule: "FREQ=WEEKLY;BYDAY=WE",
+        nextDueDate: "2026-03-04",
+        autoPost: true,
+        active: true,
+      })
+      .returning();
     weeklyId = w.id;
 
-    const [o] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "One-Off",
-      amount: -200,
-      rrule: "FREQ=DAILY;COUNT=1",
-      nextDueDate: "2026-03-01",
-      autoPost: true,
-      active: true,
-    }).returning();
+    const [o] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "One-Off",
+        amount: -200,
+        rrule: "FREQ=DAILY;COUNT=1",
+        nextDueDate: "2026-03-01",
+        autoPost: true,
+        active: true,
+      })
+      .returning();
     onceId = o.id;
 
-    const [f] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Future Standing Order",
-      amount: -100,
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=20",
-      nextDueDate: "2026-03-20",
-      autoPost: true,
-      active: true,
-    }).returning();
+    const [f] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Future Standing Order",
+        amount: -100,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=20",
+        nextDueDate: "2026-03-20",
+        autoPost: true,
+        active: true,
+      })
+      .returning();
     futureId = f.id;
   });
 
@@ -312,16 +332,19 @@ describe("processAutoPost — catch-up loop (3 months overdue)", () => {
 
   it("setup: monthly payment last ran 2026-01-07", async () => {
     accountId = await seedAccount(db, schema);
-    const [row] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Overdue Bill",
-      amount: -75,
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=7",
-      nextDueDate: "2026-01-07",
-      autoPost: true,
-      active: true,
-      daysInAdvance: 0,
-    }).returning();
+    const [row] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Overdue Bill",
+        amount: -75,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=7",
+        nextDueDate: "2026-01-07",
+        autoPost: true,
+        active: true,
+        daysInAdvance: 0,
+      })
+      .returning();
     schedId = row.id;
   });
 
@@ -400,26 +423,32 @@ describe("processAutoPost — multiple items, only autoPost ones processed", () 
       active: true,
     });
 
-    const [b] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Auto B",
-      amount: -20,
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      nextDueDate: "2026-03-01",
-      autoPost: true,
-      active: true,
-    }).returning();
+    const [b] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Auto B",
+        amount: -20,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+        nextDueDate: "2026-03-01",
+        autoPost: true,
+        active: true,
+      })
+      .returning();
     schedBId = b.id;
 
-    const [c] = await db.insert(schema.scheduledTransactions).values({
-      accountId,
-      payee: "Manual C",
-      amount: -30,
-      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
-      nextDueDate: "2026-03-01",
-      autoPost: false,
-      active: true,
-    }).returning();
+    const [c] = await db
+      .insert(schema.scheduledTransactions)
+      .values({
+        accountId,
+        payee: "Manual C",
+        amount: -30,
+        rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+        nextDueDate: "2026-03-01",
+        autoPost: false,
+        active: true,
+      })
+      .returning();
     schedCId = c.id;
   });
 
@@ -444,5 +473,106 @@ describe("processAutoPost — multiple items, only autoPost ones processed", () 
     const rows = await db.select().from(schema.scheduledTransactions);
     const b = rows.find((r: { id: number }) => r.id === schedBId);
     expect(b?.nextDueDate).toBe("2026-04-01");
+  });
+});
+
+// ── Suite 8: transfer category creates counter transaction ─────────────────────
+
+describe("processAutoPost — transfer category creates counter transaction", () => {
+  const { db, schema, teardown } = createTestDb();
+  afterAll(() => teardown());
+
+  let jointAccountId: number;
+  let savingsAccountId: number;
+  let transferCategoryId: number; // Transfer > Savings
+
+  it("setup accounts and transfer categories", async () => {
+    const [joint] = await db
+      .insert(schema.accounts)
+      .values({ name: "Joint", type: "bank", balance: 0 })
+      .returning();
+    jointAccountId = joint.id;
+
+    const [savings] = await db
+      .insert(schema.accounts)
+      .values({ name: "Savings", type: "bank", balance: 0 })
+      .returning();
+    savingsAccountId = savings.id;
+
+    // The Transfer parent category is seeded by migration 0001.
+    const transferParent = await db
+      .select()
+      .from(schema.categories)
+      .then((rows: { id: number; name: string; parentId: number | null }[]) =>
+        rows.find((r) => r.name === "Transfer" && r.parentId === null),
+      );
+    expect(transferParent).toBeDefined();
+    const parentId = transferParent!.id;
+
+    // Create Transfer sub-categories for both accounts.
+    const [savingsCat] = await db
+      .insert(schema.categories)
+      .values({ parentId, name: "Savings", expenseType: "transfer" })
+      .returning();
+    transferCategoryId = savingsCat.id;
+
+    await db
+      .insert(schema.categories)
+      .values({ parentId, name: "Joint", expenseType: "transfer" })
+      .returning();
+  });
+
+  it("create scheduled transfer and run processAutoPost", async () => {
+    await db.insert(schema.scheduledTransactions).values({
+      accountId: jointAccountId,
+      categoryId: transferCategoryId,
+      payee: "Monthly Savings",
+      amount: -2000,
+      rrule: "FREQ=MONTHLY;BYMONTHDAY=1",
+      nextDueDate: "2026-03-01",
+      autoPost: true,
+      active: true,
+    });
+
+    await processAutoPost(db, schema);
+  });
+
+  it("two transactions are created (primary and counter)", async () => {
+    const txns = await db.select().from(schema.transactions);
+    expect(txns).toHaveLength(2);
+  });
+
+  it("primary transaction debits Joint", async () => {
+    const txns = await db.select().from(schema.transactions);
+    const primary = txns.find(
+      (t: { accountId: number; amount: number }) =>
+        t.accountId === jointAccountId,
+    );
+    expect(primary).toBeDefined();
+    expect(primary!.amount).toBe(-2000);
+    expect(primary!.transferTransactionId).not.toBeNull();
+  });
+
+  it("counter transaction credits Savings", async () => {
+    const txns = await db.select().from(schema.transactions);
+    const counter = txns.find(
+      (t: { accountId: number; amount: number }) =>
+        t.accountId === savingsAccountId,
+    );
+    expect(counter).toBeDefined();
+    expect(counter!.amount).toBe(2000);
+    expect(counter!.transferTransactionId).not.toBeNull();
+  });
+
+  it("primary and counter are linked to each other", async () => {
+    const txns = await db.select().from(schema.transactions);
+    const primary = txns.find(
+      (t: { accountId: number }) => t.accountId === jointAccountId,
+    )!;
+    const counter = txns.find(
+      (t: { accountId: number }) => t.accountId === savingsAccountId,
+    )!;
+    expect(primary.transferTransactionId).toBe(counter.id);
+    expect(counter.transferTransactionId).toBe(primary.id);
   });
 });
