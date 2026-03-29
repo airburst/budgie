@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 
 type TransactionsTableProps = {
   transactions: Transaction[];
+  allTransactions: Transaction[];
   categories: Category[];
   openingBalance: number;
   onEdit: (id: number) => void;
@@ -27,6 +28,7 @@ type TransactionsTableProps = {
 
 export function TransactionsTable({
   transactions,
+  allTransactions,
   categories,
   openingBalance,
   onEdit,
@@ -41,8 +43,8 @@ export function TransactionsTable({
   );
 
   const runningBalances = useMemo(
-    () => computeRunningBalances(transactions, openingBalance),
-    [transactions, openingBalance],
+    () => computeRunningBalances(allTransactions, openingBalance),
+    [allTransactions, openingBalance],
   );
 
   const today = new Date().toISOString().slice(0, 10);
@@ -127,7 +129,11 @@ export function TransactionsTable({
                     {tx.notes ?? ""}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Amount value={balance} />
+                    {isReconciled || tx.cleared ? (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    ) : (
+                      <Amount value={balance} />
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     {isReconciled ? (
@@ -141,7 +147,12 @@ export function TransactionsTable({
                         onChange={(e) =>
                           onToggleCleared(tx.id, e.target.checked)
                         }
-                        className="cursor-pointer"
+                        disabled={tx.date > today}
+                        className={
+                          tx.date > today
+                            ? "cursor-not-allowed opacity-30"
+                            : "cursor-pointer"
+                        }
                       />
                     )}
                   </TableCell>

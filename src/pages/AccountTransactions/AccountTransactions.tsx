@@ -181,8 +181,9 @@ export default function AccountTransactions() {
 
           <TransactionsTable
             transactions={filtered}
+            allTransactions={transactions.filter((t) => !t.cleared && !t.reconciled)}
             categories={categories}
-            openingBalance={account?.balance ?? 0}
+            openingBalance={account?.clearedBalance ?? account?.balance ?? 0}
             onEdit={openEdit}
             onDelete={(id) => remove.mutate(id)}
             onToggleCleared={(id, cleared) =>
