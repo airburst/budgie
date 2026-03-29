@@ -160,16 +160,11 @@ short summary of the change. This creates a markdown file in `.changeset/`.
 - **minor** — new features, non-breaking enhancements
 - **major** — breaking changes
 
-### Before release
-
-```
-bun run version        # consumes changesets, bumps package.json, appends CHANGELOG.md
-```
-
 ### Rules for agents
 
 - If your work changes any user-facing behavior, **add a changeset before finishing**.
-  Run `bunx changeset` interactively, or create a `.changeset/<short-name>.md` file directly:
+  Create a `.changeset/<short-name>.md` file directly:
+
   ```md
   ---
   "budgie": patch
@@ -177,8 +172,19 @@ bun run version        # consumes changesets, bumps package.json, appends CHANGE
 
   Short description of the change
   ```
+
+- **Always commit the changeset file alongside the code change.** An untracked changeset
+  file will be silently consumed by `bun run version` without producing a changelog entry.
 - Do **not** run `bun run version` — the maintainer does this at release time.
 - Do **not** skip the changeset even if the change seems small. When in doubt, add one.
+
+### Maintainer release workflow
+
+```
+bun run version        # consumes changesets → bumps package.json, updates CHANGELOG.md
+git add package.json CHANGELOG.md .changeset
+git commit -m "Bump version"
+```
 
 ---
 

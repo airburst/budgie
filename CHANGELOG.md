@@ -1,5 +1,26 @@
 # budgie
 
+## 0.9.1
+
+### Patch Changes
+
+- Fix running balance column: now anchors from the cleared balance and accumulates only uncleared transactions, so reconciled history is treated as settled and does not shift when transaction dates change
+- Disable the cleared (C/R) checkbox for future-dated transactions in the register
+
+## 0.9.0
+
+### Minor Changes
+
+- Add custom keybindings — a new Shortcuts tab in Settings lets you view and configure keyboard shortcuts
+- macOS titlebar now uses a compact inset style
+- Subscription hotkeys: keyboard shortcuts for recording and managing scheduled payments
+- Add a GitHub changelog link to the About dialog
+
+### Patch Changes
+
+- Fix double-posting of counter-transactions when scheduled transfers are auto-posted
+- Fix reconcile dialog showing a stale opening balance when returning to an in-progress session
+
 ## 0.8.6
 
 ### Patch Changes
