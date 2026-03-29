@@ -7,6 +7,17 @@ vi.mock("@/components/header", () => ({
   default: () => <div>Header</div>,
 }));
 
+vi.mock("@/hooks/usePreferences", () => ({
+  usePreferences: () => ({
+    preferences: {
+      hideReconciled: true,
+      hideCleared: false,
+      autofillPayees: true,
+    },
+    update: { mutate: vi.fn() },
+  }),
+}));
+
 function renderLayout() {
   render(
     <MemoryRouter initialEntries={["/"]}>

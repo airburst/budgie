@@ -26,6 +26,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import Layout from "../layout";
+import { ShortcutsTab } from "./ShortcutsTab";
 
 const STATIC_ROUTES: { value: string; label: string }[] = [
   { value: "/", label: "Dashboard" },
@@ -137,6 +138,7 @@ export default function SettingsPage() {
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -323,6 +325,10 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="shortcuts">
+            <ShortcutsTab />
           </TabsContent>
         </Tabs>
       </div>

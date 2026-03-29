@@ -34,6 +34,12 @@ export type Envelope = InferSelectModel<typeof envelopes>;
 export type EnvelopeCategory = InferSelectModel<typeof envelopeCategories>;
 export type BudgetAllocation = InferSelectModel<typeof budgetAllocations>;
 export type BudgetTransfer = InferSelectModel<typeof budgetTransfers>;
+export type AccountShortcut = {
+  key: string;
+  ctrl?: boolean;
+  accountId: number;
+};
+
 export type Preferences = {
   hideReconciled: boolean;
   hideCleared: boolean;
@@ -42,6 +48,7 @@ export type Preferences = {
   autofillPayees: boolean;
   theme?: "light" | "dark" | "auto";
   startupPage?: string;
+  accountShortcuts?: AccountShortcut[];
 };
 
 export type BackupInfo = {

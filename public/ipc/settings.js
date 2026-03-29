@@ -46,6 +46,7 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           ),
         theme: sql`json_extract(${schema.settings.preferences}, '$.theme')`,
         startupPage: sql`json_extract(${schema.settings.preferences}, '$.startupPage')`,
+        accountShortcuts: sql`json_extract(${schema.settings.preferences}, '$.accountShortcuts')`,
       })
       .from(schema.settings)
       .where(eq(schema.settings.id, 1))
@@ -58,6 +59,7 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           backupRetentionDays: undefined,
           theme: undefined,
           startupPage: undefined,
+          accountShortcuts: undefined,
         };
         // json_extract returns null for missing keys — convert to undefined
         if (row.backupFolder === null) row.backupFolder = undefined;
@@ -65,6 +67,9 @@ module.exports = function registerSettingsHandlers(ipcMain, db, schema) {
           row.backupRetentionDays = undefined;
         if (row.theme === null) row.theme = undefined;
         if (row.startupPage === null) row.startupPage = undefined;
+        row.accountShortcuts = row.accountShortcuts
+          ? JSON.parse(row.accountShortcuts)
+          : undefined;
         return row;
       }),
   );
