@@ -249,8 +249,12 @@ export default function ReconcilePage() {
                     return (
                       <TableRow
                         key={tx.id}
-                        className={`cursor-pointer${checked ? " bg-primary/25" : ""}`}
+                        className={`cursor-pointer${checked ? " bg-primary/25 hover:bg-primary/25" : ""}`}
                         onClick={() => toggleChecked(tx.id)}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(tx.id);
+                        }}
                       >
                         <TableCell>{formatDate(tx.date)}</TableCell>
                         <TableCell>{tx.payee}</TableCell>
