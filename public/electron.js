@@ -27,6 +27,24 @@ const registerBudgetTransfersHandlers = require("./ipc/budget-transfers");
 const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
+function readBackupPrefs(sqlite) {
+  let backupFolder = DEFAULT_BACKUP_FOLDER;
+  let retentionDays;
+  try {
+    const row = sqlite
+      .prepare("SELECT preferences FROM settings WHERE id = 1")
+      .get();
+    if (row) {
+      const prefs = JSON.parse(row.preferences || "{}");
+      if (prefs.backupFolder) backupFolder = prefs.backupFolder;
+      if (prefs.backupRetentionDays) retentionDays = prefs.backupRetentionDays;
+    }
+  } catch {
+    // use defaults
+  }
+  return { backupFolder, retentionDays };
+}
+
 let mainWindow;
 let skipAutoBackup = false;
 
@@ -150,19 +168,8 @@ app.whenReady().then(async () => {
     event.preventDefault();
     skipAutoBackup = true;
     try {
-      let backupFolder = DEFAULT_BACKUP_FOLDER;
-      try {
-        const row = sqlite
-          .prepare("SELECT preferences FROM settings WHERE id = 1")
-          .get();
-        if (row) {
-          const prefs = JSON.parse(row.preferences || "{}");
-          if (prefs.backupFolder) backupFolder = prefs.backupFolder;
-        }
-      } catch {
-        // use default folder
-      }
-      await createBackupDirect(sqlite, backupFolder);
+      const { backupFolder, retentionDays } = readBackupPrefs(sqlite);
+      await createBackupDirect(sqlite, backupFolder, retentionDays);
     } catch (e) {
       console.error("Auto-backup failed:", e);
     }
@@ -218,19 +225,8 @@ app.whenReady().then(async () => {
   ipcMain.on("restart-to-update", async () => {
     // Backup before installing update
     try {
-      let backupFolder = DEFAULT_BACKUP_FOLDER;
-      try {
-        const row = sqlite
-          .prepare("SELECT preferences FROM settings WHERE id = 1")
-          .get();
-        if (row) {
-          const prefs = JSON.parse(row.preferences || "{}");
-          if (prefs.backupFolder) backupFolder = prefs.backupFolder;
-        }
-      } catch {
-        // use default folder
-      }
-      await createBackupDirect(sqlite, backupFolder);
+      const { backupFolder, retentionDays } = readBackupPrefs(sqlite);
+      await createBackupDirect(sqlite, backupFolder, retentionDays);
     } catch (e) {
       console.error("Pre-update backup failed:", e);
     }

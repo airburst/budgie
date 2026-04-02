@@ -41,9 +41,7 @@ async function createBackupDirect(sqlite, folder, retentionDays) {
   try {
     const stat = fs.statSync(folder);
     if (!stat.isDirectory()) {
-      throw new Error(
-        `Backup folder path already exists as a file: ${folder}`,
-      );
+      throw new Error(`Backup folder path already exists as a file: ${folder}`);
     }
     // Directory already exists — nothing to do
   } catch (e) {
@@ -72,7 +70,24 @@ module.exports = function registerBackupsHandlers(
 
   ipcMain.handle("backups:create", async (_, folder) => {
     const backupFolder = folder || DEFAULT_BACKUP_FOLDER;
-    const destPath = await createBackupDirect(sqlite, backupFolder);
+    let retentionDays;
+    try {
+      const row = sqlite
+        .prepare("SELECT preferences FROM settings WHERE id = 1")
+        .get();
+      if (row) {
+        const prefs = JSON.parse(row.preferences || "{}");
+        if (prefs.backupRetentionDays)
+          retentionDays = prefs.backupRetentionDays;
+      }
+    } catch {
+      // use default retention
+    }
+    const destPath = await createBackupDirect(
+      sqlite,
+      backupFolder,
+      retentionDays,
+    );
     return { path: destPath };
   });
 
