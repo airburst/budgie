@@ -1,5 +1,11 @@
 # budgie
 
+## 0.9.2
+
+### Patch Changes
+
+- 162a02e: Reconcile page: suppress hover highlight on checked rows; double-click a row to open the edit dialog
+
 ## 0.9.1
 
 ### Patch Changes
