@@ -1,5 +1,11 @@
 # budgie
 
+## 0.9.3
+
+### Patch Changes
+
+- 2ab450b: Backup retention policy now correctly applies the user-configured retention days when sweeping old backup files on close
+
 ## 0.9.2
 
 ### Patch Changes
