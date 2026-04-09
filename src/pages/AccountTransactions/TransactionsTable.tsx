@@ -150,8 +150,8 @@ export function TransactionsTable({
                         disabled={tx.date > today}
                         className={
                           tx.date > today
-                            ? "cursor-not-allowed opacity-30"
-                            : "cursor-pointer"
+                            ? "cursor-not-allowed opacity-30 align-middle"
+                            : "cursor-pointer align-middle"
                         }
                       />
                     )}

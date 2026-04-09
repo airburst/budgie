@@ -282,7 +282,7 @@ export default function ReconcilePage() {
                             checked={checked}
                             onChange={() => toggleChecked(tx.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="cursor-pointer accent-blue-500 size-4"
+                            className="cursor-pointer accent-blue-500 size-4 align-middle"
                           />
                         </TableCell>
                         <TableCell className="text-right">
