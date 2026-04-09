@@ -29,6 +29,7 @@ type RecordPaymentDialogProps = {
   onOpenChange: (open: boolean) => void;
   scheduledId: number | null;
   onEdit: (id: number) => void;
+  focusAmountOnOpen?: boolean;
 };
 
 function makeEmpty(date: string) {
@@ -48,6 +49,7 @@ export function RecordPaymentDialog({
   onOpenChange,
   scheduledId,
   onEdit,
+  focusAmountOnOpen = false,
 }: RecordPaymentDialogProps) {
   const { scheduled, accounts, remove } = useScheduledTransactions();
   const qc = useQueryClient();
@@ -55,6 +57,8 @@ export function RecordPaymentDialog({
   const sched = scheduledId
     ? scheduled.find((s) => s.id === scheduledId)
     : null;
+  const shouldFocusWithdrawal = focusAmountOnOpen && !!sched && sched.amount < 0;
+  const shouldFocusDeposit = focusAmountOnOpen && !!sched && sched.amount > 0;
 
   const [form, setForm] = useState(() =>
     makeEmpty(new Date().toISOString().slice(0, 10)),
@@ -192,6 +196,7 @@ export function RecordPaymentDialog({
                   step="0.01"
                   min="0"
                   placeholder="0.00"
+                  autoFocus={shouldFocusWithdrawal}
                   value={form.withdrawal}
                   onChange={(e) => {
                     set("withdrawal", e.target.value);
@@ -211,6 +216,7 @@ export function RecordPaymentDialog({
                   step="0.01"
                   min="0"
                   placeholder="0.00"
+                  autoFocus={shouldFocusDeposit}
                   value={form.deposit}
                   onChange={(e) => {
                     set("deposit", e.target.value);

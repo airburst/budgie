@@ -29,6 +29,7 @@ type TransactionSheetProps = {
   account?: Account;
   defaultDate?: string;
   defaultCleared?: boolean;
+  focusAmountOnOpen?: boolean;
 };
 
 function makeEmpty() {
@@ -51,6 +52,7 @@ export function TransactionForm({
   account,
   defaultDate,
   defaultCleared,
+  focusAmountOnOpen = false,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
   const { upsert: upsertPayee } = usePayees();
@@ -65,6 +67,15 @@ export function TransactionForm({
   const editing = editingId
     ? transactions.find((t) => t.id === editingId)
     : null;
+
+  const shouldFocusWithdrawal =
+    focusAmountOnOpen &&
+    !!editing &&
+    (isAssumedNegative ? editing.amount > 0 : editing.amount < 0);
+  const shouldFocusDeposit =
+    focusAmountOnOpen &&
+    !!editing &&
+    (isAssumedNegative ? editing.amount < 0 : editing.amount > 0);
 
   useEffect(() => {
     if (editing) {
@@ -225,7 +236,7 @@ export function TransactionForm({
                 if (v.trim()) setErrors((e) => ({ ...e, payee: undefined }));
               }}
               onPayeeSelect={handlePayeeSelect}
-              autoFocus
+              autoFocus={!shouldFocusWithdrawal && !shouldFocusDeposit}
             />
             {errors.payee && (
               <p className="text-sm text-destructive">{errors.payee}</p>
@@ -251,6 +262,7 @@ export function TransactionForm({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
+                autoFocus={shouldFocusWithdrawal}
                 value={form.withdrawal}
                 onChange={(e) => {
                   set("withdrawal", e.target.value);
@@ -274,6 +286,7 @@ export function TransactionForm({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
+                autoFocus={shouldFocusDeposit}
                 value={form.deposit}
                 onChange={(e) => {
                   set("deposit", e.target.value);

@@ -33,6 +33,7 @@ export default function AccountTransactions() {
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [importData, setImportData] = useState<{
     content: string;
@@ -64,12 +65,19 @@ export default function AccountTransactions() {
 
   function openAdd() {
     setEditingId(null);
+    setFocusAmountOnOpen(false);
     setSheetOpen(true);
   }
 
-  function openEdit(id: number) {
+  function openEdit(id: number, options?: { focusAmount?: boolean }) {
     setEditingId(id);
+    setFocusAmountOnOpen(!!options?.focusAmount);
     setSheetOpen(true);
+  }
+
+  function handleSheetOpenChange(open: boolean) {
+    setSheetOpen(open);
+    if (!open) setFocusAmountOnOpen(false);
   }
 
   async function handleImport() {
@@ -194,10 +202,11 @@ export default function AccountTransactions() {
       </div>
       <TransactionForm
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={handleSheetOpenChange}
         editingId={editingId}
         accountId={accountId}
         account={account}
+        focusAmountOnOpen={focusAmountOnOpen}
       />
       {account && (
         <ReconciliationDialog

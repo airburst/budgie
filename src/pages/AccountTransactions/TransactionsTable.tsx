@@ -21,7 +21,7 @@ type TransactionsTableProps = {
   allTransactions: Transaction[];
   categories: Category[];
   openingBalance: number;
-  onEdit: (id: number) => void;
+  onEdit: (id: number, options?: { focusAmount?: boolean }) => void;
   onDelete: (id: number) => void;
   onToggleCleared: (id: number, cleared: boolean) => void;
 };
@@ -107,7 +107,7 @@ export function TransactionsTable({
                     isLastPast && "border-b-4 border-b-sidebar-primary",
                   )}
                   onDoubleClick={() => {
-                    if (!isReconciled) onEdit(tx.id);
+                    if (!isReconciled) onEdit(tx.id, { focusAmount: true });
                   }}
                 >
                   <TableCell>{formatDate(tx.date)}</TableCell>

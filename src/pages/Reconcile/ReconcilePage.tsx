@@ -41,6 +41,7 @@ export default function ReconcilePage() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
 
   const eligibleTransactions = useMemo(
     () => transactions.filter((t) => !t.reconciled && t.date <= statementDate),
@@ -115,12 +116,19 @@ export default function ReconcilePage() {
 
   function openAdd() {
     setEditingId(null);
+    setFocusAmountOnOpen(false);
     setSheetOpen(true);
   }
 
-  function openEdit(txId: number) {
+  function openEdit(txId: number, options?: { focusAmount?: boolean }) {
     setEditingId(txId);
+    setFocusAmountOnOpen(!!options?.focusAmount);
     setSheetOpen(true);
+  }
+
+  function handleSheetOpenChange(open: boolean) {
+    setSheetOpen(open);
+    if (!open) setFocusAmountOnOpen(false);
   }
 
   async function handleFinish() {
@@ -253,7 +261,7 @@ export default function ReconcilePage() {
                         onClick={() => toggleChecked(tx.id)}
                         onDoubleClick={(e) => {
                           e.stopPropagation();
-                          openEdit(tx.id);
+                          openEdit(tx.id, { focusAmount: true });
                         }}
                       >
                         <TableCell>{formatDate(tx.date)}</TableCell>
@@ -326,11 +334,12 @@ export default function ReconcilePage() {
 
       <TransactionForm
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={handleSheetOpenChange}
         editingId={editingId}
         accountId={accountId}
         defaultDate={statementDate}
         defaultCleared
+        focusAmountOnOpen={focusAmountOnOpen}
       />
     </Layout>
   );

@@ -17,6 +17,8 @@ export default function ScheduledTransactions() {
 
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordingId, setRecordingId] = useState<number | null>(null);
+  const [focusRecordedAmountOnOpen, setFocusRecordedAmountOnOpen] =
+    useState(false);
 
   function openAdd() {
     setEditingId(null);
@@ -28,9 +30,15 @@ export default function ScheduledTransactions() {
     setSheetOpen(true);
   }
 
-  function openRecord(id: number) {
+  function openRecord(id: number, options?: { focusAmount?: boolean }) {
     setRecordingId(id);
+    setFocusRecordedAmountOnOpen(!!options?.focusAmount);
     setRecordOpen(true);
+  }
+
+  function handleRecordOpenChange(open: boolean) {
+    setRecordOpen(open);
+    if (!open) setFocusRecordedAmountOnOpen(false);
   }
 
   return (
@@ -75,9 +83,10 @@ export default function ScheduledTransactions() {
 
       <RecordPaymentDialog
         open={recordOpen}
-        onOpenChange={setRecordOpen}
+        onOpenChange={handleRecordOpenChange}
         scheduledId={recordingId}
         onEdit={openEdit}
+        focusAmountOnOpen={focusRecordedAmountOnOpen}
       />
     </Layout>
   );

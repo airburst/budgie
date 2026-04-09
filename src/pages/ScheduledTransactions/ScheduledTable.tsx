@@ -18,7 +18,7 @@ import { FrequencyBadge } from "./FrequencyBadge";
 type ScheduledTableProps = {
   scheduledTransactions: ScheduledTransaction[];
   accounts: Account[];
-  onRecord: (id: number) => void;
+  onRecord: (id: number, options?: { focusAmount?: boolean }) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
 };
@@ -95,7 +95,7 @@ export function ScheduledTable({
                 <TableRow
                   key={s.id}
                   className={`cursor-pointer${!s.active ? " opacity-50" : ""}`}
-                  onDoubleClick={() => onRecord(s.id)}
+                  onDoubleClick={() => onRecord(s.id, { focusAmount: true })}
                 >
                   <TableCell className="text-sm text-muted-foreground">
                     {s.nextDueDate ? formatDate(s.nextDueDate) : "—"}
