@@ -1,5 +1,12 @@
 # budgie
 
+## 0.9.4
+
+### Patch Changes
+
+- 9598f95: Focus the populated amount field when transaction dialogs are opened from a row double-click.
+- 36f570f: Align transaction-style table rows so text, inputs, and icons appear vertically centered.
+
 ## 0.9.3
 
 ### Patch Changes
