@@ -1,5 +1,11 @@
 # budgie
 
+## 0.9.5
+
+### Patch Changes
+
+- Forecast chart now shows a tracking cursor on hover: a vertical drop line from the x-axis to the data point, with the balance value and date displayed above the point.
+
 ## 0.9.4
 
 ### Patch Changes

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -5,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Maximize2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -64,7 +64,7 @@ export function ChartCard({ title, badge, children }: Props) {
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <Card className="flex-1 flex flex-col rounded-none border-0 ring-0 h-full">
           {header}
-          <CardContent className="flex-1 min-h-0 [&_[data-slot=chart]]:aspect-auto [&_[data-slot=chart]]:max-h-none [&_[data-slot=chart]]:h-full">
+          <CardContent className="flex-1 min-h-0 **:data-[slot=chart]:aspect-auto **:data-[slot=chart]:max-h-none **:data-[slot=chart]:h-full">
             {children}
           </CardContent>
         </Card>

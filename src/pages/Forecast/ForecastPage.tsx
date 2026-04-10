@@ -1,11 +1,4 @@
-import { Amount } from "@/components/ui/amount";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
@@ -14,52 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { buildForecastRows } from "@/lib/forecast";
-import { formatDate } from "@/lib/utils";
 import { addMonths, endOfMonth, format } from "date-fns";
 import { ArrowLeftIcon, HelpCircleIcon, RefreshCwIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  XAxis,
-  YAxis,
-} from "recharts";
 import Layout from "../layout";
-
-type ChartPoint = {
-  date: string;
-  balance: number;
-};
-
-const chartConfig = {
-  balance: {
-    label: "Balance",
-    color: "#22c55e",
-  },
-} satisfies ChartConfig;
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
+import { ForecastChart, type ChartPoint } from "./ForecastChart";
+import { ForecastTransactionList } from "./ForecastTransactionList";
 
 export default function ForecastPage() {
   const { id } = useParams<{ id: string }>();
@@ -67,7 +25,10 @@ export default function ForecastPage() {
   const navigate = useNavigate();
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const defaultEndDate = format(endOfMonth(addMonths(new Date(), 3)), "yyyy-MM-dd");
+  const defaultEndDate = format(
+    endOfMonth(addMonths(new Date(), 3)),
+    "yyyy-MM-dd",
+  );
 
   const [endDate, setEndDate] = useState(defaultEndDate);
   const [draftEndDate, setDraftEndDate] = useState(defaultEndDate);
@@ -192,170 +153,16 @@ export default function ForecastPage() {
 
         {/* Chart */}
         <div className="px-4 py-4 shrink-0">
-          <ChartContainer config={chartConfig} className="h-64 w-full">
-            <LineChart
-              data={chartData}
-              margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
-            >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value: string) => {
-                  const [y, m, d] = value.split("-");
-                  return format(
-                    new Date(Number(y), Number(m) - 1, Number(d)),
-                    "dd MMM",
-                  );
-                }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={4}
-                width={64}
-                tickFormatter={formatCurrency}
-              />
-              <ChartTooltip
-                cursor={false}
-                isAnimationActive={false}
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  const value = payload[0]?.value as number | undefined;
-                  const [y, m, d] = (label as string).split("-");
-                  const dateLabel = format(
-                    new Date(Number(y), Number(m) - 1, Number(d)),
-                    "d MMMM yyyy",
-                  );
-                  return (
-                    <div className="grid min-w-36 items-start gap-1 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
-                      <span className="font-medium">{dateLabel}</span>
-                      {value !== undefined && (
-                        <span className="font-mono tabular-nums">
-                          {value.toLocaleString("en-GB", {
-                            style: "currency",
-                            currency: "GBP",
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  );
-                }}
-              />
-              <ReferenceLine
-                y={0}
-                stroke="#ef4444"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
-              />
-              <Line
-                dataKey="balance"
-                type="linear"
-                stroke="var(--color-balance)"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ChartContainer>
+          <ForecastChart chartData={chartData} />
         </div>
 
         {/* Transaction list */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-20">
-          <div className="border border-border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="bg-accent">Date</TableHead>
-                  <TableHead className="bg-accent">Payee</TableHead>
-                  <TableHead className="text-right bg-accent">
-                    Withdrawal
-                  </TableHead>
-                  <TableHead className="text-right bg-accent">
-                    Deposit
-                  </TableHead>
-                  <TableHead className="bg-accent">Category</TableHead>
-                  <TableHead className="bg-accent">Memo</TableHead>
-                  <TableHead className="text-right bg-accent">
-                    Balance
-                  </TableHead>
-                  <TableHead className="text-center bg-accent">
-                    Include
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rowsWithBalance.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="text-center text-muted-foreground py-12"
-                    >
-                      No projected transactions in this period.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rowsWithBalance.map((row) => {
-                    const category = row.categoryId
-                      ? categoryMap.get(row.categoryId)
-                      : null;
-                    return (
-                      <TableRow
-                        key={row.key}
-                        className={
-                          row.isScheduled
-                            ? "text-muted-foreground italic"
-                            : undefined
-                        }
-                      >
-                        <TableCell>{formatDate(row.date)}</TableCell>
-                        <TableCell>{row.payee}</TableCell>
-                        <TableCell className="text-right">
-                          {row.amount < 0 ? (
-                            <Amount value={row.amount} />
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.amount > 0 ? (
-                            <Amount value={row.amount} />
-                          ) : null}
-                        </TableCell>
-                        <TableCell>
-                          {category ? (
-                            <Badge variant="secondary">{category.name}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">
-                              —
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground max-w-48 truncate">
-                          {row.notes ?? ""}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {row.included ? (
-                            <Amount value={row.runningBalance} />
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <input
-                            type="checkbox"
-                            checked={row.included}
-                            onChange={() => toggleRow(row.key)}
-                            className="cursor-pointer accent-blue-500 size-4"
-                            aria-label="Include in forecast"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <ForecastTransactionList
+            rows={rowsWithBalance}
+            categoryMap={categoryMap}
+            onToggleRow={toggleRow}
+          />
         </div>
       </div>
 
