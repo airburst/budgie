@@ -6,37 +6,10 @@ tracks the migration plan for each.
 
 ---
 
-## Phase 2 — lucide-react (0.577 → 1.x)
+## Phase 2 — lucide-react (0.577 → 1.x) ✅ DONE (April 2026)
 
-**Risk:** icon renames. 37 files import from lucide-react.
-
-### Icons to audit
-
-These are the names most likely to have changed at the 0.x → 1.x boundary:
-
-| Current name       | Likely new name     | File                                  |
-| ------------------ | ------------------- | ------------------------------------- |
-| `HelpCircleIcon`   | `CircleHelpIcon`    | `src/pages/Forecast/ForecastPage.tsx` |
-| `AlertTriangle`    | `TriangleAlertIcon` | `src/pages/Budget/EnvelopeRow.tsx`    |
-| `CheckCircle2Icon` | `CircleCheckIcon`   | `src/pages/Home/AccountsTable.tsx`    |
-| `CheckCircle`      | `CircleCheckIcon`   | `src/pages/Settings/BackupDialog.tsx` |
-| `XCircle`          | `CircleXIcon`       | `src/pages/Settings/BackupDialog.tsx` |
-| `EditIcon`         | `PencilIcon`        | `src/pages/Home/AccountsTable.tsx`    |
-
-Names that are almost certainly stable: `ArrowLeftRight`, `Settings`, `Pencil`,
-`Plus`, `Trash2`, `Copy`, `ChevronLeft/Right/Down/Up`, `X`, `XIcon`, `CheckIcon`,
-`GripVertical`, `SearchIcon`, `CalendarIcon`, `FolderOpen`, `ReceiptText`,
-`PanelLeftIcon`, `RefreshCwIcon`, `PencilIcon`, `PlusIcon`, `Trash2Icon`.
-
-### Process
-
-1. `bun add lucide-react@latest`
-2. `bun run check-types` — TypeScript surfaces every missing export immediately
-3. For each error, find the current name at https://lucide.dev/icons/
-4. Fix all callsites (the grep output above is the full inventory)
-5. `bun run lint && bun run check-types`
-
-**Estimated effort:** 1–2 hours.
+Upgraded to 1.8.0. `bun run check-types` passed with zero errors — lucide-react 1.x
+preserved all icon names used in this codebase. No callsite changes were needed.
 
 ---
 
