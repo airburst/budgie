@@ -1,5 +1,15 @@
 # budgie
 
+## 0.9.8
+
+### Patch Changes
+
+- Downgrade recharts 3.8.1 → 2.15.4 to fix infinite render loop on forecast chart
+
+  Recharts 3's internal Redux store dispatches state updates during component
+  cleanup that React 19 rejects during the commit phase, causing an unrecoverable
+  "Maximum update depth exceeded" crash on the forecast page.
+
 ## 0.9.7
 
 ### Patch Changes
