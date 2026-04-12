@@ -122,6 +122,15 @@ function TrackingCursor({ points, height, width, payload }: CursorProps) {
   );
 }
 
+// Stable module-level references prevent recharts 3's Redux store from
+// detecting a "change" on every render and spinning into an infinite loop.
+const noTooltipContent = () => null;
+const trackingCursor = <TrackingCursor />;
+const xTickFormatter = (value: string) => {
+  const [y, m, d] = value.split("-");
+  return format(new Date(Number(y), Number(m) - 1, Number(d)), "dd MMM");
+};
+
 type Props = {
   chartData: ChartPoint[];
 };
@@ -132,6 +141,7 @@ export function ForecastChart({ chartData }: Props) {
       <LineChart
         data={chartData}
         margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
+        accessibilityLayer={false}
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -139,13 +149,7 @@ export function ForecastChart({ chartData }: Props) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          tickFormatter={(value: string) => {
-            const [y, m, d] = value.split("-");
-            return format(
-              new Date(Number(y), Number(m) - 1, Number(d)),
-              "dd MMM",
-            );
-          }}
+          tickFormatter={xTickFormatter}
         />
         <YAxis
           tickLine={false}
@@ -155,8 +159,8 @@ export function ForecastChart({ chartData }: Props) {
           tickFormatter={formatCurrency}
         />
         <ChartTooltip
-          cursor={<TrackingCursor />}
-          content={() => null}
+          cursor={trackingCursor}
+          content={noTooltipContent}
           isAnimationActive={false}
         />
         <ReferenceLine
