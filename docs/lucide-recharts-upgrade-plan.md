@@ -13,34 +13,12 @@ preserved all icon names used in this codebase. No callsite changes were needed.
 
 ---
 
-## Phase 3 — recharts (2.x → 3.x)
+## Phase 3 — recharts (2.x → 3.x) ✅ DONE (April 2026)
 
-**Risk:** breaking API rewrite. 3 source files affected.
+Upgraded to 3.8.1. Regenerated `src/components/ui/chart.tsx` via `bunx shadcn@latest add chart --overwrite`.
+The shadcn wrapper needed two type fixes for recharts 3:
 
-### Components in use
+- `ChartTooltipContent` — props now typed against `DefaultTooltipContentProps` instead of `ComponentProps<Tooltip>`
+- `ChartLegendContent` — props now typed against `DefaultLegendContentProps` instead of `Pick<LegendProps, "payload" | "verticalAlign">`
 
-| File                                   | Recharts components                                                                                        |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `src/pages/Forecast/ForecastChart.tsx` | `LineChart`, `Line`, `CartesianGrid`, `XAxis`, `YAxis`, `ReferenceLine`                                    |
-| `src/pages/Reports/ReportsPage.tsx`    | `AreaChart`/`Area`, `BarChart`/`Bar`, `PieChart`/`Pie`/`Cell`, `CartesianGrid`, `XAxis`, `YAxis`, `Legend` |
-| `src/components/ui/chart.tsx`          | `import * as RechartsPrimitive` (wildcard — shadcn wrapper)                                                |
-
-### Process
-
-1. Read the recharts 3.x migration guide before touching anything.
-2. **Regenerate the shadcn chart wrapper first:**
-   ```
-   bunx shadcn@latest add chart
-   ```
-   This rewrites `src/components/ui/chart.tsx` for recharts 3 and is the canonical
-   starting point. Review the diff carefully before accepting it.
-3. Fix `src/pages/Forecast/ForecastChart.tsx` — single `LineChart` with a custom SVG
-   cursor (`TrackingCursor`). Verify that the tooltip still passes the same
-   `points`/`payload` shape to the cursor component; this is the highest-risk piece.
-4. Fix `src/pages/Reports/ReportsPage.tsx` — three chart types. Pay attention to
-   whether `Cell` props or `PieChart dataKey` conventions changed.
-5. Run the app visually after each chart fix — recharts breaking changes tend to
-   produce silent mis-renders rather than runtime errors.
-6. `bun run lint && bun run check-types`
-
-**Estimated effort:** 2–4 hours, dominated by the `TrackingCursor` tooltip API risk.
+`ForecastChart.tsx` and `ReportsPage.tsx` required no changes.
