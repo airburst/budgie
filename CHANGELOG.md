@@ -1,5 +1,13 @@
 # budgie
 
+## 0.9.7
+
+### Patch Changes
+
+- ae8a1e0: Fix infinite render loop on forecast chart after recharts 3 upgrade. Stabilise tooltip content and cursor to module-level references, and disable the now-default accessibilityLayer whose unmount cleanup was dispatching into recharts' internal Redux store during teardown.
+- 1a41b68: Upgrade lucide-react 0.577 → 1.8.0. No icon renames required — all existing imports were preserved in the 1.x release.
+- f7b6ca5: Upgrade recharts 2.15.4 → 3.8.1. Regenerated shadcn chart wrapper to use recharts 3 types (DefaultTooltipContentProps, DefaultLegendContentProps). No changes needed in application chart components.
+
 ## 0.9.6
 
 ### Patch Changes
