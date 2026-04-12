@@ -1,6 +1,6 @@
 {
   "name": "budgie",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "private": true,
   "main": "public/electron.js",
   "description": "A simple home finance app built with Electron and React.",
