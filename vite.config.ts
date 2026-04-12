@@ -25,12 +25,19 @@ export default defineConfig({
     rollupOptions: {
       external: ["electron", "electron-settings"],
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router"],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-recharts": ["recharts"],
-          "vendor-rrule": ["rrule"],
-          "vendor-dates": ["date-fns", "react-day-picker"],
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/react-router")
+          )
+            return "vendor-react";
+          if (id.includes("/@tanstack/react-query")) return "vendor-query";
+          if (id.includes("/recharts")) return "vendor-recharts";
+          if (id.includes("/rrule")) return "vendor-rrule";
+          if (id.includes("/date-fns") || id.includes("/react-day-picker"))
+            return "vendor-dates";
         },
       },
     },
