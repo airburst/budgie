@@ -126,7 +126,7 @@ export default function BudgetPage() {
               items={orderedEnvelopes.map((e) => e.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-[auto_auto_1fr_auto_auto_auto] gap-x-4 gap-y-2">
                 {orderedEnvelopes.map((envelope) => {
                   const env = summaryMap.get(envelope.id);
                   if (!env) return null;

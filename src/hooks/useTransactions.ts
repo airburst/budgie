@@ -21,8 +21,7 @@ export function useTransactions(accountId: number) {
       >,
     ) => window.api.createTransaction(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
-      qc.invalidateQueries({ queryKey: ["transactions"], exact: true });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
     },
   });
@@ -38,8 +37,7 @@ export function useTransactions(accountId: number) {
       >;
     }) => window.api.updateTransaction(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
-      qc.invalidateQueries({ queryKey: ["transactions"], exact: true });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
     },
   });
@@ -47,8 +45,7 @@ export function useTransactions(accountId: number) {
   const remove = useMutation({
     mutationFn: (id: number) => window.api.deleteTransaction(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
-      qc.invalidateQueries({ queryKey: ["transactions"], exact: true });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
     },
   });

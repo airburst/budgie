@@ -74,87 +74,81 @@ export function EnvelopeRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="bg-card rounded-lg border p-4"
+      className="col-span-full grid grid-cols-subgrid items-center bg-card rounded-lg border px-4 py-3"
     >
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 min-w-35">
-          <Tooltip>
-            <TooltipTrigger className="font-medium cursor-default">
-              {name}
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="start">
-              {categoryNames.length > 0
-                ? categoryNames.join(" · ")
-                : "No categories"}
-            </TooltipContent>
-          </Tooltip>
-          {underfunded && <AlertTriangle className="size-4 text-amber-500" />}
-          {editButton}
-        </div>
-
-        <div className="flex items-center gap-1 min-w-35">
-          <span className="text-muted-foreground text-xs">Assigned:</span>
-          {editing ? (
-            <input
-              ref={inputRef}
-              type="number"
-              step="0.01"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
-              className="w-24 h-6 rounded border bg-background px-2 text-sm"
-              autoFocus
-            />
-          ) : (
-            <button
-              onClick={() => {
-                setDraft(String(assigned));
-                setEditing(true);
-              }}
-              className="w-24 h-6 text-left text-sm font-medium hover:underline px-2"
-            >
-              £{assigned.toFixed(2)}
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1">
-          <Progress value={Math.min(pct, 100)}>
-            <ProgressTrack className="h-2">
-              <ProgressIndicator
-                className={cn("h-full", indicatorColor(pct))}
-              />
-            </ProgressTrack>
-          </Progress>
-        </div>
-
-        <div className="text-right min-w-25">
-          <span className="text-sm">
-            £{spent.toFixed(2)} / £{assigned.toFixed(2)}
-          </span>
-        </div>
-
-        <div className="text-right min-w-20">
-          <span
-            className={cn(
-              "text-sm font-medium",
-              available < 0 ? "text-destructive" : "text-green-600",
-            )}
-          >
-            £{available.toFixed(2)}
-          </span>
-        </div>
-
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
-          aria-label="Drag to reorder"
-        >
-          <GripVertical className="size-4" />
-        </button>
+      <div className="flex items-center gap-2">
+        <Tooltip>
+          <TooltipTrigger className="font-medium cursor-default">
+            {name}
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start">
+            {categoryNames.length > 0
+              ? categoryNames.join(" · ")
+              : "No categories"}
+          </TooltipContent>
+        </Tooltip>
+        {underfunded && <AlertTriangle className="size-4 text-amber-500" />}
+        {editButton}
       </div>
+
+      <div className="flex items-center gap-1">
+        <span className="text-muted-foreground text-xs">Assigned:</span>
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="number"
+            step="0.01"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="w-24 h-6 rounded border bg-background px-2 text-sm"
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={() => {
+              setDraft(String(assigned));
+              setEditing(true);
+            }}
+            className="w-24 h-6 text-left text-sm font-medium hover:underline px-2"
+          >
+            £{assigned.toFixed(2)}
+          </button>
+        )}
+      </div>
+
+      <Progress value={Math.min(pct, 100)}>
+        <ProgressTrack className="h-2">
+          <ProgressIndicator className={cn("h-full", indicatorColor(pct))} />
+        </ProgressTrack>
+      </Progress>
+
+      <div className="text-right">
+        <span className="text-sm">
+          £{spent.toFixed(2)} / £{assigned.toFixed(2)}
+        </span>
+      </div>
+
+      <div className="text-right">
+        <span
+          className={cn(
+            "text-sm font-medium",
+            available < 0 ? "text-destructive" : "text-green-600",
+          )}
+        >
+          £{available.toFixed(2)}
+        </span>
+      </div>
+
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="size-4" />
+      </button>
     </div>
   );
 }
