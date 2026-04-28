@@ -1,5 +1,15 @@
 # budgie
 
+## 0.10.0
+
+### Minor Changes
+
+- aa711f5: Improved budget screen alignment; updated dependencies
+
+### Patch Changes
+
+- 7e4efce: Upgrade typescript to v7, plus other dependencies
+
 ## 0.9.8
 
 ### Patch Changes
