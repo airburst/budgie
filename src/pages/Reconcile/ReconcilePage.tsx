@@ -14,7 +14,8 @@ import { useHotkeys } from "@/hooks/useHotkeys";
 import { useTransactions } from "@/hooks/useTransactions";
 import { formatDate } from "@/lib/utils";
 import { TransactionForm } from "@/pages/AccountTransactions/TransactionForm";
-import { ArrowLeftIcon, PencilIcon, PlusIcon } from "lucide-react";
+import { findSubsetSum } from "@/lib/subset-sum";
+import { ArrowLeftIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import Layout from "../layout";
@@ -42,6 +43,9 @@ export default function ReconcilePage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
+  const [autoMatchBanner, setAutoMatchBanner] = useState<{
+    count: number;
+  } | null>(null);
 
   const eligibleTransactions = useMemo(
     () => transactions.filter((t) => !t.reconciled && t.date <= statementDate),
@@ -55,6 +59,25 @@ export default function ReconcilePage() {
   useEffect(() => {
     if (eligibleTransactions.length === 0) return;
     if (!initialized.current) {
+      const target = statementBalance - openingBalance;
+      const canAutoMatch =
+        !isNaN(target) && target !== 0 && eligibleTransactions.length <= 30;
+
+      if (canAutoMatch) {
+        const amounts = eligibleTransactions.map((t) => t.amount);
+        const result = findSubsetSum(amounts, target);
+        if (result.found) {
+          const matchedIds = new Set(
+            result.indices.map((i) => eligibleTransactions[i]!.id),
+          );
+          setCheckedIds(matchedIds);
+          setAutoMatchBanner({ count: result.indices.length });
+          knownIds.current = new Set(eligibleTransactions.map((t) => t.id));
+          initialized.current = true;
+          return;
+        }
+      }
+
       const cleared = new Set(
         eligibleTransactions.filter((t) => t.cleared).map((t) => t.id),
       );
@@ -217,6 +240,26 @@ export default function ReconcilePage() {
             </p>
           </div>
         </div>
+
+        {/* Auto-match banner */}
+        {autoMatchBanner !== null && (
+          <div className="mx-4 mb-2 flex items-center justify-between gap-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+            <span>
+              Auto-matched {autoMatchBanner.count} transaction
+              {autoMatchBanner.count !== 1 ? "s" : ""} to your target balance.
+              Verify and adjust as needed.
+            </span>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setAutoMatchBanner(null)}
+              aria-label="Dismiss"
+              className="shrink-0 text-blue-800 hover:bg-blue-100 hover:text-blue-900 dark:text-blue-200 dark:hover:bg-blue-900"
+            >
+              <XIcon />
+            </Button>
+          </div>
+        )}
 
         {/* Transaction table */}
         <div className="px-4">
