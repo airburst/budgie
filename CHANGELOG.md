@@ -1,5 +1,16 @@
 # budgie
 
+## 0.11.0
+
+### Minor Changes
+
+- Auto-reconcile when transactions match balance
+
+### Patch Changes
+
+- 139d010: Upgrade react-day-picker to v10; keep recharts on v2 (v3 is incompatible with React 19)
+- a5c65c4: Auto-match transactions during reconciliation when an exact combination is found
+
 ## 0.10.0
 
 ### Minor Changes
