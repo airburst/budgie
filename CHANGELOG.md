@@ -1,5 +1,11 @@
 # budgie
 
+## 0.11.1
+
+### Patch Changes
+
+- Update build script
+
 ## 0.11.0
 
 ### Minor Changes
