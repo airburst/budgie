@@ -1,0 +1,4 @@
+{
+  "cooldown": "2d",
+  "reject": ["recharts"]
+}

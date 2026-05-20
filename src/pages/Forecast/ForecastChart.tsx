@@ -122,6 +122,9 @@ function TrackingCursor({ points, height, width, payload }: CursorProps) {
   );
 }
 
+const tooltipCursor = <TrackingCursor />;
+const noContent = () => null;
+
 type Props = {
   chartData: ChartPoint[];
 };
@@ -155,8 +158,8 @@ export function ForecastChart({ chartData }: Props) {
           tickFormatter={formatCurrency}
         />
         <ChartTooltip
-          cursor={<TrackingCursor />}
-          content={() => null}
+          cursor={tooltipCursor}
+          content={noContent}
           isAnimationActive={false}
         />
         <ReferenceLine
