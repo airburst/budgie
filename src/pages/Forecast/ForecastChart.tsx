@@ -4,6 +4,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -122,15 +123,27 @@ function TrackingCursor({ points, height, width, payload }: CursorProps) {
   );
 }
 
+const tooltipCursor = <TrackingCursor />;
+const noContent = () => null;
+
 type Props = {
   chartData: ChartPoint[];
 };
 
 export function ForecastChart({ chartData }: Props) {
+  // Buffer chartData through state so ChartDataContextProvider only sees changes
+  // in a fresh React batch (via useEffect), not nested inside an ongoing render.
+  // Without this, recharts v3's cleanup dispatch triggers useSyncExternalStore
+  // subscribers during React 19's commit phase, exceeding the 50-update limit.
+  const [renderedData, setRenderedData] = useState(chartData);
+  useEffect(() => {
+    setRenderedData(chartData);
+  }, [chartData]);
+
   return (
     <ChartContainer config={chartConfig} className="h-64 w-full">
       <LineChart
-        data={chartData}
+        data={renderedData}
         margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
       >
         <CartesianGrid vertical={false} />
@@ -155,8 +168,8 @@ export function ForecastChart({ chartData }: Props) {
           tickFormatter={formatCurrency}
         />
         <ChartTooltip
-          cursor={<TrackingCursor />}
-          content={() => null}
+          cursor={tooltipCursor}
+          content={noContent}
           isAnimationActive={false}
         />
         <ReferenceLine
