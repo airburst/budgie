@@ -1,5 +1,11 @@
 # budgie
 
+## 0.12.0
+
+### Minor Changes
+
+- Add Skip button to RecordPaymentDialog to skip the next due transaction and advance to the following occurrence
+
 ## 0.11.1
 
 ### Patch Changes

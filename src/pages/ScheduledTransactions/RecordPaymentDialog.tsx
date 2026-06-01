@@ -57,7 +57,8 @@ export function RecordPaymentDialog({
   const sched = scheduledId
     ? scheduled.find((s) => s.id === scheduledId)
     : null;
-  const shouldFocusWithdrawal = focusAmountOnOpen && !!sched && sched.amount < 0;
+  const shouldFocusWithdrawal =
+    focusAmountOnOpen && !!sched && sched.amount < 0;
   const shouldFocusDeposit = focusAmountOnOpen && !!sched && sched.amount > 0;
 
   const [form, setForm] = useState(() =>
@@ -111,6 +112,22 @@ export function RecordPaymentDialog({
     },
   });
 
+  const skipMutation = useMutation({
+    mutationFn: async () => {
+      if (!sched) return;
+      const newNextDueDate = sched.nextDueDate
+        ? computeNextOccurrenceAfter(sched.rrule, sched.nextDueDate)
+        : null;
+      await window.api.updateScheduledTransaction(sched.id, {
+        nextDueDate: newNextDueDate,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["scheduled_transactions"] });
+      onOpenChange(false);
+    },
+  });
+
   function handleEdit() {
     if (!sched) return;
     onOpenChange(false);
@@ -121,7 +138,8 @@ export function RecordPaymentDialog({
     setConfirmDeleteOpen(true);
   }
 
-  const isPending = recordMutation.isPending || remove.isPending;
+  const isPending =
+    recordMutation.isPending || skipMutation.isPending || remove.isPending;
 
   if (!sched) return null;
 
@@ -258,6 +276,13 @@ export function RecordPaymentDialog({
                 disabled={isPending}
               >
                 Cancel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => skipMutation.mutate()}
+                disabled={isPending}
+              >
+                Skip
               </Button>
               <Button
                 variant="outline"
