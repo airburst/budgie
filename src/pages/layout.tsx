@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { usePreferences } from "@/hooks/usePreferences";
+import { GLOBAL_ROUTE_SHORTCUTS } from "@/lib/shortcuts";
 import { useNavigate } from "react-router";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -8,8 +9,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const { preferences } = usePreferences();
 
   useHotkeys([
-    { key: "a", handler: () => navigate("/") },
-    { key: "s", handler: () => navigate("/scheduled") },
+    ...GLOBAL_ROUTE_SHORTCUTS.map((shortcut) => ({
+      key: shortcut.key,
+      ctrl: shortcut.ctrl,
+      handler: () => navigate(shortcut.path),
+    })),
     ...(preferences.accountShortcuts ?? []).map((s) => ({
       key: s.key,
       ctrl: s.ctrl,

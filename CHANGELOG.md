@@ -1,5 +1,13 @@
 # budgie
 
+## 0.12.1
+
+### Patch Changes
+
+- Fix keyboard shortcut routing for Budget and centralize built-in shortcut definitions so Settings and runtime hotkeys stay in sync.
+- Reorder Reconcile and Forecast buttons
+- Increase accounts table footer height
+
 ## 0.12.0
 
 ### Minor Changes

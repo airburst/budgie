@@ -167,18 +167,18 @@ export default function AccountTransactions() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/forecast/${accountId}`)}
-              >
-                <LineChartIcon />
-                Forecast
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => setReconcileOpen(true)}
               >
                 <CheckSquareIcon />
                 Reconcile
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/forecast/${accountId}`)}
+              >
+                <LineChartIcon />
+                Forecast
               </Button>
               <Button variant="outline" size="sm" onClick={handleImport}>
                 <ImportIcon />
@@ -189,7 +189,9 @@ export default function AccountTransactions() {
 
           <TransactionsTable
             transactions={filtered}
-            allTransactions={transactions.filter((t) => !t.cleared && !t.reconciled)}
+            allTransactions={transactions.filter(
+              (t) => !t.cleared && !t.reconciled,
+            )}
             categories={categories}
             openingBalance={account?.clearedBalance ?? account?.balance ?? 0}
             onEdit={openEdit}

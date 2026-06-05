@@ -8,22 +8,10 @@ import {
 } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/useAccounts";
 import { usePreferences } from "@/hooks/usePreferences";
+import { SYSTEM_SHORTCUTS } from "@/lib/shortcuts";
 import type { AccountShortcut } from "@/types/electron";
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-// Hard-coded global shortcuts from layout.tsx — shown as read-only
-const SYSTEM_SHORTCUTS: Array<{
-  key: string;
-  ctrl: boolean;
-  label: string;
-  note?: string;
-}> = [
-  { key: "a", ctrl: false, label: "Accounts" },
-  { key: "s", ctrl: false, label: "Subscriptions" },
-  { key: "f", ctrl: false, label: "Forecast", note: "account page" },
-  { key: "r", ctrl: false, label: "Reconcile", note: "account page" },
-];
 
 function formatKey(key: string, ctrl?: boolean) {
   const label =
