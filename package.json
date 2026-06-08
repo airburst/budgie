@@ -113,7 +113,8 @@
     "publish": {
       "provider": "github",
       "owner": "airburst",
-      "repo": "budgie"
+      "repo": "budgie",
+      "timeout": 300000
     },
     "mac": {
       "category": "public.app-category.finance",

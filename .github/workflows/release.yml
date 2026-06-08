@@ -27,7 +27,13 @@ jobs:
       - run: bun run electron-rebuild -f -w better-sqlite3
       - run: bunx vite build
       - run: bunx vite build --config vite.main.config.ts
-      - run: bunx electron-builder --mac --publish always
+      - name: Build & publish (macOS)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: bunx electron-builder --mac --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -41,7 +47,13 @@ jobs:
       - run: bun run electron-rebuild -f -w better-sqlite3
       - run: bunx vite build
       - run: bunx vite build --config vite.main.config.ts
-      - run: bunx electron-builder --win --publish always
+      - name: Build & publish (Windows)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: bunx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
