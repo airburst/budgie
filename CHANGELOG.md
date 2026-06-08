@@ -1,5 +1,11 @@
 # budgie
 
+## 0.13.0
+
+### Minor Changes
+
+- ab8280b: Add account filter to Subscriptions page - filter scheduled transactions by account with a popover dropdown and checkboxes
+
 ## 0.12.1
 
 ### Patch Changes
