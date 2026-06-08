@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "../layout";
+import { AccountFilter } from "./AccountFilter";
 import { RecordPaymentDialog } from "./RecordPaymentDialog";
 import { ScheduledCalendar } from "./ScheduledCalendar";
 import { ScheduledPaymentDialog } from "./ScheduledPaymentForm";
@@ -19,6 +20,53 @@ export default function ScheduledTransactions() {
   const [recordingId, setRecordingId] = useState<number | null>(null);
   const [focusRecordedAmountOnOpen, setFocusRecordedAmountOnOpen] =
     useState(false);
+
+  // Extract unique accounts from scheduled transactions
+  const uniqueAccounts = useMemo(() => {
+    const seen = new Set<number>();
+    const accountMap = new Map(accounts.map((a) => [a.id, a]));
+    const unique: Array<{ id: number; name: string }> = [];
+
+    for (const s of scheduled) {
+      if (!seen.has(s.accountId)) {
+        const account = accountMap.get(s.accountId);
+        if (account) {
+          unique.push({ id: account.id, name: account.name });
+          seen.add(s.accountId);
+        }
+      }
+    }
+
+    return unique;
+  }, [scheduled, accounts]);
+
+  // Initialize selected accounts to all unique accounts (all checked by default)
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<number>>(
+    () => new Set(uniqueAccounts.map((a) => a.id)),
+  );
+
+  // Update selected accounts when unique accounts change
+  useEffect(() => {
+    setSelectedAccountIds(new Set(uniqueAccounts.map((a) => a.id)));
+  }, [uniqueAccounts]);
+
+  // Filter scheduled transactions by selected accounts
+  const filteredScheduled = useMemo(
+    () => scheduled.filter((s) => selectedAccountIds.has(s.accountId)),
+    [scheduled, selectedAccountIds],
+  );
+
+  function handleAccountChange(accountId: number, checked: boolean) {
+    setSelectedAccountIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(accountId);
+      } else {
+        next.delete(accountId);
+      }
+      return next;
+    });
+  }
 
   function openAdd() {
     setEditingId(null);
@@ -59,14 +107,21 @@ export default function ScheduledTransactions() {
                 Manage your recurring bills and upcoming transfers.
               </p>
             </div>
-            <Button onClick={openAdd} size="sm">
-              <PlusIcon />
-              Add Subscription
-            </Button>
+            <div className="flex items-center gap-3">
+              <AccountFilter
+                accounts={uniqueAccounts}
+                selectedAccountIds={selectedAccountIds}
+                onAccountChange={handleAccountChange}
+              />
+              <Button onClick={openAdd} size="sm">
+                <PlusIcon />
+                Add Subscription
+              </Button>
+            </div>
           </div>
 
           <ScheduledTable
-            scheduledTransactions={scheduled}
+            scheduledTransactions={filteredScheduled}
             accounts={accounts}
             onRecord={openRecord}
             onEdit={openEdit}
