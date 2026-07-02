@@ -38,6 +38,18 @@ bun run start        # dev: Vite on :3000 + Electron
 
 https://www.aconvert.com/image/jpg-to-icns/
 
+## Issues with released versions
+
+I do not have an Apple developer account, so this app is not notarized with a signed certificate. On Macs this can result in a popup message after trying to run a new version:
+
+> "Budgie.app is damaged and can’t be opened. You should move it to the Bin"
+
+If you see this, either override in Privacy and Settings, or run the command
+
+```bash
+xattr -d com.apple.quarantine /Applications/Budgie.app
+```
+
 ## Docs
 
 - [Architecture](docs/ARCHITECTURE.md)
