@@ -9,9 +9,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { Account, ScheduledTransaction } from "@/types/electron";
-import { PencilIcon, ReceiptText, Trash2Icon } from "lucide-react";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type SortingState,
+} from "@tanstack/react-table";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  PencilIcon,
+  ReceiptText,
+  Trash2Icon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { FrequencyBadge } from "./FrequencyBadge";
 
@@ -23,6 +38,10 @@ type ScheduledTableProps = {
   onDelete: (id: number) => void;
 };
 
+type EnrichedRow = ScheduledTransaction & { accountName: string };
+
+const columnHelper = createColumnHelper<EnrichedRow>();
+
 export function ScheduledTable({
   scheduledTransactions,
   accounts,
@@ -31,125 +50,197 @@ export function ScheduledTable({
   onDelete,
 }: ScheduledTableProps) {
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "nextDueDate", desc: false },
+  ]);
+
   const accountMap = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
   );
-  const sorted = useMemo(
+
+  const data = useMemo<EnrichedRow[]>(
     () =>
-      [...scheduledTransactions].sort((a, b) => {
-        if (!a.nextDueDate) return 1;
-        if (!b.nextDueDate) return -1;
-        return a.nextDueDate.localeCompare(b.nextDueDate);
-      }),
-    [scheduledTransactions],
+      scheduledTransactions.map((s) => ({
+        ...s,
+        accountName: accountMap.get(s.accountId)?.name ?? "—",
+      })),
+    [scheduledTransactions, accountMap],
   );
 
-  if (scheduledTransactions.length === 0) {
-    return (
-      <div className="border border-border rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="bg-accent">Next Due</TableHead>
-              <TableHead className="bg-accent">Payee</TableHead>
-              <TableHead className="text-right bg-accent">Amount</TableHead>
-              <TableHead className="bg-accent">Frequency</TableHead>
-              <TableHead className="bg-accent">Account</TableHead>
-              <TableHead className="bg-accent" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-muted-foreground py-12"
-              >
-                No subscriptions yet.
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    );
-  }
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor("nextDueDate", {
+        header: "Next Due",
+        sortingFn: (rowA, rowB) => {
+          const a = rowA.original.nextDueDate;
+          const b = rowB.original.nextDueDate;
+          if (!a && !b) return 0;
+          if (!a) return 1;
+          if (!b) return -1;
+          return a.localeCompare(b);
+        },
+        cell: ({ getValue }) => (
+          <span className="text-sm text-muted-foreground">
+            {getValue() ? formatDate(getValue()!) : "—"}
+          </span>
+        ),
+      }),
+      columnHelper.accessor("payee", {
+        header: "Payee",
+        cell: ({ getValue }) => (
+          <span className="font-medium">{getValue()}</span>
+        ),
+      }),
+      columnHelper.accessor("amount", {
+        header: "Amount",
+        cell: ({ getValue }) => (
+          <div className="text-right">
+            <Amount value={getValue()} />
+          </div>
+        ),
+      }),
+      columnHelper.accessor("rrule", {
+        id: "frequency",
+        header: "Frequency",
+        enableSorting: false,
+        cell: ({ getValue }) => <FrequencyBadge rruleStr={getValue()} />,
+      }),
+      columnHelper.accessor("accountName", {
+        header: "Account",
+        cell: ({ getValue }) => (
+          <span className="text-sm text-muted-foreground">{getValue()}</span>
+        ),
+      }),
+      columnHelper.display({
+        id: "actions",
+        cell: ({ row }) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRecord(row.original.id);
+              }}
+              aria-label="Record payment"
+            >
+              <ReceiptText />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row.original.id);
+              }}
+              aria-label="Edit scheduled payment"
+            >
+              <PencilIcon />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPendingDeleteId(row.original.id);
+              }}
+              aria-label="Delete scheduled payment"
+            >
+              <Trash2Icon className="text-destructive" />
+            </Button>
+          </div>
+        ),
+      }),
+    ],
+    [onRecord, onEdit],
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
 
   return (
     <>
       <div className="border border-border rounded-md">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="bg-accent">Next Due</TableHead>
-              <TableHead className="bg-accent">Payee</TableHead>
-              <TableHead className="text-right bg-accent">Amount</TableHead>
-              <TableHead className="bg-accent">Frequency</TableHead>
-              <TableHead className="bg-accent">Account</TableHead>
-              <TableHead className="bg-accent" />
-            </TableRow>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      "bg-accent",
+                      header.column.getCanSort() &&
+                        "cursor-pointer select-none",
+                    )}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <div
+                        className={cn(
+                          "flex items-center gap-1",
+                          header.column.id === "amount" && "justify-end",
+                        )}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {header.column.getCanSort() &&
+                          (header.column.getIsSorted() === "asc" ? (
+                            <ArrowUp className="h-3 w-3 shrink-0" />
+                          ) : header.column.getIsSorted() === "desc" ? (
+                            <ArrowDown className="h-3 w-3 shrink-0" />
+                          ) : (
+                            <ArrowUpDown className="h-3 w-3 shrink-0 opacity-40" />
+                          ))}
+                      </div>
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
           </TableHeader>
           <TableBody>
-            {sorted.map((s) => {
-              const account = accountMap.get(s.accountId);
-              return (
-                <TableRow
-                  key={s.id}
-                  className={`cursor-pointer${!s.active ? " opacity-50" : ""}`}
-                  onDoubleClick={() => onRecord(s.id, { focusAmount: true })}
+            {table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-muted-foreground py-12"
                 >
-                  <TableCell className="text-sm text-muted-foreground">
-                    {s.nextDueDate ? formatDate(s.nextDueDate) : "—"}
-                  </TableCell>
-                  <TableCell className="font-medium">{s.payee}</TableCell>
-                  <TableCell className="text-right">
-                    <Amount value={s.amount} />
-                  </TableCell>
-                  <TableCell>
-                    <FrequencyBadge rruleStr={s.rrule} />
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {account?.name ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onRecord(s.id);
-                        }}
-                        aria-label="Record payment"
-                      >
-                        <ReceiptText />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(s.id);
-                        }}
-                        aria-label="Edit scheduled payment"
-                      >
-                        <PencilIcon />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPendingDeleteId(s.id);
-                        }}
-                        aria-label="Delete scheduled payment"
-                      >
-                        <Trash2Icon className="text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  No subscriptions yet.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className={cn(
+                    "cursor-pointer",
+                    !row.original.active && "opacity-50",
+                  )}
+                  onDoubleClick={() =>
+                    onRecord(row.original.id, { focusAmount: true })
+                  }
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
                 </TableRow>
-              );
-            })}
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
