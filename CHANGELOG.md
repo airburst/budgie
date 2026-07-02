@@ -1,5 +1,12 @@
 # budgie
 
+## 0.14.0
+
+### Minor Changes
+
+- Make subscriptions table sortable
+- Update dependencies
+
 ## 0.13.0
 
 ### Minor Changes
