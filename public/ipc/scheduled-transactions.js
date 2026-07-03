@@ -131,7 +131,13 @@ async function processAutoPost(db, schema) {
       nextDue = next ? next.toISOString().slice(0, 10) : null;
     }
 
-    if (nextDue !== item.nextDueDate) {
+    if (nextDue === null) {
+      // Exhausted (e.g. a "once" schedule): it will never occur again, so
+      // remove it from the list. The posted transaction is unaffected.
+      await db
+        .delete(schema.scheduledTransactions)
+        .where(eq(schema.scheduledTransactions.id, item.id));
+    } else if (nextDue !== item.nextDueDate) {
       await db
         .update(schema.scheduledTransactions)
         .set({ nextDueDate: nextDue })

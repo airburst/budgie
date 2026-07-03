@@ -16,7 +16,9 @@ type FrequencyBadgeProps = {
 export const FrequencyBadge = memo(function FrequencyBadge({ rruleStr }: FrequencyBadgeProps) {
   try {
     const rule = RRule.fromString(rruleStr);
-    const label = FREQ_LABELS[rule.options.freq] ?? rruleStr;
+    // "Once" is encoded as DAILY + COUNT=1 (see buildRRule.ts).
+    const isOnce = rule.options.freq === RRule.DAILY && rule.options.count === 1;
+    const label = isOnce ? "Once" : (FREQ_LABELS[rule.options.freq] ?? rruleStr);
     return <Badge variant="secondary">{label}</Badge>;
   } catch {
     return <Badge variant="outline">{rruleStr}</Badge>;

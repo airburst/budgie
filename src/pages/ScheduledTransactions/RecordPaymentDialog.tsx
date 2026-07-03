@@ -101,9 +101,14 @@ export function RecordPaymentDialog({
       const newNextDueDate = sched.nextDueDate
         ? computeNextOccurrenceAfter(sched.rrule, sched.nextDueDate)
         : null;
-      await window.api.updateScheduledTransaction(sched.id, {
-        nextDueDate: newNextDueDate,
-      });
+      if (newNextDueDate === null) {
+        // Exhausted (e.g. a "once" schedule): it will never occur again.
+        await window.api.deleteScheduledTransaction(sched.id);
+      } else {
+        await window.api.updateScheduledTransaction(sched.id, {
+          nextDueDate: newNextDueDate,
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
@@ -118,9 +123,14 @@ export function RecordPaymentDialog({
       const newNextDueDate = sched.nextDueDate
         ? computeNextOccurrenceAfter(sched.rrule, sched.nextDueDate)
         : null;
-      await window.api.updateScheduledTransaction(sched.id, {
-        nextDueDate: newNextDueDate,
-      });
+      if (newNextDueDate === null) {
+        // Exhausted (e.g. a "once" schedule): it will never occur again.
+        await window.api.deleteScheduledTransaction(sched.id);
+      } else {
+        await window.api.updateScheduledTransaction(sched.id, {
+          nextDueDate: newNextDueDate,
+        });
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["scheduled_transactions"] });

@@ -308,10 +308,10 @@ describe("processAutoPost — nextDueDate advancement", () => {
     expect(weekly?.nextDueDate).toBe("2026-03-11");
   });
 
-  it("once (COUNT=1): nextDueDate becomes null", async () => {
+  it("once (COUNT=1): schedule is deleted once posted (never occurs again)", async () => {
     const rows = await db.select().from(schema.scheduledTransactions);
     const once = rows.find((r: { id: number }) => r.id === onceId);
-    expect(once?.nextDueDate).toBeNull();
+    expect(once).toBeUndefined();
   });
 
   it("future payment not due: nextDueDate is unchanged", async () => {
