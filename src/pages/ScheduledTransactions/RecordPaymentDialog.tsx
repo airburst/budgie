@@ -69,7 +69,7 @@ export function RecordPaymentDialog({
   useEffect(() => {
     if (sched) {
       setForm({
-        date: sched.nextDueDate ?? new Date().toISOString().slice(0, 10),
+        date: new Date().toISOString().slice(0, 10),
         accountId: String(sched.accountId),
         payee: sched.payee,
         categoryId: sched.categoryId ? String(sched.categoryId) : "",

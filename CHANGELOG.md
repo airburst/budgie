@@ -1,5 +1,11 @@
 # budgie
 
+## 0.15.0
+
+### Minor Changes
+
+- Add sortable columns to scheduled transactions table and default Record button date to today
+
 ## 0.14.1
 
 ### Patch Changes
