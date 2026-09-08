@@ -6,29 +6,13 @@ import {
   computeRange,
 } from "@/components/date-range-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useReportsData } from "@/hooks/useReportsData";
 import Layout from "@/pages/layout";
+import { IncomeExpensesChart } from "@/pages/Reports/IncomeExpensesChart";
+import { NetWorthChart } from "@/pages/Reports/NetWorthChart";
+import { SpendingDonut } from "@/pages/Reports/SpendingDonut";
 import { useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 const fmt = (v: number) =>
   `£${v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -45,27 +29,11 @@ function formatMonth(ym: string): string {
   return date.toLocaleDateString("en-GB", { month: "short", year: "2-digit" });
 }
 
-const incExpConfig: ChartConfig = {
-  income: { label: "Income", color: "hsl(160, 60%, 45%)" },
-  expenses: { label: "Expenses", color: "hsl(0, 70%, 60%)" },
-};
-
-const netWorthConfig: ChartConfig = {
-  netWorth: { label: "Net Worth", color: "hsl(220, 70%, 55%)" },
-};
-
 export default function ReportsPage() {
   const [range, setRange] = useState<DateRange>(() => computeRange("90"));
   const [accountIds, setAccountIds] = useState<number[]>([]);
   const { accounts } = useAccounts();
   const data = useReportsData(range.startDate, range.endDate, accountIds);
-
-  const spendingConfig: ChartConfig = Object.fromEntries(
-    data.spendingByCategory.map((s) => [
-      s.name,
-      { label: s.name, color: s.fill },
-    ]),
-  );
 
   const spendingTotal = data.spendingByCategory.reduce(
     (sum, s) => sum + s.amount,
@@ -100,42 +68,11 @@ export default function ReportsPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <ChartCard title="Spending by Category">
                 {data.spendingByCategory.length > 0 ? (
-                  <ChartContainer
-                    config={spendingConfig}
-                    className="aspect-square max-h-[300px]"
-                  >
-                    <PieChart>
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            formatter={(value) => fmt(value as number)}
-                          />
-                        }
-                      />
-                      <Pie
-                        data={data.spendingByCategory}
-                        dataKey="amount"
-                        nameKey="name"
-                        innerRadius="50%"
-                        outerRadius="80%"
-                        paddingAngle={2}
-                      >
-                        {data.spendingByCategory.map((entry) => (
-                          <Cell key={entry.name} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Legend />
-                      <text
-                        x="50%"
-                        y="50%"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="fill-foreground text-lg font-semibold"
-                      >
-                        {fmt(spendingTotal)}
-                      </text>
-                    </PieChart>
-                  </ChartContainer>
+                  <SpendingDonut
+                    slices={data.spendingByCategory}
+                    total={fmt(spendingTotal)}
+                    formatAmount={fmt}
+                  />
                 ) : (
                   <p className="text-muted-foreground text-sm text-center py-12">
                     No spending data for this period
@@ -145,47 +82,12 @@ export default function ReportsPage() {
 
               <ChartCard title="Income vs Expenses">
                 {data.incomeVsExpenses.length > 0 ? (
-                  <ChartContainer
-                    config={incExpConfig}
-                    className="aspect-video max-h-[300px]"
-                  >
-                    <BarChart data={data.incomeVsExpenses}>
-                      <CartesianGrid vertical={false} />
-                      <XAxis
-                        dataKey="month"
-                        tickFormatter={formatMonth}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        tickFormatter={fmtCompact}
-                        tickLine={false}
-                        axisLine={false}
-                        width={60}
-                      />
-                      <ChartTooltip
-                        content={
-                          <ChartTooltipContent
-                            labelFormatter={(label) =>
-                              formatMonth(label as string)
-                            }
-                            formatter={(value) => fmt(value as number)}
-                          />
-                        }
-                      />
-                      <Legend />
-                      <Bar
-                        dataKey="income"
-                        fill="var(--color-income)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="expenses"
-                        fill="var(--color-expenses)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ChartContainer>
+                  <IncomeExpensesChart
+                    data={data.incomeVsExpenses}
+                    formatMonth={formatMonth}
+                    formatAmount={fmt}
+                    formatAxisAmount={fmtCompact}
+                  />
                 ) : (
                   <p className="text-muted-foreground text-sm text-center py-12">
                     No transaction data for this period
@@ -208,63 +110,12 @@ export default function ReportsPage() {
               }
             >
               {data.netWorthOverTime.length > 0 ? (
-                <ChartContainer
-                  config={netWorthConfig}
-                  className="aspect-[3/1] max-h-[250px]"
-                >
-                  <AreaChart data={data.netWorthOverTime}>
-                    <defs>
-                      <linearGradient
-                        id="netWorthGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="var(--color-netWorth)"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="var(--color-netWorth)"
-                          stopOpacity={0.05}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickFormatter={formatMonth}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={fmtCompact}
-                      tickLine={false}
-                      axisLine={false}
-                      width={60}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={(label) =>
-                            formatMonth(label as string)
-                          }
-                          formatter={(value) => fmt(value as number)}
-                        />
-                      }
-                    />
-                    <Area
-                      dataKey="netWorth"
-                      type="monotone"
-                      stroke="var(--color-netWorth)"
-                      fill="url(#netWorthGradient)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ChartContainer>
+                <NetWorthChart
+                  data={data.netWorthOverTime}
+                  formatMonth={formatMonth}
+                  formatAmount={fmt}
+                  formatAxisAmount={fmtCompact}
+                />
               ) : (
                 <p className="text-muted-foreground text-sm text-center py-12">
                   No net worth data for this period
@@ -273,7 +124,10 @@ export default function ReportsPage() {
             </ChartCard>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Total Assets" value={fmt(data.stats.totalAssets)} />
+              <StatCard
+                label="Total Assets"
+                value={fmt(data.stats.totalAssets)}
+              />
               <StatCard label="Total Debt" value={fmt(data.stats.totalDebt)} />
               <StatCard
                 label="Monthly Surplus"

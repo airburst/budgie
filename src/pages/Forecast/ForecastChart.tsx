@@ -1,29 +1,28 @@
 import {
-  ChartContainer,
-  ChartTooltip,
+  budgieChartTheme,
+  chartMargin,
+  seriesColor,
   type ChartConfig,
-} from "@/components/ui/chart";
+} from "@/components/chart-theme";
+import { defineChart, dot, lineY, ruleX, ruleY, text } from "@tanstack/charts";
+import { whenFocused } from "@tanstack/charts";
+import { Chart } from "@tanstack/charts/react";
+import { scaleLinear, scaleUtc } from "d3-scale";
 import { format } from "date-fns";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 export type ChartPoint = {
   date: string;
   balance: number;
 };
 
-const chartConfig = {
-  balance: {
-    label: "Balance",
-    color: "#22c55e",
-  },
-} satisfies ChartConfig;
+type Row = ChartPoint & { at: Date };
+
+const chartConfig: ChartConfig = {
+  balance: { label: "Balance", color: "#22c55e" },
+};
+
+const BALANCE = seriesColor(chartConfig, "balance");
+const OVERDRAWN = "#ef4444";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-GB", {
@@ -36,147 +35,143 @@ const formatCurrency = (value: number) =>
 const formatCurrencyFull = (value: number) =>
   value.toLocaleString("en-GB", { style: "currency", currency: "GBP" });
 
-type CursorProps = {
-  points?: { x: number; y: number }[];
-  height?: number;
-  width?: number;
-  payload?: { value: number; payload: ChartPoint }[];
-};
-
-function TrackingCursor({ points, height, width, payload }: CursorProps) {
-  if (!points?.length || height == null || width == null) return null;
-  const point = points[0];
-  if (!point) return null;
-  const { x, y } = point;
-  const value = payload?.[0]?.value;
-  const date = payload?.[0]?.payload?.date;
-
-  // Flip label below the dot if there isn't room above it
-  const labelAbove = y > 36;
-  const valueY = labelAbove ? y - 8 : y + 16;
-  const dateY = labelAbove ? y - 20 : y + 26;
-
-  // Keep horizontal label inside the chart area (approx 90px wide)
-  const labelX = x + 8 + 90 > width ? x - 8 : x + 8;
-  const anchor = x + 8 + 90 > width ? "end" : "start";
-
-  const dateLabel = date
-    ? (() => {
-        const [yr, m, d] = date.split("-");
-        return format(new Date(Number(yr), Number(m) - 1, Number(d)), "d MMM");
-      })()
-    : null;
-
-  return (
-    <g>
-      {/* Full-height dashed cursor line */}
-      <line
-        x1={x}
-        y1={0}
-        x2={x}
-        y2={height}
-        style={{ stroke: "var(--muted-foreground)" }}
-        strokeWidth={1}
-        strokeDasharray="4 4"
-        strokeOpacity={0.6}
-      />
-      {/* Solid line from chart floor to data point */}
-      <line
-        x1={x}
-        y1={height}
-        x2={x}
-        y2={y}
-        stroke="var(--color-balance)"
-        strokeWidth={2}
-        strokeOpacity={0.35}
-      />
-      {/* Active dot */}
-      <circle cx={x} cy={y} r={3.5} fill="var(--color-balance)" />
-      {/* Value + date labels above (or below) the dot */}
-      {value !== undefined && (
-        <>
-          <text
-            x={labelX}
-            y={valueY}
-            textAnchor={anchor}
-            style={{ fill: "var(--foreground)" }}
-            fontSize={11}
-            fontWeight={600}
-          >
-            {formatCurrencyFull(value)}
-          </text>
-          {dateLabel && (
-            <text
-              x={labelX}
-              y={dateY}
-              textAnchor={anchor}
-              style={{ fill: "var(--muted-foreground)" }}
-              fontSize={10}
-            >
-              {dateLabel}
-            </text>
-          )}
-        </>
-      )}
-    </g>
-  );
+function parseDate(value: string): Date {
+  const [y, m, d] = value.split("-");
+  return new Date(Number(y), Number(m) - 1, Number(d));
 }
 
-const tooltipCursor = <TrackingCursor />;
-const noContent = () => null;
+/**
+ * The hover label tracks the focused point rather than opening a tooltip
+ * panel. Under recharts this needed pixel maths in a custom cursor; here the
+ * same two decisions — flip the label below a high point, and pull it inside
+ * the right edge — fall out of where the datum sits in each domain.
+ */
+function buildDefinition(rows: readonly Row[]) {
+  const balances = rows.map((row) => row.balance);
+  const low = Math.min(0, ...balances);
+  const high = Math.max(0, ...balances);
+  const span = high - low || 1;
+
+  const first = rows[0]?.at.getTime() ?? 0;
+  const last = rows[rows.length - 1]?.at.getTime() ?? 1;
+  const timeSpan = last - first || 1;
+
+  // Points in the top 15% of the plot have no room for a label above them.
+  const labelBelow = (row: Row) => (row.balance - low) / span > 0.85;
+  // Points in the last 15% would push a start-anchored label off the edge.
+  const labelAtEnd = (row: Row) => (row.at.getTime() - first) / timeSpan > 0.85;
+
+  return defineChart(
+    {
+      marks: [
+        ruleY([0], {
+          id: "zero-line",
+          stroke: OVERDRAWN,
+          strokeWidth: 1.5,
+          strokeDasharray: "4 4",
+        }),
+        lineY(rows, {
+          id: "balance-line",
+          x: "at",
+          y: "balance",
+          stroke: BALANCE,
+          strokeWidth: 2,
+        }),
+        whenFocused(
+          ruleX(rows, {
+            id: "focus-guide",
+            x: "at",
+            stroke: budgieChartTheme.foreground,
+            strokeWidth: 1,
+            strokeDasharray: "4 4",
+            strokeOpacity: 0.6,
+          }),
+        ),
+        whenFocused(
+          dot(rows, {
+            id: "focus-dot",
+            x: "at",
+            y: "balance",
+            r: 3.5,
+            fill: BALANCE,
+          }),
+        ),
+        whenFocused(
+          text(rows, {
+            id: "focus-value",
+            x: "at",
+            y: "balance",
+            text: (row: Row) => formatCurrencyFull(row.balance),
+            fill: "var(--foreground)",
+            fontSize: 11,
+            fontWeight: 600,
+            anchor: (row: Row) => (labelAtEnd(row) ? "end" : "start"),
+            dx: (row: Row) => (labelAtEnd(row) ? -8 : 8),
+            dy: (row: Row) => (labelBelow(row) ? 16 : -8),
+          }),
+        ),
+        whenFocused(
+          text(rows, {
+            id: "focus-date",
+            x: "at",
+            y: "balance",
+            text: (row: Row) => format(row.at, "d MMM"),
+            fill: budgieChartTheme.foreground,
+            fontSize: 10,
+            anchor: (row: Row) => (labelAtEnd(row) ? "end" : "start"),
+            dx: (row: Row) => (labelAtEnd(row) ? -8 : 8),
+            dy: (row: Row) => (labelBelow(row) ? 26 : -20),
+          }),
+        ),
+      ],
+      scales: {
+        x: {
+          scale: scaleUtc,
+          axis: {
+            line: false,
+            ticks: {
+              size: 0,
+              padding: 8,
+              format: (value: Date) => format(value, "dd MMM"),
+            },
+          },
+        },
+        y: {
+          scale: scaleLinear,
+          grid: true,
+          axis: {
+            line: false,
+            ticks: { size: 0, padding: 4, format: formatCurrency },
+          },
+        },
+      },
+      margin: chartMargin,
+      theme: budgieChartTheme,
+    },
+    {
+      svgAnimation: false,
+      focus: "group-x",
+    },
+  );
+}
 
 type Props = {
   chartData: ChartPoint[];
 };
 
 export function ForecastChart({ chartData }: Props) {
+  const rows: Row[] = chartData.map((point) => ({
+    ...point,
+    at: parseDate(point.date),
+  }));
+
   return (
-    <ChartContainer config={chartConfig} className="h-64 w-full">
-      <LineChart
-        data={chartData}
-        margin={{ left: 8, right: 16, top: 8, bottom: 8 }}
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickFormatter={(value: string) => {
-            const [y, m, d] = value.split("-");
-            return format(
-              new Date(Number(y), Number(m) - 1, Number(d)),
-              "dd MMM",
-            );
-          }}
-        />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={4}
-          width={64}
-          tickFormatter={formatCurrency}
-        />
-        <ChartTooltip
-          cursor={tooltipCursor}
-          content={noContent}
-          isAnimationActive={false}
-        />
-        <ReferenceLine
-          y={0}
-          stroke="#ef4444"
-          strokeWidth={1.5}
-          strokeDasharray="4 4"
-        />
-        <Line
-          dataKey="balance"
-          type="linear"
-          stroke="var(--color-balance)"
-          strokeWidth={2}
-          dot={false}
-          isAnimationActive={false}
-        />
-      </LineChart>
-    </ChartContainer>
+    <Chart
+      definition={buildDefinition(rows)}
+      height={256}
+      initialWidth={720}
+      className="w-full"
+      ariaLabel="Forecast balance over time"
+    />
   );
 }

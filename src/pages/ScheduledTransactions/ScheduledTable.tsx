@@ -13,10 +13,11 @@ import { cn, formatDate } from "@/lib/utils";
 import type { Account, ScheduledTransaction } from "@/types/electron";
 import {
   createColumnHelper,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
   type SortingState,
 } from "@tanstack/react-table";
 import {
@@ -40,7 +41,12 @@ type ScheduledTableProps = {
 
 type EnrichedRow = ScheduledTransaction & { accountName: string };
 
-const columnHelper = createColumnHelper<EnrichedRow>();
+const features = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+});
+
+const columnHelper = createColumnHelper<typeof features, EnrichedRow>();
 
 export function ScheduledTable({
   scheduledTransactions,
@@ -69,100 +75,100 @@ export function ScheduledTable({
   );
 
   const columns = useMemo(
-    () => [
-      columnHelper.accessor("nextDueDate", {
-        header: "Next Due",
-        sortingFn: (rowA, rowB) => {
-          const a = rowA.original.nextDueDate;
-          const b = rowB.original.nextDueDate;
-          if (!a && !b) return 0;
-          if (!a) return 1;
-          if (!b) return -1;
-          return a.localeCompare(b);
-        },
-        cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground">
-            {getValue() ? formatDate(getValue()!) : "—"}
-          </span>
-        ),
-      }),
-      columnHelper.accessor("payee", {
-        header: "Payee",
-        cell: ({ getValue }) => (
-          <span className="font-medium">{getValue()}</span>
-        ),
-      }),
-      columnHelper.accessor("amount", {
-        header: "Amount",
-        cell: ({ getValue }) => (
-          <div className="text-right">
-            <Amount value={getValue()} />
-          </div>
-        ),
-      }),
-      columnHelper.accessor("rrule", {
-        id: "frequency",
-        header: "Frequency",
-        enableSorting: false,
-        cell: ({ getValue }) => <FrequencyBadge rruleStr={getValue()} />,
-      }),
-      columnHelper.accessor("accountName", {
-        header: "Account",
-        cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground">{getValue()}</span>
-        ),
-      }),
-      columnHelper.display({
-        id: "actions",
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRecord(row.original.id);
-              }}
-              aria-label="Record payment"
-            >
-              <ReceiptText />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(row.original.id);
-              }}
-              aria-label="Edit scheduled payment"
-            >
-              <PencilIcon />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPendingDeleteId(row.original.id);
-              }}
-              aria-label="Delete scheduled payment"
-            >
-              <Trash2Icon className="text-destructive" />
-            </Button>
-          </div>
-        ),
-      }),
-    ],
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor("nextDueDate", {
+          header: "Next Due",
+          sortFn: (rowA, rowB) => {
+            const a = rowA.original.nextDueDate;
+            const b = rowB.original.nextDueDate;
+            if (!a && !b) return 0;
+            if (!a) return 1;
+            if (!b) return -1;
+            return a.localeCompare(b);
+          },
+          cell: ({ getValue }) => (
+            <span className="text-sm text-muted-foreground">
+              {getValue() ? formatDate(getValue()!) : "—"}
+            </span>
+          ),
+        }),
+        columnHelper.accessor("payee", {
+          header: "Payee",
+          cell: ({ getValue }) => (
+            <span className="font-medium">{getValue()}</span>
+          ),
+        }),
+        columnHelper.accessor("amount", {
+          header: "Amount",
+          cell: ({ getValue }) => (
+            <div className="text-right">
+              <Amount value={getValue()} />
+            </div>
+          ),
+        }),
+        columnHelper.accessor("rrule", {
+          id: "frequency",
+          header: "Frequency",
+          enableSorting: false,
+          cell: ({ getValue }) => <FrequencyBadge rruleStr={getValue()} />,
+        }),
+        columnHelper.accessor("accountName", {
+          header: "Account",
+          cell: ({ getValue }) => (
+            <span className="text-sm text-muted-foreground">{getValue()}</span>
+          ),
+        }),
+        columnHelper.display({
+          id: "actions",
+          cell: ({ row }) => (
+            <div className="flex items-center justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRecord(row.original.id);
+                }}
+                aria-label="Record payment"
+              >
+                <ReceiptText />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(row.original.id);
+                }}
+                aria-label="Edit scheduled payment"
+              >
+                <PencilIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingDeleteId(row.original.id);
+                }}
+                aria-label="Delete scheduled payment"
+              >
+                <Trash2Icon className="text-destructive" />
+              </Button>
+            </div>
+          ),
+        }),
+      ]),
     [onRecord, onEdit],
   );
 
-  const table = useReactTable({
+  const table = useTable<typeof features, EnrichedRow>({
+    features,
     data,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   });
 
   return (
@@ -230,7 +236,7 @@ export function ScheduledTable({
                     onRecord(row.original.id, { focusAmount: true })
                   }
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getAllCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
