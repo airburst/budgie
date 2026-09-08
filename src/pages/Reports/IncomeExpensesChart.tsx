@@ -1,8 +1,8 @@
 import { useChartFillHeight } from "@/components/chart-card";
+import { ChartLegend, useMeasuredHeight } from "@/components/chart-legend";
 import {
   animatedRenderer,
   budgieChartTheme,
-  readableColorLegend,
   type ChartConfig,
 } from "@/components/chart-theme";
 import {
@@ -79,12 +79,8 @@ function buildDefinition({
           },
         },
       },
-      color: {
-        domain,
-        range,
-        legend: readableColorLegend({ placement: "bottom" }),
-      },
-      margin: { top: 8, right: 12, bottom: 48, left: 60 },
+      color: { domain, range },
+      margin: { top: 8, right: 12, bottom: 32, left: 60 },
       theme: budgieChartTheme,
     }),
     focus: "group-x",
@@ -107,15 +103,42 @@ function buildDefinition({
 
 export function IncomeExpensesChart(props: Props) {
   const fillHeight = useChartFillHeight();
+  const [chartAreaRef, chartAreaHeight] = useMeasuredHeight<HTMLDivElement>();
+  const legendItems = Object.values(config);
+
+  if (!fillHeight) {
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <RendererChart
+          definition={buildDefinition(props)}
+          renderer={animatedRenderer}
+          aspectRatio={16 / 9}
+          initialWidth={520}
+          className="w-full max-h-75"
+          ariaLabel="Income versus expenses by month"
+        />
+        <ChartLegend items={legendItems} />
+      </div>
+    );
+  }
+
   return (
-    <RendererChart
-      definition={buildDefinition(props)}
-      renderer={animatedRenderer}
-      aspectRatio={fillHeight ? undefined : 16 / 9}
-      height={fillHeight}
-      initialWidth={520}
-      className={fillHeight ? "w-full h-full" : "w-full max-h-75"}
-      ariaLabel="Income versus expenses by month"
-    />
+    <div className="flex h-full w-full flex-col items-center gap-4">
+      {/* Sized by flexbox alone, so the chart below measures its final space
+          in one pass instead of an approximate height corrected after mount. */}
+      <div ref={chartAreaRef} className="w-full min-h-0 flex-1">
+        {chartAreaHeight > 0 ? (
+          <RendererChart
+            definition={buildDefinition(props)}
+            renderer={animatedRenderer}
+            height={chartAreaHeight}
+            initialWidth={520}
+            className="h-full w-full"
+            ariaLabel="Income versus expenses by month"
+          />
+        ) : null}
+      </div>
+      <ChartLegend items={legendItems} large />
+    </div>
   );
 }

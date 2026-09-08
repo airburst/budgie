@@ -2,7 +2,6 @@ import { useChartFillHeight } from "@/components/chart-card";
 import {
   animatedRenderer,
   budgieChartTheme,
-  seriesColor,
   type ChartConfig,
 } from "@/components/chart-theme";
 import { barY, defineChart, type ChartPoint } from "@tanstack/charts";
@@ -19,7 +18,9 @@ const config: ChartConfig = {
   netWorth: { label: "Net Worth", color: "hsl(220, 70%, 55%)" },
 };
 
-const NET_WORTH = seriesColor(config, "netWorth");
+// Matches the income/expenses palette so gains and losses read consistently.
+const POSITIVE = "hsl(160, 60%, 45%)";
+const NEGATIVE = "hsl(0, 70%, 60%)";
 
 type Props = {
   data: NetWorthPoint[];
@@ -41,16 +42,18 @@ function buildDefinition({
           id: "net-worth-bars",
           x: "month",
           y: "netWorth",
-          fill: NET_WORTH,
+          fill: (point: NetWorthPoint) =>
+            point.netWorth >= 0 ? POSITIVE : NEGATIVE,
           radius: 4,
         }),
       ],
       scales: {
         x: {
-          scale: scaleBand,
+          scale: () => scaleBand().padding(0.35),
           axis: {
             line: false,
             ticks: { size: 0, padding: 8, format: formatMonth },
+            tickLabels: { fontSize: 22 },
           },
         },
         y: {
@@ -59,10 +62,11 @@ function buildDefinition({
           axis: {
             line: false,
             ticks: { size: 0, padding: 4, format: formatAxisAmount },
+            tickLabels: { fontSize: 22 },
           },
         },
       },
-      margin: { top: 8, right: 12, bottom: 32, left: 60 },
+      margin: { top: 8, right: 12, bottom: 48, left: 90 },
       theme: budgieChartTheme,
     }),
     focus: "group-x",
@@ -76,7 +80,7 @@ function buildDefinition({
           {
             label: config.netWorth!.label,
             value: formatAmount(Number(points[0]?.yValue ?? 0)),
-            color: NET_WORTH,
+            color: points[0]?.color,
           },
         ],
       }),
@@ -93,7 +97,7 @@ export function NetWorthChart(props: Props) {
       aspectRatio={fillHeight ? undefined : 3}
       height={fillHeight}
       initialWidth={720}
-      className={fillHeight ? "w-full h-full" : "w-full max-h-[250px]"}
+      className={fillHeight ? "w-full h-full" : "w-full max-h-62.5"}
       ariaLabel="Net worth over time"
     />
   );

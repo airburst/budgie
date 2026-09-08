@@ -1,9 +1,6 @@
 import { useChartFillHeight } from "@/components/chart-card";
-import {
-  animatedRenderer,
-  budgieChartTheme,
-  readableColorLegend,
-} from "@/components/chart-theme";
+import { ChartLegend } from "@/components/chart-legend";
+import { animatedRenderer, budgieChartTheme } from "@/components/chart-theme";
 import { defineChart, type ChartPoint } from "@tanstack/charts";
 import {
   focusGroupAngle,
@@ -89,7 +86,6 @@ function buildDefinition(
       color: {
         domain: slices.map((slice) => slice.name),
         range: slices.map((slice) => slice.fill),
-        legend: readableColorLegend({ placement: "bottom" }),
       },
       margin: 0,
       theme: budgieChartTheme,
@@ -122,15 +118,29 @@ function buildDefinition(
 
 export function SpendingDonut({ slices, total, formatAmount }: Props) {
   const fillHeight = useChartFillHeight();
+  const legendItems = slices.map((slice) => ({
+    label: slice.name,
+    color: slice.fill,
+  }));
   return (
-    <RendererChart
-      definition={buildDefinition(slices, total, formatAmount)}
-      renderer={animatedRenderer}
-      aspectRatio={fillHeight ? undefined : 1}
-      height={fillHeight}
-      initialWidth={300}
-      className={fillHeight ? "mx-auto h-full" : "mx-auto max-h-75"}
-      ariaLabel="Spending by category"
-    />
+    <div
+      className={
+        fillHeight
+          ? "flex h-full w-full items-center gap-8"
+          : "flex flex-col items-center gap-4"
+      }
+    >
+      {fillHeight ? <ChartLegend items={legendItems} large /> : null}
+      <RendererChart
+        definition={buildDefinition(slices, total, formatAmount)}
+        renderer={animatedRenderer}
+        aspectRatio={fillHeight ? undefined : 1}
+        height={fillHeight}
+        initialWidth={300}
+        className={fillHeight ? "h-full flex-1" : "mx-auto max-h-75 w-full"}
+        ariaLabel="Spending by category"
+      />
+      {fillHeight ? null : <ChartLegend items={legendItems} />}
+    </div>
   );
 }

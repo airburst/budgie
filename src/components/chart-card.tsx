@@ -99,9 +99,14 @@ export function ChartCard({ title, badge, children }: Props) {
         <Card className="flex-1 flex flex-col rounded-none border-0 ring-0 h-full">
           {header}
           <CardContent ref={contentRef} className="flex-1 min-h-0 flex">
-            <ChartFillHeightContext.Provider value={fillHeight}>
-              {children}
-            </ChartFillHeightContext.Provider>
+            {fillHeight === undefined ? null : (
+              // Mounting the chart only once its final size is known means it
+              // paints (and animates in) at full size instead of snapping to
+              // it right after an initial small-then-large resize.
+              <ChartFillHeightContext.Provider value={fillHeight}>
+                {children}
+              </ChartFillHeightContext.Provider>
+            )}
           </CardContent>
         </Card>
       </div>,

@@ -1,4 +1,3 @@
-import type { ChartColorLegend, SceneNode } from "@tanstack/charts";
 import { motion } from "@tanstack/charts/motion";
 
 /**
@@ -44,69 +43,3 @@ export const chartMargin = {
   bottom: 32,
   left: 60,
 } as const;
-
-/**
- * `colorLegend()` from `@tanstack/charts/legend` renders 11px labels and 4px
- * dots — noticeably smaller than the recharts legend it replaced. This is the
- * same categorical layout at a size that matches the old chart legends.
- */
-export function readableColorLegend(options?: {
-  itemWidth?: number;
-  placement?: "top" | "bottom";
-}): ChartColorLegend {
-  const minimumItemWidth = Math.max(80, options?.itemWidth ?? 130);
-  const columnsFor = (itemCount: number, width: number) =>
-    Math.max(
-      1,
-      Math.min(itemCount || 1, Math.floor(width / minimumItemWidth) || 1),
-    );
-
-  return {
-    placement: options?.placement,
-    height(itemCount, { chart }) {
-      const columns = columnsFor(itemCount, chart.width);
-      const rows = Math.ceil(itemCount / columns);
-      return 12 + rows * 26;
-    },
-    render({ colors, bounds, theme }) {
-      const domain = colors.domain;
-      const columns = columnsFor(domain.length, bounds.width);
-      const itemWidth = bounds.width / columns;
-      const children: SceneNode[] = [];
-      domain.forEach((value, index) => {
-        const column = index % columns;
-        const row = Math.floor(index / columns);
-        const x = bounds.x + column * itemWidth;
-        const y = bounds.y + 13 + row * 26;
-        const key = String(value);
-        children.push(
-          {
-            kind: "dot",
-            key: `legend-dot:${key}`,
-            x: x + 6,
-            y,
-            radius: 6,
-            style: { fill: colors.map(value) },
-          },
-          {
-            kind: "label",
-            key: `legend-label:${key}`,
-            x: x + 18,
-            y,
-            text: key,
-            baseline: "middle",
-            fontSize: 13,
-            style: { fill: theme.foreground, fillOpacity: 0.85 },
-          },
-        );
-      });
-      return {
-        kind: "group",
-        key: "legend",
-        className: "ts-chart__legend",
-        ariaHidden: true,
-        children,
-      };
-    },
-  };
-}
