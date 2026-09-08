@@ -1,5 +1,26 @@
 # budgie
 
+## 0.16.0
+
+### Minor Changes
+
+- a8c75af: Replace recharts with TanStack Charts across the Forecast and Reports pages.
+
+  The Forecast line keeps its tracking hover label (no tooltip panel) and the red
+  overdraft rule; Reports keeps the spending doughnut with its centred total, the
+  grouped income/expenses bars and the gradient net worth area, now with spring
+  entry animations. Charts vendor chunk drops from 417 kB to 183 kB.
+
+### Patch Changes
+
+- a8c75af: Upgrade dependencies: Electron 44, TypeScript 7, Vitest 5, React Router 8, TanStack Table 9,
+  better-sqlite3 13, concurrently 10 and changesets 3, plus all outstanding minor/patch bumps.
+
+  better-sqlite3 is now an N-API module, so the `electron-rebuild` / `npm rebuild` steps have
+  been removed from install, build and test.
+
+- a8c75af: Reports charts: larger, more readable legends; maximised charts now fill the available screen space instead of staying capped at their card height; the net worth trend is now a bar chart with green/red bars for gains/losses, wider gaps between bars, and larger axis labels; the spending donut's legend moves beside the chart (using the wide left gutter) with larger text when maximised; the income vs expenses legend now matches the donut's size and spacing; maximised charts reliably replay their entrance animation instead of snapping straight to full size.
+
 ## 0.15.0
 
 ### Minor Changes
