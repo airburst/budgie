@@ -7,7 +7,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Maximize2, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 
 type Props = {
@@ -16,8 +23,19 @@ type Props = {
   children: React.ReactNode;
 };
 
+// Undefined outside of a maximised ChartCard, so charts fall back to their
+// default fixed aspect ratio.
+const ChartFillHeightContext = createContext<number | undefined>(undefined);
+
+/** The pixel height available to a chart when its card is maximised. */
+export function useChartFillHeight() {
+  return useContext(ChartFillHeightContext);
+}
+
 export function ChartCard({ title, badge, children }: Props) {
   const [maximised, setMaximised] = useState(false);
+  const [fillHeight, setFillHeight] = useState<number>();
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
@@ -30,6 +48,22 @@ export function ChartCard({ title, badge, children }: Props) {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [handleEscape]);
+
+  useEffect(() => {
+    if (!maximised) {
+      setFillHeight(undefined);
+      return;
+    }
+    const content = contentRef.current;
+    if (!content) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const height =
+        entry?.contentBoxSize?.[0]?.blockSize ?? entry?.contentRect.height;
+      if (height) setFillHeight(height);
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, [maximised]);
 
   const header = (
     <CardHeader>
@@ -64,8 +98,10 @@ export function ChartCard({ title, badge, children }: Props) {
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <Card className="flex-1 flex flex-col rounded-none border-0 ring-0 h-full">
           {header}
-          <CardContent className="flex-1 min-h-0 **:data-[slot=chart]:aspect-auto **:data-[slot=chart]:max-h-none **:data-[slot=chart]:h-full">
-            {children}
+          <CardContent ref={contentRef} className="flex-1 min-h-0 flex">
+            <ChartFillHeightContext.Provider value={fillHeight}>
+              {children}
+            </ChartFillHeightContext.Provider>
           </CardContent>
         </Card>
       </div>,

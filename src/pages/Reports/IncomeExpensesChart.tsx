@@ -1,6 +1,8 @@
+import { useChartFillHeight } from "@/components/chart-card";
 import {
   animatedRenderer,
   budgieChartTheme,
+  readableColorLegend,
   type ChartConfig,
 } from "@/components/chart-theme";
 import {
@@ -10,7 +12,6 @@ import {
   group,
   type ChartPoint,
 } from "@tanstack/charts";
-import { colorLegend } from "@tanstack/charts/legend";
 import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { scaleBand, scaleLinear } from "d3-scale";
@@ -78,7 +79,11 @@ function buildDefinition({
           },
         },
       },
-      color: { domain, range, legend: colorLegend({ placement: "bottom" }) },
+      color: {
+        domain,
+        range,
+        legend: readableColorLegend({ placement: "bottom" }),
+      },
       margin: { top: 8, right: 12, bottom: 48, left: 60 },
       theme: budgieChartTheme,
     }),
@@ -101,13 +106,15 @@ function buildDefinition({
 }
 
 export function IncomeExpensesChart(props: Props) {
+  const fillHeight = useChartFillHeight();
   return (
     <RendererChart
       definition={buildDefinition(props)}
       renderer={animatedRenderer}
-      aspectRatio={16 / 9}
+      aspectRatio={fillHeight ? undefined : 16 / 9}
+      height={fillHeight}
       initialWidth={520}
-      className="w-full max-h-[300px]"
+      className={fillHeight ? "w-full h-full" : "w-full max-h-75"}
       ariaLabel="Income versus expenses by month"
     />
   );

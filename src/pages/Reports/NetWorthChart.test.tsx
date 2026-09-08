@@ -27,21 +27,12 @@ function renderChart(rows: NetWorthPoint[] = data) {
 }
 
 describe("NetWorthChart", () => {
-  it("renders both the filled area and the trend line", () => {
+  it("renders one bar per data point", () => {
     const { container } = renderChart();
-    expect(
-      container.querySelector('[data-ts-key="net-worth-area"]'),
-    ).not.toBeNull();
-    expect(
-      container.querySelector('[data-ts-key^="net-worth-line"]'),
-    ).not.toBeNull();
-  });
-
-  it("declares the gradient the area is filled with", () => {
-    const { container } = renderChart();
-    expect(
-      container.querySelector('linearGradient[id$="net-worth-gradient"]'),
-    ).not.toBeNull();
+    const bars = container.querySelectorAll(
+      '[data-ts-key="net-worth-bars"] > *',
+    );
+    expect(bars.length).toBe(data.length);
   });
 
   it("labels the x axis with formatted months", () => {

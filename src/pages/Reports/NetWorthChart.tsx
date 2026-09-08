@@ -1,20 +1,14 @@
+import { useChartFillHeight } from "@/components/chart-card";
 import {
   animatedRenderer,
   budgieChartTheme,
   seriesColor,
   type ChartConfig,
 } from "@/components/chart-theme";
-import {
-  areaY,
-  d3Curve,
-  defineChart,
-  lineY,
-  type ChartPoint,
-} from "@tanstack/charts";
+import { barY, defineChart, type ChartPoint } from "@tanstack/charts";
 import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
-import { scaleLinear, scalePoint } from "d3-scale";
-import { curveMonotoneX } from "d3-shape";
+import { scaleBand, scaleLinear } from "d3-scale";
 
 export type NetWorthPoint = {
   month: string;
@@ -26,7 +20,6 @@ const config: ChartConfig = {
 };
 
 const NET_WORTH = seriesColor(config, "netWorth");
-const GRADIENT_ID = "net-worth-gradient";
 
 type Props = {
   data: NetWorthPoint[];
@@ -44,41 +37,17 @@ function buildDefinition({
   return defineChart({
     chart: () => ({
       marks: [
-        areaY(data, {
-          id: "net-worth-area",
+        barY(data, {
+          id: "net-worth-bars",
           x: "month",
           y: "netWorth",
-          curve: d3Curve(curveMonotoneX),
-          fill: `url(#${GRADIENT_ID})`,
-          // Stops already encode the fade; the default 0.2 would double-dim it.
-          fillOpacity: 1,
+          fill: NET_WORTH,
+          radius: 4,
         }),
-        lineY(data, {
-          id: "net-worth-line",
-          x: "month",
-          y: "netWorth",
-          curve: d3Curve(curveMonotoneX),
-          stroke: NET_WORTH,
-          strokeWidth: 2,
-        }),
-      ],
-      // Replaces the <defs><linearGradient> the recharts version declared.
-      gradients: [
-        {
-          id: GRADIENT_ID,
-          x1: 0,
-          y1: 0,
-          x2: 0,
-          y2: 1,
-          stops: [
-            { offset: 0, color: NET_WORTH, opacity: 0.3 },
-            { offset: 1, color: NET_WORTH, opacity: 0.05 },
-          ],
-        },
       ],
       scales: {
         x: {
-          scale: scalePoint,
+          scale: scaleBand,
           axis: {
             line: false,
             ticks: { size: 0, padding: 8, format: formatMonth },
@@ -116,13 +85,15 @@ function buildDefinition({
 }
 
 export function NetWorthChart(props: Props) {
+  const fillHeight = useChartFillHeight();
   return (
     <RendererChart
       definition={buildDefinition(props)}
       renderer={animatedRenderer}
-      aspectRatio={3}
+      aspectRatio={fillHeight ? undefined : 3}
+      height={fillHeight}
       initialWidth={720}
-      className="w-full max-h-[250px]"
+      className={fillHeight ? "w-full h-full" : "w-full max-h-[250px]"}
       ariaLabel="Net worth over time"
     />
   );

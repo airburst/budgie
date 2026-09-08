@@ -1,6 +1,10 @@
-import { animatedRenderer, budgieChartTheme } from "@/components/chart-theme";
+import { useChartFillHeight } from "@/components/chart-card";
+import {
+  animatedRenderer,
+  budgieChartTheme,
+  readableColorLegend,
+} from "@/components/chart-theme";
 import { defineChart, type ChartPoint } from "@tanstack/charts";
-import { colorLegend } from "@tanstack/charts/legend";
 import {
   focusGroupAngle,
   pie,
@@ -85,7 +89,7 @@ function buildDefinition(
       color: {
         domain: slices.map((slice) => slice.name),
         range: slices.map((slice) => slice.fill),
-        legend: colorLegend({ placement: "bottom" }),
+        legend: readableColorLegend({ placement: "bottom" }),
       },
       margin: 0,
       theme: budgieChartTheme,
@@ -117,13 +121,15 @@ function buildDefinition(
 }
 
 export function SpendingDonut({ slices, total, formatAmount }: Props) {
+  const fillHeight = useChartFillHeight();
   return (
     <RendererChart
       definition={buildDefinition(slices, total, formatAmount)}
       renderer={animatedRenderer}
-      aspectRatio={1}
+      aspectRatio={fillHeight ? undefined : 1}
+      height={fillHeight}
       initialWidth={300}
-      className="mx-auto max-h-[300px]"
+      className={fillHeight ? "mx-auto h-full" : "mx-auto max-h-75"}
       ariaLabel="Spending by category"
     />
   );
