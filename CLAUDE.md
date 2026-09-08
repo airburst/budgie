@@ -11,6 +11,20 @@ bun run check-types
 
 Both commands must exit cleanly (zero errors) before work is done.
 
+### TypeScript is installed twice — on purpose
+
+typescript-eslint has no TypeScript 7 support yet (its peer range is `>=4.8.4 <6.1.0`, pending
+the new compiler API in TS 7.1), so the project installs both:
+
+| Package | Version | Used by |
+| --- | --- | --- |
+| `typescript` | 6.0.3 | typescript-eslint, editor language service |
+| `typescript7` (alias of `typescript@7.0.2`) | 7.0.2 | `bun run check-types` |
+
+`check-types` therefore calls `node node_modules/typescript7/bin/tsc --noEmit` explicitly —
+`node_modules/.bin/tsc` resolves to TS 6. Do not "simplify" it back to `tsc --noEmit`.
+Collapse this to a single `typescript@7` dependency once typescript-eslint supports TS 7.
+
 ---
 
 ## Test Infrastructure
@@ -21,8 +35,8 @@ Tests live in `src/tests/` and run with Vitest:
 bun run test          # run all tests
 ```
 
-> `npm rebuild better-sqlite3` may be required before the first run on a new machine
-> (better-sqlite3 is a native module that must be compiled for the current runtime).
+> better-sqlite3 v13+ is an N-API module shipping platform prebuilds, so no rebuild step is
+> needed for Node, Electron, or Bun. Do not reintroduce `electron-rebuild` / `npm rebuild`.
 
 ### Layout
 
