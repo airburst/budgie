@@ -211,6 +211,23 @@ All UI components must come from the shadcn component registry at **https://ui.s
 - Never hand-roll UI primitives (dialogs, selects, comboboxes, tooltips, popovers, etc.) that already exist in the registry.
 - Existing components live in `src/components/ui/`. Read a component file before using it to understand its API — the Base UI wrappers often differ from the Radix equivalents in prop names and composition patterns.
 
+### Charts are the exception
+
+Charts use **TanStack Charts** (`@tanstack/charts`), not the shadcn/recharts chart component.
+Do not run `bunx shadcn@latest add chart` — `src/components/ui/chart.tsx` was deliberately
+deleted. Shared theme, colour-scale and renderer helpers live in `src/components/chart-theme.ts`;
+each chart is its own component with a smoke test beside it.
+
+Two gotchas, both learned the hard way:
+
+- `@tanstack/charts` is pinned to an exact version because it is a **0.x alpha** and minor
+  releases may break APIs. Re-read the mark option types in `node_modules/@tanstack/charts/dist`
+  before trusting any online example — the published catalog examples track `main`, not the
+  release.
+- When a chart has a tooltip you **must** use the `defineChart({ chart: () => spec, ...options })`
+  form. The two-argument `defineChart(spec, options)` overload widens the tooltip host token to
+  `string`, which then fails to satisfy `RendererChart`'s `"dom"` requirement.
+
 ---
 
 ## IPC Channel Naming Convention

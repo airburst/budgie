@@ -34,7 +34,7 @@ export default defineConfig({
           )
             return "vendor-react";
           if (id.includes("/@tanstack/react-query")) return "vendor-query";
-          if (id.includes("/recharts")) return "vendor-recharts";
+          if (id.includes("/@tanstack/charts")) return "vendor-charts";
           if (id.includes("/rrule")) return "vendor-rrule";
           if (id.includes("/date-fns") || id.includes("/react-day-picker"))
             return "vendor-dates";
