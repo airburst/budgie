@@ -1,5 +1,11 @@
 # budgie
 
+## 0.16.1
+
+### Patch Changes
+
+- 5d31e65: Remove obsolete electron-rebuild step from release CI workflow (better-sqlite3 is N-API and needs no rebuild; the step failed because node-abi doesn't know the Electron 44 ABI)
+
 ## 0.16.0
 
 ### Minor Changes
