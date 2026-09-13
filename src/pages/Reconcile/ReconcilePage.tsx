@@ -12,10 +12,16 @@ import {
 import { useAccounts } from "@/hooks/useAccounts";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useTransactions } from "@/hooks/useTransactions";
+import { findSubsetSum } from "@/lib/subset-sum";
 import { formatDate } from "@/lib/utils";
 import { TransactionForm } from "@/pages/AccountTransactions/TransactionForm";
-import { findSubsetSum } from "@/lib/subset-sum";
-import { ArrowLeftIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  PlusIcon,
+  ScaleIcon,
+  XIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import Layout from "../layout";
@@ -43,6 +49,7 @@ export default function ReconcilePage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
+  const [defaultAmount, setDefaultAmount] = useState<number>();
   const [autoMatchBanner, setAutoMatchBanner] = useState<{
     count: number;
   } | null>(null);
@@ -140,18 +147,31 @@ export default function ReconcilePage() {
   function openAdd() {
     setEditingId(null);
     setFocusAmountOnOpen(false);
+    setDefaultAmount(undefined);
+    setSheetOpen(true);
+  }
+
+  function openAutoBalance() {
+    if (difference === null || isBalanced) return;
+    setEditingId(null);
+    setFocusAmountOnOpen(false);
+    setDefaultAmount(difference);
     setSheetOpen(true);
   }
 
   function openEdit(txId: number, options?: { focusAmount?: boolean }) {
     setEditingId(txId);
     setFocusAmountOnOpen(!!options?.focusAmount);
+    setDefaultAmount(undefined);
     setSheetOpen(true);
   }
 
   function handleSheetOpenChange(open: boolean) {
     setSheetOpen(open);
-    if (!open) setFocusAmountOnOpen(false);
+    if (!open) {
+      setFocusAmountOnOpen(false);
+      setDefaultAmount(undefined);
+    }
   }
 
   async function handleFinish() {
@@ -207,10 +227,21 @@ export default function ReconcilePage() {
               </p>
             </div>
           </div>
-          <Button size="sm" onClick={openAdd}>
-            <PlusIcon />
-            Add Transaction
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={openAutoBalance}
+              disabled={isBalanced}
+            >
+              <ScaleIcon />
+              Auto Balance
+            </Button>
+            <Button size="sm" onClick={openAdd}>
+              <PlusIcon />
+              Add Transaction
+            </Button>
+          </div>
         </div>
 
         {/* Balance summary */}
@@ -380,8 +411,10 @@ export default function ReconcilePage() {
         onOpenChange={handleSheetOpenChange}
         editingId={editingId}
         accountId={accountId}
+        account={account}
         defaultDate={statementDate}
         defaultCleared
+        defaultAmount={defaultAmount}
         focusAmountOnOpen={focusAmountOnOpen}
       />
     </Layout>

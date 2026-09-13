@@ -1,5 +1,11 @@
 # budgie
 
+## 0.16.2
+
+### Patch Changes
+
+- Add an Auto Balance action to prefill reconciliation discrepancy transactions.
+
 ## 0.16.1
 
 ### Patch Changes

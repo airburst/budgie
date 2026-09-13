@@ -29,6 +29,7 @@ type TransactionSheetProps = {
   account?: Account;
   defaultDate?: string;
   defaultCleared?: boolean;
+  defaultAmount?: number;
   focusAmountOnOpen?: boolean;
 };
 
@@ -52,6 +53,7 @@ export function TransactionForm({
   account,
   defaultDate,
   defaultCleared,
+  defaultAmount,
   focusAmountOnOpen = false,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
@@ -110,6 +112,13 @@ export function TransactionForm({
       const empty = makeEmpty();
       if (defaultDate) empty.date = defaultDate;
       if (defaultCleared) empty.cleared = true;
+      if (defaultAmount) {
+        if (isAssumedNegative ? defaultAmount > 0 : defaultAmount < 0) {
+          empty.withdrawal = Math.abs(defaultAmount).toFixed(2);
+        } else {
+          empty.deposit = Math.abs(defaultAmount).toFixed(2);
+        }
+      }
       setForm(empty);
     }
     setErrors({});
