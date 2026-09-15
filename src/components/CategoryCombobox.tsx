@@ -14,11 +14,13 @@ import { useMemo, useRef, useState } from "react";
 type CategoryComboboxProps = {
   value: string;
   onValueChange: (value: string) => void;
+  autoFocus?: boolean;
 };
 
 export function CategoryCombobox({
   value,
   onValueChange,
+  autoFocus,
 }: CategoryComboboxProps) {
   const { categories, create } = useCategories();
   const [inputValue, setInputValue] = useState("");
@@ -97,6 +99,7 @@ export function CategoryCombobox({
       <ComboboxInput
         placeholder="No category"
         showClear
+        autoFocus={autoFocus}
         onFocus={() => {
           focusedRef.current = true;
         }}

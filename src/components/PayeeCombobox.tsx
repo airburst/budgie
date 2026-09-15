@@ -15,6 +15,7 @@ type PayeeComboboxProps = {
   onValueChange: (name: string) => void;
   onPayeeSelect: (payee: Payee) => void;
   autoFocus?: boolean;
+  disabled?: boolean;
 };
 
 export function PayeeCombobox({
@@ -22,6 +23,7 @@ export function PayeeCombobox({
   onValueChange,
   onPayeeSelect,
   autoFocus,
+  disabled,
 }: PayeeComboboxProps) {
   const { payees } = usePayees();
   // Track whether the input is focused so we can ignore Base UI's blur-reset
@@ -98,6 +100,7 @@ export function PayeeCombobox({
         placeholder="e.g. Starbucks, Amazon..."
         showClear
         autoFocus={autoFocus}
+        disabled={disabled}
         onFocus={() => {
           focusedRef.current = true;
         }}

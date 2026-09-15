@@ -31,6 +31,7 @@ type TransactionSheetProps = {
   defaultCleared?: boolean;
   defaultAmount?: number;
   focusAmountOnOpen?: boolean;
+  autoBalance?: boolean;
 };
 
 function makeEmpty() {
@@ -55,6 +56,7 @@ export function TransactionForm({
   defaultCleared,
   defaultAmount,
   focusAmountOnOpen = false,
+  autoBalance = false,
 }: TransactionSheetProps) {
   const { transactions, create, update } = useTransactions(accountId);
   const { upsert: upsertPayee } = usePayees();
@@ -112,6 +114,7 @@ export function TransactionForm({
       const empty = makeEmpty();
       if (defaultDate) empty.date = defaultDate;
       if (defaultCleared) empty.cleared = true;
+      if (autoBalance) empty.payee = "Adjustment";
       if (defaultAmount) {
         if (isAssumedNegative ? defaultAmount > 0 : defaultAmount < 0) {
           empty.withdrawal = Math.abs(defaultAmount).toFixed(2);
@@ -129,6 +132,7 @@ export function TransactionForm({
   }
 
   function handlePayeeSelect(payee: Payee) {
+    if (autoBalance) return;
     if (!preferences.autofillPayees) return;
     if (payee.categoryId) {
       set("categoryId", String(payee.categoryId));
@@ -198,7 +202,7 @@ export function TransactionForm({
     } else {
       await create.mutateAsync(data);
     }
-    if (form.payee.trim()) {
+    if (form.payee.trim() && !autoBalance) {
       upsertPayee.mutate({
         name: form.payee.trim(),
         categoryId: data.categoryId ?? null,
@@ -245,7 +249,10 @@ export function TransactionForm({
                 if (v.trim()) setErrors((e) => ({ ...e, payee: undefined }));
               }}
               onPayeeSelect={handlePayeeSelect}
-              autoFocus={!shouldFocusWithdrawal && !shouldFocusDeposit}
+              disabled={autoBalance}
+              autoFocus={
+                !autoBalance && !shouldFocusWithdrawal && !shouldFocusDeposit
+              }
             />
             {errors.payee && (
               <p className="text-sm text-destructive">{errors.payee}</p>
@@ -257,6 +264,9 @@ export function TransactionForm({
             <CategoryCombobox
               value={form.categoryId}
               onValueChange={(v) => set("categoryId", v)}
+              autoFocus={
+                autoBalance && !shouldFocusWithdrawal && !shouldFocusDeposit
+              }
             />
           </div>
 

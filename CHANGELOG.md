@@ -1,5 +1,11 @@
 # budgie
 
+## 0.16.3
+
+### Patch Changes
+
+- Auto Balance on the reconcile view now sets the payee to a fixed "Adjustment" and focuses the category field, instead of allowing payee selection to overwrite the auto-calculated amount
+
 ## 0.16.2
 
 ### Patch Changes

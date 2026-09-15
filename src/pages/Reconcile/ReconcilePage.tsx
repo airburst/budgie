@@ -50,6 +50,7 @@ export default function ReconcilePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
   const [defaultAmount, setDefaultAmount] = useState<number>();
+  const [isAutoBalance, setIsAutoBalance] = useState(false);
   const [autoMatchBanner, setAutoMatchBanner] = useState<{
     count: number;
   } | null>(null);
@@ -148,6 +149,7 @@ export default function ReconcilePage() {
     setEditingId(null);
     setFocusAmountOnOpen(false);
     setDefaultAmount(undefined);
+    setIsAutoBalance(false);
     setSheetOpen(true);
   }
 
@@ -156,6 +158,7 @@ export default function ReconcilePage() {
     setEditingId(null);
     setFocusAmountOnOpen(false);
     setDefaultAmount(difference);
+    setIsAutoBalance(true);
     setSheetOpen(true);
   }
 
@@ -163,6 +166,7 @@ export default function ReconcilePage() {
     setEditingId(txId);
     setFocusAmountOnOpen(!!options?.focusAmount);
     setDefaultAmount(undefined);
+    setIsAutoBalance(false);
     setSheetOpen(true);
   }
 
@@ -171,6 +175,7 @@ export default function ReconcilePage() {
     if (!open) {
       setFocusAmountOnOpen(false);
       setDefaultAmount(undefined);
+      setIsAutoBalance(false);
     }
   }
 
@@ -416,6 +421,7 @@ export default function ReconcilePage() {
         defaultCleared
         defaultAmount={defaultAmount}
         focusAmountOnOpen={focusAmountOnOpen}
+        autoBalance={isAutoBalance}
       />
     </Layout>
   );
