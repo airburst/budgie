@@ -36,6 +36,41 @@ The work should proceed in this order:
 This proves data portability and behavior in Electron before introducing the
 web platform.
 
+## 3.1 Current Status and Resume Point
+
+Status as of 2026-09-17: phase 0 has a passing desktop-browser feasibility
+probe, but the web target has no production runtime yet. The probe was removed
+after its findings were recorded. The durable follow-up checklist is
+`docs/WEB_IMPLEMENTATION_TASKS.md`.
+
+Completed in this work:
+
+- Added and then removed the disposable official SQLite WASM probe dependency,
+  worker, harness, and command.
+- Verified official SQLite WASM 3.53.4 with `opfs-sahpool` in a Vite worker.
+- Verified JSON functions, foreign keys, aggregate queries, `RETURNING`,
+  rollback, and persistence across probe reload.
+- Added cross-origin isolation headers to `vite.config.ts` for the future
+  worker/OPFS path.
+- Passed `bun run lint` and `bun run check-types` after cleanup.
+
+Next work, in order:
+
+1. Complete the remaining phase 0 browser/device, persistence, performance,
+   deployment, and offline checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`.
+2. Run the same contract against the no-sync baseline and the PowerSync
+   browser VFS spike before changing production schema.
+3. Choose the browser database adapter and define its shared asynchronous
+   capability interface.
+4. Build the first production slice: bundled browser migrations, serialized
+   database worker, startup failure states, single-tab locking, persistence
+   handling, and adapter contract tests.
+
+The next coding session should start by turning the existing Electron schema
+and migrations into a browser-loadable contract fixture, then add the first
+browser adapter contract test. Do not begin the UI redesign or sync-ready
+schema migration until the phase 0 approval gate below is satisfied.
+
 ## 3. Target Architecture
 
 ```mermaid
@@ -81,15 +116,23 @@ be reused unchanged.
 
 ## 4. Phase 0: Technical Proof
 
-Before committing to the browser driver or final sync-ready schema:
+The disposable SQLite WASM probe completed on 2026-09-17. In a Vite-served
+worker with cross-origin isolation, official SQLite WASM 3.53.4 opened an
+`opfs-sahpool` database and passed representative JSON, foreign-key,
+aggregate, `RETURNING`, and rollback checks. Reloading the probe also confirmed
+that the OPFS database persisted. This proves browser feasibility for the
+no-sync baseline only; it does not approve the browser adapter, schema, sync
+engine, or mobile support matrix.
 
-- Prototype official SQLite WASM in a dedicated worker as the no-sync baseline.
+The probe and its package dependency are intentionally disposable and are not
+part of the application runtime. Keep the result and follow-up work in
+`docs/WEB_IMPLEMENTATION_TASKS.md` rather than maintaining the synthetic
+database harness on a long-running branch.
+
+Remaining phase 0 gates:
+
 - In parallel, spike the recommended sync engine and its browser database/VFS
   against the same contract; see `docs/SYNC_ENGINE_PLAN.md`.
-- For the no-sync baseline, use `opfs-sahpool`, matching the single-active-tab
-  requirement.
-- Confirm current SQL, JSON functions, foreign keys, aggregate queries,
-  `RETURNING`, and transactions.
 - Benchmark startup, migration, bulk import, reporting queries, and a large
   transaction dataset on representative iPhone, iPad, and Android hardware.
 - Confirm Safari/iPadOS persistence across reload, restart, PWA installation,
