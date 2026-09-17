@@ -95,6 +95,9 @@ Completed in this work:
   coordinator; web startup and inactive-instance UI integration remain.
 - Connected the browser lock, SQLite worker, persistence request, and shared
   auto-post operation in a web runtime initializer with resume/shutdown hooks.
+- Connected the web runtime to React startup, installed the browser
+  `ApplicationAPI` over shared services, and added explicit inactive/startup
+  failure states; native-only operations now report unsupported behavior.
 - Added cross-origin isolation headers to `vite.config.ts` for the future
   worker/OPFS path.
 - Passed `bun run lint` and `bun run check-types` after cleanup.
@@ -111,6 +114,12 @@ Next work, in order:
 4. Build the first production slice: bundled browser migrations, serialized
    database worker, startup failure states, single-tab locking, persistence
    handling, and adapter contract tests.
+
+Phase 1 local foundation status: complete. The shared platform/API boundary,
+database adapters, domain services, Electron IPC bundle, browser startup
+lifecycle, inactive-tab handling, persistence state, and local contract tests
+are implemented. External phase 0 browser/deployment/performance validation
+remains a separate gate before production web release.
 
 The next coding session should start by turning the existing Electron schema
 and migrations into a browser-loadable contract fixture, then add the first

@@ -150,9 +150,9 @@ capability limitation, not treated as a migration failure.
 - [x] Execute bundled migrations in a browser database and verify fresh and
       upgrade paths.
 - [x] Create a dedicated database worker with serialized commands.
-- [ ] Add explicit worker startup failure states and recovery behavior.
-- [x] Add the origin-wide Web Lock/BroadcastChannel coordinator module;
-      integrate it into web startup and inactive-instance UI next.
+- [x] Add explicit worker startup failure states and recovery behavior.
+- [x] Add the origin-wide Web Lock/BroadcastChannel coordinator and connect it
+      to web startup with an inactive-instance screen.
 - [ ] Add persistent-storage requests and distinct OPFS, quota, corruption,
       migration, and private-browsing errors.
 - [x] Extract accounts, categories, transactions, reconciliation, scheduled,
@@ -219,8 +219,8 @@ execution remains to be added with the platform lifecycle service.
 
 Runtime checkpoint: browser database commands now fail closed if initialization
 fails, and `src/web/runtime/instance-lock.ts` provides an origin-wide Web Lock
-with BroadcastChannel announcements. The lock is not yet connected to web
-startup or an inactive-instance screen.
+with BroadcastChannel announcements. `src/index.tsx` connects it before React
+mounts and renders inactive/startup failure states.
 
 Platform checkpoint: the Electron-only update listener is now gated by
 `usePlatform().capabilities.nativeUpdates`, so direct web startup no longer
@@ -230,9 +230,21 @@ Web-runtime checkpoint: `src/web/runtime/runtime.ts` now connects the lock,
 browser database worker, persistence request, and shared auto-post operation.
 Startup returns `null` for an inactive tab, reports persistence as granted,
 denied, or unavailable, runs overdue auto-posting, and exposes resume/shutdown
-lifecycle methods. UI startup integration and explicit failure screens remain.
+lifecycle methods. The browser `ApplicationAPI` bridge is installed before
+React mounts, and native-only operations fail explicitly in the browser.
 
 ## Phase 0 Approval Status
+
+## Phase 1 Local Foundation Status
+
+Complete for the current local implementation scope. The platform-neutral API,
+async database capability, Electron/browser adapters, shared database-domain
+services, serialized browser worker, startup lifecycle, inactive-instance
+handling, persistence-state reporting, Electron IPC bundle, and contract tests
+are implemented and validated. Backups and QIF import remain deliberately
+native Electron boundaries.
+
+Phase 1 does not waive the remaining phase 0 external validation below.
 
 Repository-local proof is complete. Full phase 0 approval remains blocked on
 external validation that cannot be performed reliably from this development

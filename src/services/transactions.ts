@@ -192,6 +192,20 @@ export const createTransactionService = (database: DatabaseCapability) => ({
     });
     return rows.map(mapTransaction);
   },
+  getByDateRange: async (
+    startDate: string,
+    endDate: string,
+    accountIds?: number[],
+  ) => {
+    const accountClause = accountIds?.length
+      ? ` AND account_id IN (${accountIds.map(() => "?").join(", ")})`
+      : "";
+    const rows = await database.query<TransactionRow>({
+      sql: `SELECT * FROM transactions WHERE date >= ? AND date <= ?${accountClause} ORDER BY date ASC`,
+      params: [startDate, endDate, ...(accountIds ?? [])],
+    });
+    return rows.map(mapTransaction);
+  },
   create: (data: TransactionCreate) => createTransaction(database, data),
   update: async (id: number, data: TransactionUpdate) =>
     database.transaction(async (transaction) => {
