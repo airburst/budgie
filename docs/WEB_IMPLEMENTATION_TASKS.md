@@ -136,23 +136,101 @@ capability limitation, not treated as a migration failure.
 
 ## First Production Slice
 
-- [ ] Choose and document the browser database adapter behind a shared
-      asynchronous capability interface.
+- [x] Add the platform-neutral `ApplicationAPI` type name while preserving the
+      Electron preload contract.
+- [x] Add an injectable platform capability factory and `usePlatform()` hook.
+- [x] Define the shared asynchronous `DatabaseCapability` contract and add an
+      Electron adapter with serialized transaction handles.
+- [x] Implement the browser SQLite WASM worker/client behind the same contract;
+      keep one connection alive and serialize commands through the worker.
+- [x] Choose SQLite WASM with `opfs-sahpool` as the provisional no-sync browser
+      adapter behind the shared asynchronous capability interface.
 - [x] Bundle the existing migration SQL for browser loading without
       filesystem-based discovery.
 - [x] Execute bundled migrations in a browser database and verify fresh and
       upgrade paths.
-- [ ] Create a dedicated database worker with serialized commands and explicit
-      startup failure states.
-- [ ] Add origin-wide Web Lock and BroadcastChannel inactive-tab handling.
+- [x] Create a dedicated database worker with serialized commands.
+- [ ] Add explicit worker startup failure states and recovery behavior.
+- [x] Add the origin-wide Web Lock/BroadcastChannel coordinator module;
+      integrate it into web startup and inactive-instance UI next.
 - [ ] Add persistent-storage requests and distinct OPFS, quota, corruption,
       migration, and private-browsing errors.
-- [ ] Extract shared domain services before wiring browser RPC.
-- [ ] Add contract tests that execute against Electron and browser adapters.
+- [x] Extract accounts, categories, transactions, reconciliation, scheduled,
+      settings, payees, envelopes, and budgets behind shared capability
+      services; migrated SQLite coverage exists for the high-risk operations.
+- [x] Wire the extracted entity channels through the built shared service
+      bundle and the existing Electron SQLite connection.
+- [x] Add a built-service-bundle contract test that verifies Electron's
+      CommonJS output exports and constructs every shared database-domain
+      factory; full Electron/browser behavioral parity remains.
 - [x] Add a migration metadata contract test using the real Electron Drizzle
       migrator and browser executor.
 - [x] Add physical WAL-enabled Electron database-file coverage for migration
       metadata compatibility.
+
+Adapter finding: the browser worker must return query rows through the RPC
+result envelope's `value` field. The first smoke run exposed a client bug that
+returned the whole envelope; the corrected worker/client smoke run passed
+schema query, transactional insert/query, and worker close behavior.
+
+Domain-service checkpoint: `src/services/accounts.ts` now contains typed
+account CRUD, balance projections, transfer-category side effects, and
+reference-aware soft deletion over `DatabaseCapability`. Real migrated SQLite
+tests cover account creation, computed/cleared balances, transfer categories,
+and soft deletion. IPC wiring remains intentionally next so Electron behavior
+can be switched to the service without changing renderer consumers.
+
+Transaction checkpoint: `src/services/reconciliation.ts` now performs
+reconciliation updates and checkpoint insertion through one async transaction
+handle. Migrated SQLite tests prove successful flag/checkpoint updates and
+rollback when checkpoint insertion fails. Transfer pairing and transaction CRUD
+remain to be extracted before replacing the existing IPC handler.
+
+Transaction service checkpoint: `src/services/transactions.ts` now provides
+typed reads, normal transaction creation, atomic transfer pairing, and guarded
+deletion over the shared capability. Migrated SQLite tests cover transfer
+counter creation, missing-target fallback, deletion, and reconciled-row
+protection. Transfer-aware update propagation is covered for amount and payee
+changes, and category conversion now covers both normal-to-transfer and
+transfer-to-normal atomic paths. IPC wiring for these channels is recorded
+below; remaining entities still use legacy handlers.
+
+IPC checkpoint: `src/services/index.ts`, `vite.services.config.ts`, and
+`public/services.js` provide a CommonJS build boundary for Electron. Accounts,
+transaction and reconciliation channels now use those services through one
+capability wrapper around the existing SQLite connection. Settings, payees,
+categories, envelopes, mappings, and budgets now use the same bundle.
+
+Budget finding: allocation upsert deliberately retains the current
+query-then-update/insert behavior because the existing schema has no unique
+`(envelope_id, month)` constraint.
+
+Entity-boundary result: account reconciliation CRUD is now shared-service
+backed as well. All database-domain IPC channels use `public/services.js`; only
+backups and QIF import remain legacy because they depend on Electron dialogs,
+filesystem paths, or native database backup APIs.
+
+Scheduled-service checkpoint: scheduled transaction CRUD now uses the shared
+capability and Electron IPC bundle. The existing recurrence and auto-post
+operation now uses the shared async service and transaction creation path;
+Electron startup invokes it through the capability. A migrated SQLite test
+covers overdue posting and exhausted-schedule removal. Resume-triggered web
+execution remains to be added with the platform lifecycle service.
+
+Runtime checkpoint: browser database commands now fail closed if initialization
+fails, and `src/web/runtime/instance-lock.ts` provides an origin-wide Web Lock
+with BroadcastChannel announcements. The lock is not yet connected to web
+startup or an inactive-instance screen.
+
+Platform checkpoint: the Electron-only update listener is now gated by
+`usePlatform().capabilities.nativeUpdates`, so direct web startup no longer
+accesses `window.api` for native update events.
+
+Web-runtime checkpoint: `src/web/runtime/runtime.ts` now connects the lock,
+browser database worker, persistence request, and shared auto-post operation.
+Startup returns `null` for an inactive tab, reports persistence as granted,
+denied, or unavailable, runs overdue auto-posting, and exposes resume/shutdown
+lifecycle methods. UI startup integration and explicit failure screens remain.
 
 ## Phase 0 Approval Status
 

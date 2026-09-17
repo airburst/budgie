@@ -8,7 +8,7 @@
   "homepage": "./",
   "scripts": {
     "start": "concurrently \"vite\" \"bun run electron-start\"",
-    "build": "vite build && vite build --config vite.main.config.ts && bun run electron-build",
+    "build": "vite build && vite build --config vite.main.config.ts && vite build --config vite.services.config.ts && bun run electron-build",
     "electron-start": "wait-on http://localhost:3000 && vite build --config vite.main.config.ts && electron .",
     "electron-build": "electron-builder",
     "electron-build:win": "electron-builder --win",
@@ -106,6 +106,7 @@
       "public/electron.js",
       "public/preload.js",
       "public/db.js",
+      "public/services.js",
       "public/ipc/**/*",
       "src/main/db/migrations/**/*",
       "package.json"

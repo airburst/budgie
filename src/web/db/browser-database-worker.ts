@@ -1,12 +1,28 @@
+import type { DatabaseStatement } from "@/platform/database";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import { migrateBrowserDatabase } from "./migrate";
 
-type WorkerRequest = {
-  type: "initialize";
-  filename?: string;
-};
+type SqliteModule = Awaited<ReturnType<typeof sqlite3InitModule>>;
+type SqliteDatabase = InstanceType<SqliteModule["oo1"]["DB"]>;
+
+export type BrowserDatabaseRequest =
+  | { id: number; type: "initialize"; filename?: string }
+  | { id: number; type: "execute"; statement: DatabaseStatement }
+  | { id: number; type: "query"; statement: DatabaseStatement }
+  | { id: number; type: "begin" }
+  | { id: number; type: "commit" }
+  | { id: number; type: "rollback" }
+  | { id: number; type: "close" };
+
+export type BrowserDatabaseCommand = {
+  [Type in BrowserDatabaseRequest["type"]]: Omit<
+    Extract<BrowserDatabaseRequest, { type: Type }>,
+    "id"
+  >;
+}[BrowserDatabaseRequest["type"]];
 
 export type BrowserDatabaseReady = {
+  id: number;
   type: "ready";
   sqliteVersion: string;
   applied: string[];
@@ -14,44 +30,94 @@ export type BrowserDatabaseReady = {
 };
 
 export type BrowserDatabaseResponse =
-  BrowserDatabaseReady | { type: "error"; message: string };
+  | BrowserDatabaseReady
+  | { id: number; type: "result"; value?: unknown }
+  | { id: number; type: "error"; message: string };
 
 const worker = self as typeof globalThis & {
   postMessage: (message: BrowserDatabaseResponse) => void;
 };
 
+let db: SqliteDatabase | undefined;
+let sqlite: SqliteModule | undefined;
+
+const requireDatabase = () => {
+  if (!db) throw new Error("Browser database is not initialized");
+  return db;
+};
+
+const execute = (statement: DatabaseStatement) => {
+  requireDatabase().exec({ sql: statement.sql, bind: statement.params ?? [] });
+};
+
+const query = (statement: DatabaseStatement) => {
+  return requireDatabase().selectObjects(statement.sql, statement.params ?? []);
+};
+
 const initialize = async (filename: string) => {
-  const sqlite = await sqlite3InitModule();
+  sqlite = await sqlite3InitModule();
   await sqlite.installOpfsSAHPoolVfs({
     name: "opfs-sahpool",
     initialCapacity: 4,
   });
-  const db = new sqlite.oo1.DB(`file:${filename}?vfs=opfs-sahpool`, "c");
+  db = new sqlite.oo1.DB(`file:${filename}?vfs=opfs-sahpool`, "c");
+  db.exec("PRAGMA foreign_keys = ON;");
+  const migration = migrateBrowserDatabase({
+    exec: (sql) => requireDatabase().exec(sql),
+    selectValues: <T>(sql: string) =>
+      requireDatabase().selectObjects(sql) as T[],
+  });
+  return {
+    type: "ready" as const,
+    sqliteVersion: sqlite.version.libVersion,
+    ...migration,
+  };
+};
 
-  try {
-    db.exec("PRAGMA foreign_keys = ON;");
-    const migration = migrateBrowserDatabase({
-      exec: (sql) => db.exec(sql),
-      selectValues: <T>(sql: string) => db.selectObjects(sql) as T[],
-    });
-    worker.postMessage({
-      type: "ready",
-      sqliteVersion: sqlite.version.libVersion,
-      ...migration,
-    } satisfies BrowserDatabaseReady);
-  } finally {
-    db.close();
+const respond = async (request: BrowserDatabaseRequest) => {
+  switch (request.type) {
+    case "initialize":
+      return initialize(request.filename ?? "budgie-web.sqlite3");
+    case "execute":
+      execute(request.statement);
+      return undefined;
+    case "query":
+      return query(request.statement);
+    case "begin":
+      execute({ sql: "BEGIN;" });
+      return undefined;
+    case "commit":
+      execute({ sql: "COMMIT;" });
+      return undefined;
+    case "rollback":
+      execute({ sql: "ROLLBACK;" });
+      return undefined;
+    case "close":
+      db?.close();
+      db = undefined;
+      sqlite = undefined;
+      return undefined;
   }
 };
 
-worker.addEventListener("message", (event: MessageEvent<WorkerRequest>) => {
-  if (event.data.type !== "initialize") return;
-  void initialize(event.data.filename ?? "budgie-web.sqlite3").catch(
-    (error) => {
-      worker.postMessage({
-        type: "error",
-        message: error instanceof Error ? error.message : String(error),
-      });
-    },
-  );
-});
+worker.addEventListener(
+  "message",
+  (event: MessageEvent<BrowserDatabaseRequest>) => {
+    void respond(event.data).then(
+      (value) => {
+        worker.postMessage(
+          event.data.type === "initialize"
+            ? { id: event.data.id, ...value }
+            : { id: event.data.id, type: "result", value },
+        );
+      },
+      (error: unknown) => {
+        worker.postMessage({
+          id: event.data.id,
+          type: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      },
+    );
+  },
+);

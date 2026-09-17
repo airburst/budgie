@@ -1,5 +1,6 @@
 import RouterContent from "@/components/RouterContent";
 import { Toaster } from "@/components/ui/sonner";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -39,7 +40,11 @@ function ThemeApplier() {
 }
 
 function UpdateListener() {
+  const platform = usePlatform();
+
   useEffect(() => {
+    if (!platform.capabilities.nativeUpdates) return;
+
     window.api.onUpdateAvailable((version) => {
       toast.info(`Version ${version} available`, {
         duration: Infinity,
@@ -67,7 +72,7 @@ function UpdateListener() {
     window.api.onUpdateNotAvailable(() => {
       toast.success("Budgie is up to date");
     });
-  }, []);
+  }, [platform.capabilities.nativeUpdates]);
   return null;
 }
 

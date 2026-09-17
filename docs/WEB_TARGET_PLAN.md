@@ -69,6 +69,32 @@ Completed in this work:
   false in the localhost profile.
 - Verified Safari reload persistence: a second load skipped all 13 migrations
   in approximately 199 ms; persistent-storage protection remained denied.
+- Began phase 1 with a platform-neutral `ApplicationAPI` type name and an
+  injectable `usePlatform()` capability service; existing Electron consumers
+  remain unchanged.
+- Added the shared asynchronous `DatabaseCapability` contract, a WAL-enabled
+  Electron adapter, and a persistent SQLite WASM worker/client with serialized
+  RPC transactions; the browser smoke test passed query, transaction, and
+  close behavior.
+- Extracted the first typed shared domain service for accounts, including
+  balance projections, transfer-category side effects, and reference-aware
+  soft deletion, with migrated SQLite tests.
+- Extracted the atomic reconciliation service with rollback coverage.
+- Extracted transaction reads, atomic transfer creation, and guarded deletion
+  with migrated SQLite tests; transfer-aware amount/payee propagation is now
+  covered, category conversion is covered in both directions.
+- Wired the extracted accounts, transactions, and reconciliation services into
+  Electron IPC through a built CommonJS service bundle and the existing SQLite
+  connection. Settings, payees, categories, envelopes, mappings, and budgets
+  now use the same path.
+- Moved account reconciliation CRUD onto the shared service path; backups and
+  QIF import remain native Electron boundaries.
+- Moved scheduled CRUD and startup auto-posting behind the shared async service;
+  overdue posting and exhausted-schedule removal have migrated SQLite tests.
+- Added fail-closed browser command sequencing and a Web Lock/BroadcastChannel
+  coordinator; web startup and inactive-instance UI integration remain.
+- Connected the browser lock, SQLite worker, persistence request, and shared
+  auto-post operation in a web runtime initializer with resume/shutdown hooks.
 - Added cross-origin isolation headers to `vite.config.ts` for the future
   worker/OPFS path.
 - Passed `bun run lint` and `bun run check-types` after cleanup.
@@ -80,8 +106,8 @@ Next work, in order:
    repository-local migration proof is complete.
 2. Run the same contract against the no-sync baseline and the PowerSync
    browser VFS spike before changing production schema.
-3. Choose the browser database adapter and define its shared asynchronous
-   capability interface.
+3. Add browser contract tests against the shared services and explicit worker
+   startup failure/recovery states.
 4. Build the first production slice: bundled browser migrations, serialized
    database worker, startup failure states, single-tab locking, persistence
    handling, and adapter contract tests.

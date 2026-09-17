@@ -58,7 +58,7 @@ export type BackupInfo = {
   createdAt: string;
 };
 
-interface ElectronAPI {
+export interface ApplicationAPI {
   getAccounts: () => Promise<AccountWithBalances[]>;
   getAccount: (id: number) => Promise<AccountWithBalances | null>;
   createAccount: (
@@ -235,6 +235,6 @@ interface ElectronAPI {
 
 declare global {
   interface Window {
-    api: ElectronAPI;
+    api: ApplicationAPI;
   }
 }

@@ -10,20 +10,11 @@ const { autoUpdater } = require("electron-updater");
 const path = require("path");
 const fs = require("fs");
 const { setupDatabase, schema } = require("./db");
-const registerAccountsHandlers = require("./ipc/accounts");
-const registerCategoriesHandlers = require("./ipc/categories");
-const registerTransactionsHandlers = require("./ipc/transactions");
-const registerScheduledTransactionsHandlers = require("./ipc/scheduled-transactions");
-const { processAutoPost } = require("./ipc/scheduled-transactions");
-const registerAccountReconciliationsHandlers = require("./ipc/account-reconciliations");
-const registerSettingsHandlers = require("./ipc/settings");
 const registerBackupsHandlers = require("./ipc/backups");
-const registerPayeesHandlers = require("./ipc/payees");
 const registerImportHandlers = require("./ipc/import");
-const registerEnvelopesHandlers = require("./ipc/envelopes");
-const registerEnvelopeCategoriesHandlers = require("./ipc/envelope-categories");
-const registerBudgetAllocationsHandlers = require("./ipc/budget-allocations");
-const registerBudgetTransfersHandlers = require("./ipc/budget-transfers");
+const registerSharedServices = require("./ipc/shared-services");
+const { createDatabaseCapability } = require("./services-adapter");
+const { processAutoPost } = require("./services.js");
 const { createBackupDirect, DEFAULT_BACKUP_FOLDER } = require("./ipc/backups");
 const isDev = !app.isPackaged;
 
@@ -115,22 +106,14 @@ app.whenReady().then(async () => {
   }
 
   const { db, sqlite, dbPath } = setupDatabase(customDbPath);
+  const databaseCapability = createDatabaseCapability(sqlite);
   // Add IPC handlers for database operations
-  registerAccountsHandlers(ipcMain, db, schema);
-  registerCategoriesHandlers(ipcMain, db, schema);
-  registerTransactionsHandlers(ipcMain, db, schema);
-  registerScheduledTransactionsHandlers(ipcMain, db, schema);
-  registerAccountReconciliationsHandlers(ipcMain, db, schema);
-  registerSettingsHandlers(ipcMain, db, schema);
+  registerSharedServices(ipcMain, databaseCapability);
+
   registerBackupsHandlers(ipcMain, db, schema, sqlite, dbPath, dialog, () => {
     skipAutoBackup = true;
   });
-  registerPayeesHandlers(ipcMain, db, schema);
   registerImportHandlers(ipcMain, dialog);
-  registerEnvelopesHandlers(ipcMain, db, schema);
-  registerEnvelopeCategoriesHandlers(ipcMain, db, schema);
-  registerBudgetAllocationsHandlers(ipcMain, db, schema);
-  registerBudgetTransfersHandlers(ipcMain, db, schema);
 
   // Data folder handlers
   ipcMain.handle("settings:getDataFolder", () => path.dirname(dbPath));
@@ -160,7 +143,7 @@ app.whenReady().then(async () => {
     app.quit();
   });
 
-  await processAutoPost(db, schema);
+  await processAutoPost(databaseCapability);
 
   // Auto-backup on quit (skip if triggered by a restore)
   app.on("before-quit", async (event) => {
