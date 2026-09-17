@@ -50,14 +50,34 @@ Completed in this work:
 - Verified official SQLite WASM 3.53.4 with `opfs-sahpool` in a Vite worker.
 - Verified JSON functions, foreign keys, aggregate queries, `RETURNING`,
   rollback, and persistence across probe reload.
+- Bundled and executed all 13 existing migrations in a browser worker; a fresh
+  database applied all 13 and reload skipped all 13.
+- Verified the browser executor recognizes all 13 rows written by the real
+  Electron Drizzle migrator in an in-memory SQLite contract test.
+- Verified the same migration metadata compatibility against a physical,
+  WAL-enabled Electron database file.
+- Verified the migration worker in current Chromium: first load applied all 13
+  migrations and reload skipped all 13 through OPFS persistence.
+- Measured a Chromium persisted-database reopen at approximately 132 ms in the
+  local profile; `navigator.storage.persisted()` was false, so eviction safety
+  remains unproven.
+- An explicit Chromium `navigator.storage.persist()` request also returned
+  false on localhost; the eventual runtime must handle denied persistence
+  distinctly and avoid claiming eviction protection.
+- Verified Safari 27 first-load migration execution: all 13 migrations applied
+  in approximately 193 ms; `persist()` returned false and `persisted()` stayed
+  false in the localhost profile.
+- Verified Safari reload persistence: a second load skipped all 13 migrations
+  in approximately 199 ms; persistent-storage protection remained denied.
 - Added cross-origin isolation headers to `vite.config.ts` for the future
   worker/OPFS path.
 - Passed `bun run lint` and `bun run check-types` after cleanup.
 
 Next work, in order:
 
-1. Complete the remaining phase 0 browser/device, persistence, performance,
-   deployment, and offline checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`.
+1. Complete the Chromium and Safari persistence, performance, deployment,
+   offline, and PowerSync checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`;
+   repository-local migration proof is complete.
 2. Run the same contract against the no-sync baseline and the PowerSync
    browser VFS spike before changing production schema.
 3. Choose the browser database adapter and define its shared asynchronous
@@ -70,6 +90,10 @@ The next coding session should start by turning the existing Electron schema
 and migrations into a browser-loadable contract fixture, then add the first
 browser adapter contract test. Do not begin the UI redesign or sync-ready
 schema migration until the phase 0 approval gate below is satisfied.
+
+Current validation scope: Chromium and Safari are the approval baseline.
+Physical mobile-device and Firefox coverage is deferred until before public
+mobile launch or if browser storage behavior changes materially.
 
 ## 3. Target Architecture
 
