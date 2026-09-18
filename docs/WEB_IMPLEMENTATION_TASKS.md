@@ -351,6 +351,9 @@ Phase 2 is complete for the current version-1 local-only package scope:
 Hosted-account replacement semantics remain deferred to
 `docs/SYNC_ENGINE_PLAN.md`.
 
+Next resume point: Phase 3 Browser Runtime, beginning with browser startup
+failure/recovery and offline deployment validation.
+
 ## Guardrails
 
 - Do not make WAL a shared domain assumption; journal mode belongs to each

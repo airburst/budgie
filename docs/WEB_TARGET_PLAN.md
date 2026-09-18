@@ -109,17 +109,20 @@ Completed in this work:
   tombstones while filtering them from active reads; settings remains
   device-local.
 - Passed `bun run lint` and `bun run check-types` after cleanup.
+- Completed the local-only version-1 Portable Data Package, including
+  cross-platform export/import adapters, public-ID relationship mapping,
+  atomic tombstone-preserving overwrite, validation, golden fixtures, and
+  regression coverage.
 
 Next work, in order:
 
 1. Complete the Chromium and Safari persistence, performance, deployment, and
    offline checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`; repository-
    local migration proof is complete.
-2. Add browser contract tests against the shared services and explicit worker
-   startup failure/recovery states.
-3. Build the first production slice: bundled browser migrations, serialized
-   database worker, startup failure states, single-tab locking, persistence
-   handling, and adapter contract tests.
+2. Begin Phase 3 Browser Runtime by completing the remaining browser startup,
+   persistence, failure/recovery, and offline deployment checks.
+3. Add browser contract tests against the shared services and complete the
+   worker/runtime release gate.
 
 Phase 1 local foundation status: complete. The shared platform/API boundary,
 database adapters, domain services, Electron IPC bundle, browser startup
@@ -127,10 +130,11 @@ lifecycle, inactive-tab handling, persistence state, and local contract tests
 are implemented. External phase 0 browser/deployment/performance validation
 remains a separate gate before production web release.
 
-The next coding session should continue the local browser persistence,
-provider-neutral sync-ready data, and portable data work. Do not select a
-sync engine or hosting model from this plan; those decisions are owned by
-`docs/SYNC_ENGINE_PLAN.md`.
+The next coding session should start Phase 3: Browser Runtime. Begin with the
+dedicated SQLite worker startup/error states, bundled migration execution,
+single-tab locking, persistence reporting, resume auto-posting, and offline
+asset validation. Do not select a sync engine or hosting model from this plan;
+those decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
 Provider-neutral Sync-Ready Data Structure status: complete for the current
 scope. Existing integer relationships remain intact, while syncable entities

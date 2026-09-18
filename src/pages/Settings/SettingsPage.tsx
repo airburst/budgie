@@ -26,8 +26,8 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import Layout from "../layout";
-import { ShortcutsTab } from "./ShortcutsTab";
 import { DataTransferSection } from "./DataTransferSection";
+import { ShortcutsTab } from "./ShortcutsTab";
 
 const STATIC_ROUTES: { value: string; label: string }[] = [
   { value: "/", label: "Dashboard" },

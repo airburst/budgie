@@ -1,5 +1,4 @@
 import * as schema from "@/main/db/schema";
-import goldenPackage from "@/tests/fixtures/portable-data-v1.json";
 import type {
   DatabaseCapability,
   DatabaseRow,
@@ -12,6 +11,7 @@ import {
   parsePortableData,
   serializePortableData,
 } from "@/services/portable-data";
+import goldenPackage from "@/tests/fixtures/portable-data-v1.json";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
@@ -64,18 +64,15 @@ const createDatabase = (): DatabaseCapability => {
 
 describe("portable data export", () => {
   it("reads the version 1 empty golden package", async () => {
-    await expect(parsePortableData(JSON.stringify(goldenPackage))).resolves.toEqual(
-      goldenPackage,
-    );
+    await expect(
+      parsePortableData(JSON.stringify(goldenPackage)),
+    ).resolves.toEqual(goldenPackage);
   });
 
   it("rejects duplicate IDs and broken relationships before import", async () => {
     const duplicate = {
       ...goldenPackage,
-      accounts: [
-        { publicId: "same" },
-        { publicId: "same" },
-      ],
+      accounts: [{ publicId: "same" }, { publicId: "same" }],
     };
     await expect(parsePortableData(JSON.stringify(duplicate))).rejects.toThrow(
       "Duplicate accounts public ID",
@@ -91,47 +88,47 @@ describe("portable data export", () => {
     );
   });
 
-    it("round-trips the golden package through a second database", async () => {
-      const database = createDatabase();
-      await importPortableData(database, goldenPackage);
-      const exported = await createPortableData(database, {
-        applicationVersion: goldenPackage.manifest.applicationVersion,
-        minimumReaderVersion: goldenPackage.manifest.minimumReaderVersion,
-        exportedAt: goldenPackage.manifest.exportedAt,
-      });
-      expect(exported.preferences).toEqual({});
-      expect(exported.accounts.every((row) => row.deletedAt !== null)).toBe(true);
-      await expect(parsePortableData(JSON.stringify(exported))).resolves.toEqual(
-        exported,
-      );
+  it("round-trips the golden package through a second database", async () => {
+    const database = createDatabase();
+    await importPortableData(database, goldenPackage);
+    const exported = await createPortableData(database, {
+      applicationVersion: goldenPackage.manifest.applicationVersion,
+      minimumReaderVersion: goldenPackage.manifest.minimumReaderVersion,
+      exportedAt: goldenPackage.manifest.exportedAt,
     });
+    expect(exported.preferences).toEqual({});
+    expect(exported.accounts.every((row) => row.deletedAt !== null)).toBe(true);
+    await expect(parsePortableData(JSON.stringify(exported))).resolves.toEqual(
+      exported,
+    );
+  });
 
-    it("exports a moderate large dataset with stable ordering", async () => {
-      const database = createDatabase();
-      for (let index = 0; index < 250; index += 1) {
-        await database.execute({
-          sql: `INSERT INTO accounts
+  it("exports a moderate large dataset with stable ordering", async () => {
+    const database = createDatabase();
+    for (let index = 0; index < 250; index += 1) {
+      await database.execute({
+        sql: `INSERT INTO accounts
             (public_id, updated_at, name, type, balance, currency)
             VALUES (?, ?, ?, ?, ?, ?)`,
-          params: [
-            `account-${index}`,
-            "2026-09-18T00:00:00.000Z",
-            `Account ${index}`,
-            "cash",
-            index,
-            "GBP",
-          ],
-        });
-      }
-      const exported = await createPortableData(database, {
-        applicationVersion: "0.16.3",
-        minimumReaderVersion: "0.16.3",
-        exportedAt: "2026-09-18T00:00:00.000Z",
+        params: [
+          `account-${index}`,
+          "2026-09-18T00:00:00.000Z",
+          `Account ${index}`,
+          "cash",
+          index,
+          "GBP",
+        ],
       });
-      expect(exported.accounts).toHaveLength(250);
-      expect(exported.accounts[0]?.publicId).toBe("account-0");
-      expect(exported.accounts[249]?.publicId).toBe("account-249");
+    }
+    const exported = await createPortableData(database, {
+      applicationVersion: "0.16.3",
+      minimumReaderVersion: "0.16.3",
+      exportedAt: "2026-09-18T00:00:00.000Z",
     });
+    expect(exported.accounts).toHaveLength(250);
+    expect(exported.accounts[0]?.publicId).toBe("account-0");
+    expect(exported.accounts[249]?.publicId).toBe("account-249");
+  });
 
   it("exports public-ID relationships, tombstones, preferences, and checksum", async () => {
     const database = createDatabase();

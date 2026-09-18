@@ -40,7 +40,9 @@ export function DataTransferSection() {
       setPendingDocument(await file.text());
     } catch (error) {
       setStatus("error");
-      setMessage(error instanceof Error ? error.message : "Could not read file");
+      setMessage(
+        error instanceof Error ? error.message : "Could not read file",
+      );
     }
   }
 
@@ -70,7 +72,11 @@ export function DataTransferSection() {
         replaces all local data.
       </p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={handleExport} disabled={status === "busy"}>
+        <Button
+          variant="outline"
+          onClick={handleExport}
+          disabled={status === "busy"}
+        >
           <Download />
           Export data
         </Button>
