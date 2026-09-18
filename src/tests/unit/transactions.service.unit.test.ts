@@ -150,8 +150,11 @@ describe("transaction creation service", () => {
     });
     await service.delete(created.id);
     await expect(
-      database.query({ sql: "SELECT count(*) AS count FROM transactions" }),
-    ).resolves.toEqual([{ count: 0 }]);
+      database.query({
+        sql: "SELECT deleted_at FROM transactions WHERE id = ?",
+        params: [created.id],
+      }),
+    ).resolves.toEqual([{ deleted_at: expect.any(String) }]);
   });
 
   it("rejects deletion of reconciled transactions", async () => {
@@ -293,7 +296,9 @@ describe("transaction creation service", () => {
     expect(updated.categoryId).toBeNull();
     expect(updated.transferTransactionId).toBeNull();
     await expect(
-      database.query({ sql: "SELECT count(*) AS count FROM transactions" }),
+      database.query({
+        sql: "SELECT count(*) AS count FROM transactions WHERE deleted_at IS NULL",
+      }),
     ).resolves.toEqual([{ count: 1 }]);
   });
 });

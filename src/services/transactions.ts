@@ -1,16 +1,26 @@
 import type { DatabaseCapability, DatabaseRow } from "@/platform/database";
-import type { Transaction } from "@/types/electron";
+import type { SyncMetadataFields, Transaction } from "@/types/electron";
 
 export type TransactionCreate = Omit<
   Transaction,
-  "id" | "createdAt" | "reconciled" | "transferTransactionId"
+  | "id"
+  | "createdAt"
+  | "reconciled"
+  | "transferTransactionId"
+  | SyncMetadataFields
 >;
 export type TransactionUpdate = Partial<
-  Omit<Transaction, "id" | "createdAt" | "transferTransactionId">
+  Omit<
+    Transaction,
+    "id" | "createdAt" | "transferTransactionId" | SyncMetadataFields
+  >
 >;
 
 type TransactionRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   account_id: number;
   category_id: number | null;
   date: string;
@@ -44,6 +54,9 @@ const columnsForTransaction: Partial<Record<keyof TransactionUpdate, string>> =
 
 const mapTransaction = (row: TransactionRow): Transaction => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   accountId: row.account_id,
   categoryId: row.category_id,
   date: row.date,
@@ -174,20 +187,20 @@ export const createTransaction = async (
 export const createTransactionService = (database: DatabaseCapability) => ({
   getAll: async () => {
     const rows = await database.query<TransactionRow>({
-      sql: "SELECT * FROM transactions ORDER BY date ASC, created_at ASC, id ASC",
+      sql: "SELECT * FROM transactions WHERE deleted_at IS NULL ORDER BY date ASC, created_at ASC, id ASC",
     });
     return rows.map(mapTransaction);
   },
   getById: async (id: number) => {
     const rows = await database.query<TransactionRow>({
-      sql: "SELECT * FROM transactions WHERE id = ?",
+      sql: "SELECT * FROM transactions WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? mapTransaction(rows[0]) : null;
   },
   getByAccount: async (accountId: number) => {
     const rows = await database.query<TransactionRow>({
-      sql: "SELECT * FROM transactions WHERE account_id = ? ORDER BY date ASC, created_at ASC, id ASC",
+      sql: "SELECT * FROM transactions WHERE account_id = ? AND deleted_at IS NULL ORDER BY date ASC, created_at ASC, id ASC",
       params: [accountId],
     });
     return rows.map(mapTransaction);
@@ -201,7 +214,7 @@ export const createTransactionService = (database: DatabaseCapability) => ({
       ? ` AND account_id IN (${accountIds.map(() => "?").join(", ")})`
       : "";
     const rows = await database.query<TransactionRow>({
-      sql: `SELECT * FROM transactions WHERE date >= ? AND date <= ?${accountClause} ORDER BY date ASC`,
+      sql: `SELECT * FROM transactions WHERE deleted_at IS NULL AND date >= ? AND date <= ?${accountClause} ORDER BY date ASC`,
       params: [startDate, endDate, ...(accountIds ?? [])],
     });
     return rows.map(mapTransaction);
@@ -244,7 +257,7 @@ export const createTransactionService = (database: DatabaseCapability) => ({
           params: [id, counterId],
         });
         await transaction.execute({
-          sql: "DELETE FROM transactions WHERE id = ?",
+          sql: "UPDATE transactions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
           params: [counterId],
         });
       };
@@ -374,12 +387,12 @@ export const createTransactionService = (database: DatabaseCapability) => ({
           params: [id, counterId],
         });
         await transaction.execute({
-          sql: "DELETE FROM transactions WHERE id IN (?, ?)",
+          sql: "UPDATE transactions SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (?, ?)",
           params: [id, counterId],
         });
       } else {
         await transaction.execute({
-          sql: "DELETE FROM transactions WHERE id = ?",
+          sql: "UPDATE transactions SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
           params: [id],
         });
       }

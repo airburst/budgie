@@ -1,8 +1,16 @@
 import type { DatabaseCapability, DatabaseRow } from "@/platform/database";
-import type { Category, Envelope, EnvelopeCategory } from "@/types/electron";
+import type {
+  Category,
+  Envelope,
+  EnvelopeCategory,
+  SyncMetadataFields,
+} from "@/types/electron";
 
 type EnvelopeRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   name: string;
   active: number;
   sort_order: number;
@@ -10,11 +18,18 @@ type EnvelopeRow = DatabaseRow & {
 };
 type MappingRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   envelope_id: number;
   category_id: number;
+  created_at: string | null;
 };
 const mapEnvelope = (row: EnvelopeRow): Envelope => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   name: row.name,
   active: Boolean(row.active),
   sortOrder: row.sort_order,
@@ -22,24 +37,30 @@ const mapEnvelope = (row: EnvelopeRow): Envelope => ({
 });
 const mapMapping = (row: MappingRow): EnvelopeCategory => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   envelopeId: row.envelope_id,
   categoryId: row.category_id,
+  createdAt: row.created_at,
 });
 
 export const createEnvelopeService = (database: DatabaseCapability) => ({
   getAll: async () =>
     (
       await database.query<EnvelopeRow>({
-        sql: "SELECT * FROM envelopes WHERE active = 1 ORDER BY sort_order",
+        sql: "SELECT * FROM envelopes WHERE active = 1 AND deleted_at IS NULL ORDER BY sort_order",
       })
     ).map(mapEnvelope),
   getAllIncludingInactive: async () =>
-    (await database.query<EnvelopeRow>({ sql: "SELECT * FROM envelopes" })).map(
-      mapEnvelope,
-    ),
+    (
+      await database.query<EnvelopeRow>({
+        sql: "SELECT * FROM envelopes WHERE deleted_at IS NULL",
+      })
+    ).map(mapEnvelope),
   getById: async (id: number) => {
     const rows = await database.query<EnvelopeRow>({
-      sql: "SELECT * FROM envelopes WHERE id = ?",
+      sql: "SELECT * FROM envelopes WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? mapEnvelope(rows[0]) : null;
@@ -94,17 +115,19 @@ export const createEnvelopeService = (database: DatabaseCapability) => ({
   getCategories: async () =>
     (
       await database.query<MappingRow>({
-        sql: "SELECT * FROM envelope_categories",
+        sql: "SELECT * FROM envelope_categories WHERE deleted_at IS NULL",
       })
     ).map(mapMapping),
   getCategoriesByEnvelope: async (envelopeId: number) =>
     (
       await database.query<MappingRow>({
-        sql: "SELECT * FROM envelope_categories WHERE envelope_id = ?",
+        sql: "SELECT * FROM envelope_categories WHERE envelope_id = ? AND deleted_at IS NULL",
         params: [envelopeId],
       })
     ).map(mapMapping),
-  createCategory: async (data: Omit<EnvelopeCategory, "id">) => {
+  createCategory: async (
+    data: Omit<EnvelopeCategory, "id" | "createdAt" | SyncMetadataFields>,
+  ) => {
     const category = await database.query<{
       expense_type: Category["expenseType"];
     }>({
@@ -114,6 +137,18 @@ export const createEnvelopeService = (database: DatabaseCapability) => ({
     if (!category[0]) throw new Error("Category not found");
     if (category[0].expense_type === "income")
       throw new Error("Income categories cannot be mapped to envelopes");
+    const deletedMapping = await database.query<{ id: number }>({
+      sql: "SELECT id FROM envelope_categories WHERE category_id = ? AND deleted_at IS NOT NULL",
+      params: [data.categoryId],
+    });
+    if (deletedMapping[0]) {
+      return (
+        await database.query<MappingRow>({
+          sql: "UPDATE envelope_categories SET envelope_id = ?, deleted_at = NULL WHERE id = ? RETURNING *",
+          params: [data.envelopeId, deletedMapping[0].id],
+        })
+      ).map(mapMapping);
+    }
     return (
       await database.query<MappingRow>({
         sql: "INSERT INTO envelope_categories (envelope_id, category_id) VALUES (?, ?) RETURNING *",
@@ -123,12 +158,12 @@ export const createEnvelopeService = (database: DatabaseCapability) => ({
   },
   deleteCategory: (id: number) =>
     database.execute({
-      sql: "DELETE FROM envelope_categories WHERE id = ?",
+      sql: "UPDATE envelope_categories SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       params: [id],
     }),
   deleteCategoriesByEnvelope: (envelopeId: number) =>
     database.execute({
-      sql: "DELETE FROM envelope_categories WHERE envelope_id = ?",
+      sql: "UPDATE envelope_categories SET deleted_at = CURRENT_TIMESTAMP WHERE envelope_id = ?",
       params: [envelopeId],
     }),
 });

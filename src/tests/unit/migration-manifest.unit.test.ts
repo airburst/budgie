@@ -15,6 +15,7 @@ const expectedTags = [
   "0010_early_orphan",
   "0011_scheduled_transfer_account",
   "0012_accounts_pending_reconcile",
+  "0013_chilly_dorian_gray",
 ];
 
 describe("browser migration manifest", () => {

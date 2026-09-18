@@ -3,12 +3,18 @@ import type {
   DatabaseRow,
   DatabaseValue,
 } from "@/platform/database";
-import type { ScheduledTransaction } from "@/types/electron";
+import type {
+  ScheduledTransaction,
+  SyncMetadataFields,
+} from "@/types/electron";
 import { RRule } from "rrule";
 import { createTransaction } from "./transactions";
 
 type ScheduledRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   account_id: number;
   category_id: number | null;
   payee: string;
@@ -25,6 +31,9 @@ type ScheduledRow = DatabaseRow & {
 
 const mapScheduled = (row: ScheduledRow): ScheduledTransaction => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   accountId: row.account_id,
   categoryId: row.category_id,
   payee: row.payee,
@@ -39,9 +48,12 @@ const mapScheduled = (row: ScheduledRow): ScheduledTransaction => ({
   createdAt: row.created_at,
 });
 
-export type ScheduledCreate = Omit<ScheduledTransaction, "id" | "createdAt">;
+export type ScheduledCreate = Omit<
+  ScheduledTransaction,
+  "id" | "createdAt" | SyncMetadataFields
+>;
 export type ScheduledUpdate = Partial<
-  Omit<ScheduledTransaction, "id" | "createdAt">
+  Omit<ScheduledTransaction, "id" | "createdAt" | SyncMetadataFields>
 >;
 
 const columns: Record<string, string> = {
@@ -71,12 +83,12 @@ export const createScheduledTransactionService = (
   getAll: async () =>
     (
       await database.query<ScheduledRow>({
-        sql: "SELECT * FROM scheduled_transactions",
+        sql: "SELECT * FROM scheduled_transactions WHERE deleted_at IS NULL",
       })
     ).map(mapScheduled),
   getById: async (id: number) => {
     const rows = await database.query<ScheduledRow>({
-      sql: "SELECT * FROM scheduled_transactions WHERE id = ?",
+      sql: "SELECT * FROM scheduled_transactions WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? mapScheduled(rows[0]) : null;
@@ -117,7 +129,7 @@ export const createScheduledTransactionService = (
   },
   delete: (id: number) =>
     database.execute({
-      sql: "DELETE FROM scheduled_transactions WHERE id = ?",
+      sql: "UPDATE scheduled_transactions SET active = 0, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       params: [id],
     }),
 });
@@ -127,7 +139,7 @@ export const processAutoPost = async (
   today = new Date(),
 ) => {
   const items = await database.query<ScheduledRow>({
-    sql: "SELECT * FROM scheduled_transactions WHERE active = 1 AND auto_post = 1",
+    sql: "SELECT * FROM scheduled_transactions WHERE active = 1 AND auto_post = 1 AND deleted_at IS NULL",
   });
   const todayStr = today.toISOString().slice(0, 10);
 
@@ -157,7 +169,7 @@ export const processAutoPost = async (
 
     if (nextDue === null) {
       await database.execute({
-        sql: "DELETE FROM scheduled_transactions WHERE id = ?",
+        sql: "UPDATE scheduled_transactions SET active = 0, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
         params: [row.id],
       });
     } else if (nextDue !== row.next_due_date) {

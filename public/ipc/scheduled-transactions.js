@@ -1,4 +1,4 @@
-const { eq, and } = require("drizzle-orm");
+const { and, eq, isNull } = require("drizzle-orm");
 const { RRule } = require("rrule");
 
 async function processAutoPost(db, schema) {
@@ -12,6 +12,7 @@ async function processAutoPost(db, schema) {
       and(
         eq(schema.scheduledTransactions.active, true),
         eq(schema.scheduledTransactions.autoPost, true),
+        isNull(schema.scheduledTransactions.deletedAt),
       ),
     );
 
@@ -132,10 +133,10 @@ async function processAutoPost(db, schema) {
     }
 
     if (nextDue === null) {
-      // Exhausted (e.g. a "once" schedule): it will never occur again, so
-      // remove it from the list. The posted transaction is unaffected.
+      // Exhausted (e.g. a "once" schedule): retain a tombstone for sync.
       await db
-        .delete(schema.scheduledTransactions)
+        .update(schema.scheduledTransactions)
+        .set({ active: false, deletedAt: new Date().toISOString() })
         .where(eq(schema.scheduledTransactions.id, item.id));
     } else if (nextDue !== item.nextDueDate) {
       await db
@@ -148,13 +149,21 @@ async function processAutoPost(db, schema) {
 
 function registerScheduledTransactionsHandlers(ipcMain, db, schema) {
   ipcMain.handle("scheduled_transactions:getAll", () =>
-    db.select().from(schema.scheduledTransactions),
+    db
+      .select()
+      .from(schema.scheduledTransactions)
+      .where(isNull(schema.scheduledTransactions.deletedAt)),
   );
   ipcMain.handle("scheduled_transactions:getById", (_, id) =>
     db
       .select()
       .from(schema.scheduledTransactions)
-      .where(eq(schema.scheduledTransactions.id, id))
+      .where(
+        and(
+          eq(schema.scheduledTransactions.id, id),
+          isNull(schema.scheduledTransactions.deletedAt),
+        ),
+      )
       .then((r) => r[0] ?? null),
   );
   ipcMain.handle("scheduled_transactions:create", (_, data) =>
@@ -169,7 +178,8 @@ function registerScheduledTransactionsHandlers(ipcMain, db, schema) {
   );
   ipcMain.handle("scheduled_transactions:delete", (_, id) =>
     db
-      .delete(schema.scheduledTransactions)
+      .update(schema.scheduledTransactions)
+      .set({ active: false, deletedAt: new Date().toISOString() })
       .where(eq(schema.scheduledTransactions.id, id)),
   );
 }

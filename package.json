@@ -19,6 +19,7 @@
     "prepare": "husky",
     "db:migrate": "drizzle-kit generate",
     "db:seed": "bun run src/main/db/seeds/accounts.ts",
+    "spike:powersync": "vite --config vite.powersync-spike.config.ts",
     "changeset": "changeset",
     "version": "changeset version",
     "release": "bash scripts/release.sh"
@@ -54,6 +55,7 @@
     "@changesets/cli": "^3.0.2",
     "@eslint/eslintrc": "^3.3.7",
     "@eslint/js": "^10.0.1",
+    "@powersync/web": "2.3.1",
     "@prettier/plugin-oxc": "^0.2.2",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",

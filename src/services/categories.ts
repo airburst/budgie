@@ -7,6 +7,9 @@ import type { Category } from "@/types/electron";
 
 type CategoryRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   parent_id: number | null;
   name: string;
   expense_type: Category["expenseType"];
@@ -16,6 +19,9 @@ type CategoryRow = DatabaseRow & {
 
 const mapCategory = (row: CategoryRow): Category => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   parentId: row.parent_id,
   name: row.name,
   expenseType: row.expense_type,
@@ -41,12 +47,12 @@ export const createCategoryService = (database: DatabaseCapability) => ({
   getAll: async () =>
     (
       await database.query<CategoryRow>({
-        sql: "SELECT * FROM categories WHERE deleted = 0",
+        sql: "SELECT * FROM categories WHERE deleted = 0 AND deleted_at IS NULL",
       })
     ).map(mapCategory),
   getById: async (id: number) => {
     const rows = await database.query<CategoryRow>({
-      sql: "SELECT * FROM categories WHERE id = ?",
+      sql: "SELECT * FROM categories WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? mapCategory(rows[0]) : null;
@@ -82,13 +88,13 @@ export const createCategoryService = (database: DatabaseCapability) => ({
       throw new Error("Transfer categories cannot be deleted.");
     try {
       await database.execute({
-        sql: "DELETE FROM categories WHERE id = ?",
+        sql: "UPDATE categories SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
         params: [id],
       });
     } catch (error) {
       if (String(error).includes("FOREIGN KEY")) {
         await database.execute({
-          sql: "UPDATE categories SET deleted = 1 WHERE id = ?",
+          sql: "UPDATE categories SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
           params: [id],
         });
         return;

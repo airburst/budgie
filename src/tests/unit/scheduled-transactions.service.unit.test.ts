@@ -70,8 +70,8 @@ describe("scheduled auto-post service", () => {
     ).resolves.toEqual([{ amount: -50, payee: "Rent" }]);
     await expect(
       database.query({
-        sql: "SELECT count(*) AS count FROM scheduled_transactions",
+        sql: "SELECT active, deleted_at FROM scheduled_transactions",
       }),
-    ).resolves.toEqual([{ count: 0 }]);
+    ).resolves.toEqual([{ active: 0, deleted_at: expect.any(String) }]);
   });
 });

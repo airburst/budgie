@@ -9,6 +9,7 @@
 
 # production
 /build
+/build-powersync-spike
 /out
 
 # misc

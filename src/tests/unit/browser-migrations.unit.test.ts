@@ -46,7 +46,7 @@ describe("browser migration executor", () => {
         'SELECT id, hash, created_at FROM "__drizzle_migrations" ORDER BY created_at',
       )
       .all() as Array<{ id: number; hash: string; created_at: number }>;
-    expect(migrationRows).toHaveLength(13);
+    expect(migrationRows).toHaveLength(browserMigrations.length);
     expect(migrationRows.every((row) => row.hash.length > 0)).toBe(true);
 
     const database: MigrationDatabase = {
@@ -82,11 +82,48 @@ describe("browser migration executor", () => {
         sqlite
           .prepare('SELECT count(*) AS count FROM "__drizzle_migrations"')
           .get(),
-      ).toEqual({ count: 13 });
+      ).toEqual({ count: browserMigrations.length });
     } finally {
       sqlite.close();
       rmSync(directory, { recursive: true, force: true });
     }
+  });
+
+  it("backfills sync metadata and assigns it to new rows", () => {
+    const sqlite = new Database(":memory:");
+    const electronDb = drizzle(sqlite, { schema });
+    migrate(electronDb, { migrationsFolder: "src/main/db/migrations" });
+
+    const syncTables = [
+      "account_reconciliations",
+      "accounts",
+      "budget_allocations",
+      "budget_transfers",
+      "categories",
+      "envelope_categories",
+      "envelopes",
+      "payees",
+      "scheduled_transactions",
+      "transactions",
+    ];
+    for (const table of syncTables) {
+      const rows = sqlite
+        .prepare(`SELECT public_id, updated_at FROM ${table}`)
+        .all() as Array<{ public_id: string; updated_at: string }>;
+      expect(rows.every((row) => row.public_id && row.updated_at)).toBe(true);
+    }
+
+    sqlite
+      .prepare(
+        `INSERT INTO accounts (name, type, balance, currency) VALUES (?, ?, ?, ?)`,
+      )
+      .run("Metadata test", "cash", 0, "GBP");
+    const inserted = sqlite
+      .prepare("SELECT public_id, updated_at FROM accounts WHERE name = ?")
+      .get("Metadata test") as { public_id: string; updated_at: string };
+    expect(inserted.public_id).toMatch(/^[0-9a-f]{32}$/);
+    expect(inserted.updated_at).toBeTruthy();
+    sqlite.close();
   });
 
   it("applies fresh migrations in order", () => {

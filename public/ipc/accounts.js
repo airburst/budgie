@@ -39,10 +39,18 @@ function withBalances(db, schema) {
       )`,
     })
     .from(schema.accounts)
-    .where(eq(schema.accounts.deleted, false))
+    .where(
+      and(
+        eq(schema.accounts.deleted, false),
+        isNull(schema.accounts.deletedAt),
+      ),
+    )
     .leftJoin(
       schema.transactions,
-      eq(schema.transactions.accountId, schema.accounts.id),
+      and(
+        eq(schema.transactions.accountId, schema.accounts.id),
+        isNull(schema.transactions.deletedAt),
+      ),
     )
     .groupBy(schema.accounts.id);
 }
@@ -97,7 +105,7 @@ module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
       if (transferParent) {
         await db
           .update(schema.categories)
-          .set({ deleted: true })
+          .set({ deleted: true, deletedAt: new Date().toISOString() })
           .where(
             and(
               eq(schema.categories.parentId, transferParent.id),
@@ -106,19 +114,10 @@ module.exports = function registerAccountsHandlers(ipcMain, db, schema) {
           );
       }
     }
-    try {
-      // Try hard delete first (works if no FK constraints)
-      return await db.delete(schema.accounts).where(eq(schema.accounts.id, id));
-    } catch (err) {
-      // If FK constraint blocks deletion, soft delete instead
-      if (err && err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
-        return db
-          .update(schema.accounts)
-          .set({ deleted: true })
-          .where(eq(schema.accounts.id, id))
-          .returning();
-      }
-      throw err;
-    }
+    return db
+      .update(schema.accounts)
+      .set({ deleted: true, deletedAt: new Date().toISOString() })
+      .where(eq(schema.accounts.id, id))
+      .returning();
   });
 };

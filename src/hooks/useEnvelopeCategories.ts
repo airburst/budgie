@@ -1,4 +1,4 @@
-import type { EnvelopeCategory } from "@/types/electron";
+import type { EnvelopeCategory, SyncMetadataFields } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useEnvelopeCategories() {
@@ -10,8 +10,9 @@ export function useEnvelopeCategories() {
   });
 
   const create = useMutation({
-    mutationFn: (data: Omit<EnvelopeCategory, "id">) =>
-      window.api.createEnvelopeCategory(data),
+    mutationFn: (
+      data: Omit<EnvelopeCategory, "id" | "createdAt" | SyncMetadataFields>,
+    ) => window.api.createEnvelopeCategory(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["envelopeCategories"] }),
   });
 

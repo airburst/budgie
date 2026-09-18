@@ -83,7 +83,7 @@ executor recognized all 13 migration rows, and the file contained the expected
       private browsing, and denied-persistence behavior.
 - [ ] Validate WASM and worker loading in Chromium and Safari on localhost,
       Cloudflare preview, and offline service-worker mode.
-- [ ] Compare the no-sync baseline with the PowerSync browser VFS spike using
+- [x] Compare the no-sync baseline with the PowerSync browser VFS spike using
       the same contract before changing the production schema.
 
 Deferred: physical iPhone, iPadOS, Android, Firefox, and Chromium device runs
@@ -257,14 +257,61 @@ workspace:
 - Chromium reload persistence and migration execution are complete; browser
   restart, quota, pressure, and offline deployment checks remain to be recorded.
 - Cloudflare preview and offline service-worker asset loading.
-- The disposable PowerSync browser VFS comparison and its sync decision gate.
+- The local web-target gate and provider-neutral sync-ready data work belong
+  here. Hosting, sync-engine selection, and provider-specific schema
+  decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
 Deferred rather than blocking this baseline: physical iPhone, iPadOS, Android,
 Firefox, and mobile-hardware performance runs.
 
-Do not mark phase 0 approved or begin sync-ready schema changes until these
-external results are recorded. The next implementation work can proceed on
-the platform-neutral adapter interfaces, but it must preserve this gate.
+Do not mark the local web phase 0 gate approved until these external results
+are recorded. Provider-neutral sync-ready data work may proceed here, but
+provider-specific schema and engine choices must follow the separate gate in
+`docs/SYNC_ENGINE_PLAN.md`.
+
+## Reference: PowerSync Browser VFS Spike
+
+The disposable probe is available through `bun run spike:powersync`. It uses
+the current browser migration manifest and runs the same migration, query,
+`RETURNING`, transaction rollback, reload, and close contract against
+PowerSync 2.3.1 with both `AccessHandlePoolVFS` and `OPFSCoopSyncVFS`:
+
+- In the Chromium-compatible local browser, all 13 migrations applied on the
+  first load and all 13 were skipped after reopening the database.
+- Both VFS choices preserved a row across reopen, supported `RETURNING`, and
+  rolled back an intentional transaction failure.
+- The run was cross-origin isolated and reported `persisted: false`, matching
+  the no-sync baseline's localhost behavior.
+- PowerSync's normal client schema is view-based and does not consume
+  Budgie's Drizzle migration history automatically. The probe therefore used
+  a local schema plus raw SQL tables to test whether the migration shape can
+  be carried forward.
+- `AccessHandlePoolVFS` is explicitly single-tab and is not the Safari/iOS
+  choice. `OPFSCoopSyncVFS` is the documented cross-browser alternative, but
+  its multi-tab behavior does not replace Budgie's one-active-tab coordinator.
+
+This result is an input to the provider-neutral data-structure work, not a
+PowerSync approval. The full PowerSync decision, including a real service,
+raw-table and managed-view comparison, an authenticated write API, two
+browser clients plus Electron, and current Safari/iOS/Android checks, is owned
+by `docs/SYNC_ENGINE_PLAN.md`.
+
+## Provider-Neutral Sync-Ready Data Structure
+
+Complete for the current scope:
+
+- Migration `0013_chilly_dorian_gray` adds stable public IDs, lifecycle
+  timestamps, nullable tombstones, unique public-ID indexes, and metadata
+  triggers to every syncable entity and relationship table.
+- Existing rows receive deterministic `legacy:<table>:<id>` public IDs and
+  lifecycle timestamps during migration.
+- Shared services and legacy IPC adapters retain syncable rows as tombstones;
+  active reads exclude them, and database triggers reject hard deletes.
+- Existing integer relationships remain intact. Settings and desktop paths
+  remain device-local; canonical public-key strategy and provider-specific
+  ownership/schema decisions remain in `docs/SYNC_ENGINE_PLAN.md`.
+- Migration, service, IPC, and full-suite regression coverage passes with 338
+  tests.
 
 ## Guardrails
 

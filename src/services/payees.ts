@@ -6,6 +6,9 @@ export type PayeeUpdate = Partial<Omit<Payee, "id" | "createdAt">>;
 
 type PayeeRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   name: string;
   category_id: number | null;
   amount: number | null;
@@ -14,6 +17,9 @@ type PayeeRow = DatabaseRow & {
 
 const mapPayee = (row: PayeeRow): Payee => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   name: row.name,
   categoryId: row.category_id,
   amount: row.amount,
@@ -22,12 +28,14 @@ const mapPayee = (row: PayeeRow): Payee => ({
 
 export const createPayeeService = (database: DatabaseCapability) => ({
   getAll: async () =>
-    (await database.query<PayeeRow>({ sql: "SELECT * FROM payees" })).map(
-      mapPayee,
-    ),
+    (
+      await database.query<PayeeRow>({
+        sql: "SELECT * FROM payees WHERE deleted_at IS NULL",
+      })
+    ).map(mapPayee),
   getById: async (id: number) => {
     const rows = await database.query<PayeeRow>({
-      sql: "SELECT * FROM payees WHERE id = ?",
+      sql: "SELECT * FROM payees WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? mapPayee(rows[0]) : null;
@@ -57,7 +65,10 @@ export const createPayeeService = (database: DatabaseCapability) => ({
     ).map(mapPayee);
   },
   delete: (id: number) =>
-    database.execute({ sql: "DELETE FROM payees WHERE id = ?", params: [id] }),
+    database.execute({
+      sql: "UPDATE payees SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
+      params: [id],
+    }),
   upsert: async (
     name: string,
     categoryId: number | null,

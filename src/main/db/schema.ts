@@ -2,8 +2,15 @@ import { sql } from "drizzle-orm";
 import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+const syncMetadata = {
+  publicId: text("public_id"),
+  updatedAt: text("updated_at"),
+  deletedAt: text("deleted_at"),
+};
+
 export const accounts = sqliteTable("accounts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   name: text("name").notNull(),
   number: text("number"),
   type: text("type", {
@@ -22,6 +29,7 @@ export const accounts = sqliteTable("accounts", {
 
 export const categories = sqliteTable("categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   parentId: integer("parent_id").references(
     (): AnySQLiteColumn => categories.id,
   ),
@@ -35,6 +43,7 @@ export const categories = sqliteTable("categories", {
 
 export const transactions = sqliteTable("transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   accountId: integer("account_id")
     .notNull()
     .references(() => accounts.id),
@@ -55,6 +64,7 @@ export const transactions = sqliteTable("transactions", {
 
 export const accountReconciliations = sqliteTable("account_reconciliations", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   accountId: integer("account_id")
     .notNull()
     .references(() => accounts.id),
@@ -66,6 +76,7 @@ export const accountReconciliations = sqliteTable("account_reconciliations", {
 
 export const scheduledTransactions = sqliteTable("scheduled_transactions", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   accountId: integer("account_id")
     .notNull()
     .references(() => accounts.id),
@@ -91,6 +102,7 @@ export const settings = sqliteTable("settings", {
 
 export const payees = sqliteTable("payees", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   name: text("name").notNull().unique(),
   categoryId: integer("category_id").references(() => categories.id),
   amount: real("amount"),
@@ -99,6 +111,7 @@ export const payees = sqliteTable("payees", {
 
 export const envelopes = sqliteTable("envelopes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   name: text("name").notNull(),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -107,6 +120,7 @@ export const envelopes = sqliteTable("envelopes", {
 
 export const envelopeCategories = sqliteTable("envelope_categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   envelopeId: integer("envelope_id")
     .notNull()
     .references(() => envelopes.id),
@@ -114,10 +128,12 @@ export const envelopeCategories = sqliteTable("envelope_categories", {
     .notNull()
     .references(() => categories.id)
     .unique(),
+  createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const budgetAllocations = sqliteTable("budget_allocations", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   envelopeId: integer("envelope_id")
     .notNull()
     .references(() => envelopes.id),
@@ -128,6 +144,7 @@ export const budgetAllocations = sqliteTable("budget_allocations", {
 
 export const budgetTransfers = sqliteTable("budget_transfers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
+  ...syncMetadata,
   fromEnvelopeId: integer("from_envelope_id")
     .notNull()
     .references(() => envelopes.id),

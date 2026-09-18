@@ -3,6 +3,9 @@ import type { AccountReconciliation } from "@/types/electron";
 
 type ReconciliationRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   account_id: number;
   date: string;
   balance: number;
@@ -11,6 +14,9 @@ type ReconciliationRow = DatabaseRow & {
 };
 const map = (row: ReconciliationRow): AccountReconciliation => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   accountId: row.account_id,
   date: row.date,
   balance: row.balance,
@@ -24,19 +30,19 @@ export const createAccountReconciliationService = (
   getAll: async () =>
     (
       await database.query<ReconciliationRow>({
-        sql: "SELECT * FROM account_reconciliations",
+        sql: "SELECT * FROM account_reconciliations WHERE deleted_at IS NULL",
       })
     ).map(map),
   getByAccount: async (accountId: number) =>
     (
       await database.query<ReconciliationRow>({
-        sql: "SELECT * FROM account_reconciliations WHERE account_id = ?",
+        sql: "SELECT * FROM account_reconciliations WHERE account_id = ? AND deleted_at IS NULL",
         params: [accountId],
       })
     ).map(map),
   getById: async (id: number) => {
     const rows = await database.query<ReconciliationRow>({
-      sql: "SELECT * FROM account_reconciliations WHERE id = ?",
+      sql: "SELECT * FROM account_reconciliations WHERE id = ? AND deleted_at IS NULL",
       params: [id],
     });
     return rows[0] ? map(rows[0]) : null;
@@ -71,7 +77,7 @@ export const createAccountReconciliationService = (
   },
   delete: (id: number) =>
     database.execute({
-      sql: "DELETE FROM account_reconciliations WHERE id = ?",
+      sql: "UPDATE account_reconciliations SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       params: [id],
     }),
 });

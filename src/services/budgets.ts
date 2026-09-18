@@ -3,6 +3,9 @@ import type { BudgetAllocation, BudgetTransfer } from "@/types/electron";
 
 type AllocationRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   envelope_id: number;
   month: string;
   assigned: number;
@@ -10,6 +13,9 @@ type AllocationRow = DatabaseRow & {
 };
 type TransferRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   from_envelope_id: number;
   to_envelope_id: number;
   month: string;
@@ -19,6 +25,9 @@ type TransferRow = DatabaseRow & {
 };
 const mapAllocation = (row: AllocationRow): BudgetAllocation => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   envelopeId: row.envelope_id,
   month: row.month,
   assigned: row.assigned,
@@ -26,6 +35,9 @@ const mapAllocation = (row: AllocationRow): BudgetAllocation => ({
 });
 const mapTransfer = (row: TransferRow): BudgetTransfer => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   fromEnvelopeId: row.from_envelope_id,
   toEnvelopeId: row.to_envelope_id,
   month: row.month,
@@ -38,13 +50,13 @@ export const createBudgetService = (database: DatabaseCapability) => ({
   getAllocations: async () =>
     (
       await database.query<AllocationRow>({
-        sql: "SELECT * FROM budget_allocations",
+        sql: "SELECT * FROM budget_allocations WHERE deleted_at IS NULL",
       })
     ).map(mapAllocation),
   getAllocationsByMonth: async (month: string) =>
     (
       await database.query<AllocationRow>({
-        sql: "SELECT * FROM budget_allocations WHERE month = ?",
+        sql: "SELECT * FROM budget_allocations WHERE month = ? AND deleted_at IS NULL",
         params: [month],
       })
     ).map(mapAllocation),
@@ -54,7 +66,7 @@ export const createBudgetService = (database: DatabaseCapability) => ({
     assigned: number,
   ) => {
     const existing = await database.query<{ id: number }>({
-      sql: "SELECT id FROM budget_allocations WHERE envelope_id = ? AND month = ?",
+      sql: "SELECT id FROM budget_allocations WHERE envelope_id = ? AND month = ? AND deleted_at IS NULL",
       params: [envelopeId, month],
     });
     if (existing[0])
@@ -74,7 +86,7 @@ export const createBudgetService = (database: DatabaseCapability) => ({
   quickFillAllocations: async (targetMonth: string, sourceMonth: string) =>
     database.transaction(async (transaction) => {
       const source = await transaction.query<AllocationRow>({
-        sql: "SELECT * FROM budget_allocations WHERE month = ?",
+        sql: "SELECT * FROM budget_allocations WHERE month = ? AND deleted_at IS NULL",
         params: [sourceMonth],
       });
       const existing = await transaction.query<{ envelope_id: number }>({
@@ -100,19 +112,19 @@ export const createBudgetService = (database: DatabaseCapability) => ({
     }),
   deleteAllocation: (id: number) =>
     database.execute({
-      sql: "DELETE FROM budget_allocations WHERE id = ?",
+      sql: "UPDATE budget_allocations SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       params: [id],
     }),
   getTransfers: async () =>
     (
       await database.query<TransferRow>({
-        sql: "SELECT * FROM budget_transfers",
+        sql: "SELECT * FROM budget_transfers WHERE deleted_at IS NULL",
       })
     ).map(mapTransfer),
   getTransfersByMonth: async (month: string) =>
     (
       await database.query<TransferRow>({
-        sql: "SELECT * FROM budget_transfers WHERE month = ?",
+        sql: "SELECT * FROM budget_transfers WHERE month = ? AND deleted_at IS NULL",
         params: [month],
       })
     ).map(mapTransfer),
@@ -131,7 +143,7 @@ export const createBudgetService = (database: DatabaseCapability) => ({
     ).map(mapTransfer),
   deleteTransfer: (id: number) =>
     database.execute({
-      sql: "DELETE FROM budget_transfers WHERE id = ?",
+      sql: "UPDATE budget_transfers SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
       params: [id],
     }),
 });

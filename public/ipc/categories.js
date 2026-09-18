@@ -1,11 +1,16 @@
-const { eq } = require("drizzle-orm");
+const { and, eq, isNull } = require("drizzle-orm");
 
 module.exports = function registerCategoriesHandlers(ipcMain, db, schema) {
   ipcMain.handle("categories:getAll", () =>
     db
       .select()
       .from(schema.categories)
-      .where(eq(schema.categories.deleted, false)),
+      .where(
+        and(
+          eq(schema.categories.deleted, false),
+          isNull(schema.categories.deletedAt),
+        ),
+      ),
   );
   ipcMain.handle("categories:getById", (_, id) =>
     db
@@ -35,13 +40,14 @@ module.exports = function registerCategoriesHandlers(ipcMain, db, schema) {
     }
     try {
       return await db
-        .delete(schema.categories)
+        .update(schema.categories)
+        .set({ deleted: true, deletedAt: new Date().toISOString() })
         .where(eq(schema.categories.id, id));
     } catch (err) {
       if (err && err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
         return db
           .update(schema.categories)
-          .set({ deleted: true })
+          .set({ deleted: true, deletedAt: new Date().toISOString() })
           .where(eq(schema.categories.id, id))
           .returning();
       }

@@ -339,6 +339,21 @@ distribution or service model could be considered competitive.
 
 ## 10. Required Spike and Decision Gate
 
+### Repository-local browser VFS result
+
+On 2026-09-18, a disposable Vite probe ran the existing 13-migration, query,
+`RETURNING`, transaction rollback, reload, and close contract through
+PowerSync 2.3.1 in a Chromium-compatible browser. Both
+`AccessHandlePoolVFS` and `OPFSCoopSyncVFS` passed that local contract and
+persisted data across reopen.
+
+This does not approve PowerSync. The SDK's normal schema is view-based and
+does not automatically consume Budgie's Drizzle migration history. The probe
+used a local schema and raw SQL tables to establish VFS feasibility only.
+`AccessHandlePoolVFS` is single-tab and unsuitable as the Safari/iOS choice;
+`OPFSCoopSyncVFS` is the documented cross-browser option. Neither removes the
+need for Budgie's one-active-tab policy.
+
 Build a disposable vertical slice before changing production schema:
 
 1. Run two browser clients and one Electron client against a test PostgreSQL

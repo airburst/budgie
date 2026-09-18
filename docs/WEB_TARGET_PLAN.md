@@ -25,16 +25,18 @@ workflow.
 
 The work should proceed in this order:
 
-1. Sync compatibility and SQLite WASM feasibility gates.
-2. Shared data contract and provisionally sync-ready schema.
+1. SQLite WASM feasibility and browser persistence gates.
+2. Provider-neutral sync-ready data structure and shared data contract.
 3. Shared domain services.
 4. Cross-platform import/export.
 5. Web runtime and offline PWA tooling.
 6. Incremental mobile/tablet UX releases.
 7. Tag-driven production deployment.
 
-This proves data portability and behavior in Electron before introducing the
-web platform.
+This proves local data portability and behavior in Electron before introducing
+the web platform. Hosting, sync-engine selection, and sync protocol design
+belong to `docs/SYNC_ENGINE_PLAN.md`; this plan only prepares the data
+structure and contracts for a future engine.
 
 ## 3.1 Current Status and Resume Point
 
@@ -100,18 +102,22 @@ Completed in this work:
   failure states; native-only operations now report unsupported behavior.
 - Added cross-origin isolation headers to `vite.config.ts` for the future
   worker/OPFS path.
+- Added migration `0013_chilly_dorian_gray` for provider-neutral sync-ready
+  metadata: stable public IDs, lifecycle timestamps, deterministic legacy-row
+  backfill, unique indexes, update triggers, and tombstone-only delete guards.
+- Converted shared services and legacy IPC adapters to retain syncable rows as
+  tombstones while filtering them from active reads; settings remains
+  device-local.
 - Passed `bun run lint` and `bun run check-types` after cleanup.
 
 Next work, in order:
 
-1. Complete the Chromium and Safari persistence, performance, deployment,
-   offline, and PowerSync checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`;
-   repository-local migration proof is complete.
-2. Run the same contract against the no-sync baseline and the PowerSync
-   browser VFS spike before changing production schema.
-3. Add browser contract tests against the shared services and explicit worker
+1. Complete the Chromium and Safari persistence, performance, deployment, and
+   offline checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`; repository-
+   local migration proof is complete.
+2. Add browser contract tests against the shared services and explicit worker
    startup failure/recovery states.
-4. Build the first production slice: bundled browser migrations, serialized
+3. Build the first production slice: bundled browser migrations, serialized
    database worker, startup failure states, single-tab locking, persistence
    handling, and adapter contract tests.
 
@@ -121,10 +127,17 @@ lifecycle, inactive-tab handling, persistence state, and local contract tests
 are implemented. External phase 0 browser/deployment/performance validation
 remains a separate gate before production web release.
 
-The next coding session should start by turning the existing Electron schema
-and migrations into a browser-loadable contract fixture, then add the first
-browser adapter contract test. Do not begin the UI redesign or sync-ready
-schema migration until the phase 0 approval gate below is satisfied.
+The next coding session should continue the local browser persistence,
+provider-neutral sync-ready data, and portable data work. Do not select a
+sync engine or hosting model from this plan; those decisions are owned by
+`docs/SYNC_ENGINE_PLAN.md`.
+
+Provider-neutral Sync-Ready Data Structure status: complete for the current
+scope. Existing integer relationships remain intact, while syncable entities
+now have stable public IDs, lifecycle metadata, deterministic legacy
+backfill, unique indexes, tombstones, and centralized delete/update behavior.
+Canonical public-key strategy and provider-specific schema remain deferred to
+`docs/SYNC_ENGINE_PLAN.md`.
 
 Current validation scope: Chromium and Safari are the approval baseline.
 Physical mobile-device and Firefox coverage is deferred until before public
@@ -188,10 +201,8 @@ part of the application runtime. Keep the result and follow-up work in
 `docs/WEB_IMPLEMENTATION_TASKS.md` rather than maintaining the synthetic
 database harness on a long-running branch.
 
-Remaining phase 0 gates:
+Remaining local phase 0 gates:
 
-- In parallel, spike the recommended sync engine and its browser database/VFS
-  against the same contract; see `docs/SYNC_ENGINE_PLAN.md`.
 - Benchmark startup, migration, bulk import, reporting queries, and a large
   transaction dataset on representative iPhone, iPad, and Android hardware.
 - Confirm Safari/iPadOS persistence across reload, restart, PWA installation,
@@ -204,8 +215,9 @@ Do not make WAL a permanent application-level assumption. The no-sync
 own its VFS, journal mode, and checkpoint behavior. Electron may retain its
 current WAL mode until an adopted database adapter requires otherwise.
 
-Approval gate: proceed only after transaction parity, persistence, migration,
-and performance tests pass.
+Approval gate for this plan: proceed only after transaction parity,
+persistence, migration, and performance tests pass. The separate sync-engine
+approval gate is defined in `docs/SYNC_ENGINE_PLAN.md`.
 
 ## 5. Phase 1: Shared Data Foundation
 
@@ -230,14 +242,20 @@ Move startup auto-posting into a shared operation. Run it after database
 initialization and whenever the PWA resumes. Background execution while the PWA
 is closed is explicitly unsupported.
 
-## 6. Sync-Ready Schema
+## 6. Sync-Ready Data Structure
+
+Prepare the data structure for future distributed databases without selecting
+the sync protocol or hosting provider. Identity, metadata, relationship
+tombstones, and portable IDs belong here; provider-specific requirements such
+as PowerSync's exact local schema, hosted ownership model, and write protocol
+belong to `docs/SYNC_ENGINE_PLAN.md`.
 
 Prepare distributed databases without designing the sync protocol:
 
 - Add a globally unique ID to every syncable entity.
-- Use the sync-engine spike to decide whether that ID becomes the canonical
-  text primary key or remains separate from the current integer key. Do not
-  freeze the dual-ID design before testing PowerSync's text `id` requirement.
+- Keep the ID format and relationship contract provider-neutral. Defer the
+  choice between canonical public IDs and a separate local key to the
+  sync-engine spike; do not encode a provider-specific key requirement here.
 - Add UTC `created_at`, `updated_at`, and nullable `deleted_at` metadata.
 - Apply tombstones to relationships and entities that future sync must
   replicate.

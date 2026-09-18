@@ -13,9 +13,19 @@ import type {
 } from "@/main/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
 
-export type Account = InferSelectModel<typeof accounts>;
-export type AccountReconciliation = InferSelectModel<
-  typeof accountReconciliations
+export type SyncMetadataFields = "publicId" | "updatedAt" | "deletedAt";
+type OptionalSyncMetadata = {
+  publicId?: string | null;
+  updatedAt?: string | null;
+  deletedAt?: string | null;
+};
+type WithOptionalSyncMetadata<T> = Omit<T, SyncMetadataFields> &
+  OptionalSyncMetadata;
+export type Account = WithOptionalSyncMetadata<
+  InferSelectModel<typeof accounts>
+>;
+export type AccountReconciliation = WithOptionalSyncMetadata<
+  InferSelectModel<typeof accountReconciliations>
 >;
 export type AccountWithBalances = Account & {
   computedBalance: number;
@@ -23,17 +33,29 @@ export type AccountWithBalances = Account & {
   lastReconcileDate: string | null;
   lastReconcileBalance: number | null;
 };
-export type Category = InferSelectModel<typeof categories>;
-export type Transaction = InferSelectModel<typeof transactions>;
-export type ScheduledTransaction = InferSelectModel<
-  typeof scheduledTransactions
+export type Category = WithOptionalSyncMetadata<
+  InferSelectModel<typeof categories>
+>;
+export type Transaction = WithOptionalSyncMetadata<
+  InferSelectModel<typeof transactions>
+>;
+export type ScheduledTransaction = WithOptionalSyncMetadata<
+  InferSelectModel<typeof scheduledTransactions>
 >;
 export type Settings = InferSelectModel<typeof settings>;
-export type Payee = InferSelectModel<typeof payees>;
-export type Envelope = InferSelectModel<typeof envelopes>;
-export type EnvelopeCategory = InferSelectModel<typeof envelopeCategories>;
-export type BudgetAllocation = InferSelectModel<typeof budgetAllocations>;
-export type BudgetTransfer = InferSelectModel<typeof budgetTransfers>;
+export type Payee = WithOptionalSyncMetadata<InferSelectModel<typeof payees>>;
+export type Envelope = WithOptionalSyncMetadata<
+  InferSelectModel<typeof envelopes>
+>;
+export type EnvelopeCategory = WithOptionalSyncMetadata<
+  InferSelectModel<typeof envelopeCategories>
+>;
+export type BudgetAllocation = WithOptionalSyncMetadata<
+  InferSelectModel<typeof budgetAllocations>
+>;
+export type BudgetTransfer = WithOptionalSyncMetadata<
+  InferSelectModel<typeof budgetTransfers>
+>;
 export type AccountShortcut = {
   key: string;
   ctrl?: boolean;
@@ -62,11 +84,13 @@ export interface ApplicationAPI {
   getAccounts: () => Promise<AccountWithBalances[]>;
   getAccount: (id: number) => Promise<AccountWithBalances | null>;
   createAccount: (
-    data: Omit<Account, "id" | "createdAt" | "deleted">,
+    data: Omit<Account, "id" | "createdAt" | "deleted" | SyncMetadataFields>,
   ) => Promise<Account[]>;
   updateAccount: (
     id: number,
-    data: Partial<Omit<Account, "id" | "createdAt" | "deleted">>,
+    data: Partial<
+      Omit<Account, "id" | "createdAt" | "deleted" | SyncMetadataFields>
+    >,
   ) => Promise<Account[]>;
   deleteAccount: (id: number) => Promise<void>;
 
@@ -78,22 +102,26 @@ export interface ApplicationAPI {
     id: number,
   ) => Promise<AccountReconciliation | null>;
   createAccountReconciliation: (
-    data: Omit<AccountReconciliation, "id" | "createdAt">,
+    data: Omit<AccountReconciliation, "id" | "createdAt" | SyncMetadataFields>,
   ) => Promise<AccountReconciliation[]>;
   updateAccountReconciliation: (
     id: number,
-    data: Partial<Omit<AccountReconciliation, "id" | "createdAt">>,
+    data: Partial<
+      Omit<AccountReconciliation, "id" | "createdAt" | SyncMetadataFields>
+    >,
   ) => Promise<AccountReconciliation[]>;
   deleteAccountReconciliation: (id: number) => Promise<void>;
 
   getCategories: () => Promise<Category[]>;
   getCategory: (id: number) => Promise<Category | null>;
   createCategory: (
-    data: Omit<Category, "id" | "createdAt" | "deleted">,
+    data: Omit<Category, "id" | "createdAt" | "deleted" | SyncMetadataFields>,
   ) => Promise<Category[]>;
   updateCategory: (
     id: number,
-    data: Partial<Omit<Category, "id" | "createdAt" | "deleted">>,
+    data: Partial<
+      Omit<Category, "id" | "createdAt" | "deleted" | SyncMetadataFields>
+    >,
   ) => Promise<Category[]>;
   deleteCategory: (id: number) => Promise<void>;
 
@@ -108,30 +136,42 @@ export interface ApplicationAPI {
   createTransaction: (
     data: Omit<
       Transaction,
-      "id" | "createdAt" | "reconciled" | "transferTransactionId"
+      | "id"
+      | "createdAt"
+      | "reconciled"
+      | "transferTransactionId"
+      | SyncMetadataFields
     >,
   ) => Promise<Transaction[]>;
   updateTransaction: (
     id: number,
     data: Partial<
-      Omit<Transaction, "id" | "createdAt" | "transferTransactionId">
+      Omit<
+        Transaction,
+        "id" | "createdAt" | "transferTransactionId" | SyncMetadataFields
+      >
     >,
   ) => Promise<Transaction[]>;
   deleteTransaction: (id: number) => Promise<void>;
   reconcileTransactions: (payload: {
     toReconcile: number[];
     toUnclear: number[];
-    checkpoint: Omit<AccountReconciliation, "id" | "createdAt">;
+    checkpoint: Omit<
+      AccountReconciliation,
+      "id" | "createdAt" | SyncMetadataFields
+    >;
   }) => Promise<AccountReconciliation[]>;
 
   getScheduledTransactions: () => Promise<ScheduledTransaction[]>;
   getScheduledTransaction: (id: number) => Promise<ScheduledTransaction | null>;
   createScheduledTransaction: (
-    data: Omit<ScheduledTransaction, "id" | "createdAt">,
+    data: Omit<ScheduledTransaction, "id" | "createdAt" | SyncMetadataFields>,
   ) => Promise<ScheduledTransaction[]>;
   updateScheduledTransaction: (
     id: number,
-    data: Partial<Omit<ScheduledTransaction, "id" | "createdAt">>,
+    data: Partial<
+      Omit<ScheduledTransaction, "id" | "createdAt" | SyncMetadataFields>
+    >,
   ) => Promise<ScheduledTransaction[]>;
   deleteScheduledTransaction: (id: number) => Promise<void>;
 
@@ -163,10 +203,12 @@ export interface ApplicationAPI {
 
   getPayees: () => Promise<Payee[]>;
   getPayee: (id: number) => Promise<Payee | null>;
-  createPayee: (data: Omit<Payee, "id" | "createdAt">) => Promise<Payee[]>;
+  createPayee: (
+    data: Omit<Payee, "id" | "createdAt" | SyncMetadataFields>,
+  ) => Promise<Payee[]>;
   updatePayee: (
     id: number,
-    data: Partial<Omit<Payee, "id" | "createdAt">>,
+    data: Partial<Omit<Payee, "id" | "createdAt" | SyncMetadataFields>>,
   ) => Promise<Payee[]>;
   deletePayee: (id: number) => Promise<void>;
   upsertPayee: (
@@ -180,11 +222,11 @@ export interface ApplicationAPI {
   getAllEnvelopesIncludingInactive: () => Promise<Envelope[]>;
   getEnvelope: (id: number) => Promise<Envelope | null>;
   createEnvelope: (
-    data: Omit<Envelope, "id" | "createdAt">,
+    data: Omit<Envelope, "id" | "createdAt" | SyncMetadataFields>,
   ) => Promise<Envelope[]>;
   updateEnvelope: (
     id: number,
-    data: Partial<Omit<Envelope, "id" | "createdAt">>,
+    data: Partial<Omit<Envelope, "id" | "createdAt" | SyncMetadataFields>>,
   ) => Promise<Envelope[]>;
   deleteEnvelope: (id: number) => Promise<Envelope[]>;
   reorderEnvelopes: (
@@ -197,7 +239,7 @@ export interface ApplicationAPI {
     envelopeId: number,
   ) => Promise<EnvelopeCategory[]>;
   createEnvelopeCategory: (
-    data: Omit<EnvelopeCategory, "id">,
+    data: Omit<EnvelopeCategory, "id" | "createdAt" | SyncMetadataFields>,
   ) => Promise<EnvelopeCategory[]>;
   deleteEnvelopeCategory: (id: number) => Promise<void>;
   deleteEnvelopeCategoriesByEnvelope: (envelopeId: number) => Promise<void>;
@@ -228,7 +270,7 @@ export interface ApplicationAPI {
   getBudgetTransfers: () => Promise<BudgetTransfer[]>;
   getBudgetTransfersByMonth: (month: string) => Promise<BudgetTransfer[]>;
   createBudgetTransfer: (
-    data: Omit<BudgetTransfer, "id" | "createdAt">,
+    data: Omit<BudgetTransfer, "id" | "createdAt" | SyncMetadataFields>,
   ) => Promise<BudgetTransfer[]>;
   deleteBudgetTransfer: (id: number) => Promise<void>;
 }

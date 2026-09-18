@@ -28,6 +28,9 @@ export const reconcileTransactions = async (
     }
     const rows = await transaction.query<{
       id: number;
+      public_id: string | null;
+      updated_at: string | null;
+      deleted_at: string | null;
       account_id: number;
       date: string;
       balance: number;
@@ -45,6 +48,9 @@ export const reconcileTransactions = async (
     });
     return rows.map((row) => ({
       id: row.id,
+      publicId: row.public_id,
+      updatedAt: row.updated_at,
+      deletedAt: row.deleted_at,
       accountId: row.account_id,
       date: row.date,
       balance: row.balance,

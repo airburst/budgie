@@ -1,13 +1,23 @@
 import type { DatabaseCapability, DatabaseRow } from "@/platform/database";
-import type { Account, AccountWithBalances } from "@/types/electron";
+import type {
+  Account,
+  AccountWithBalances,
+  SyncMetadataFields,
+} from "@/types/electron";
 
-export type AccountCreate = Omit<Account, "id" | "createdAt" | "deleted">;
+export type AccountCreate = Omit<
+  Account,
+  "id" | "createdAt" | "deleted" | SyncMetadataFields
+>;
 export type AccountUpdate = Partial<
-  Omit<Account, "id" | "createdAt" | "deleted">
+  Omit<Account, "id" | "createdAt" | "deleted" | SyncMetadataFields>
 >;
 
 type AccountRow = DatabaseRow & {
   id: number;
+  public_id: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
   name: string;
   number: string | null;
   type: Account["type"];
@@ -38,11 +48,14 @@ const accountSelect = `
     (SELECT balance FROM account_reconciliations
       WHERE account_id = a.id ORDER BY date DESC, id DESC LIMIT 1) AS last_reconcile_balance
   FROM accounts a
-  LEFT JOIN transactions t ON t.account_id = a.id
+  LEFT JOIN transactions t ON t.account_id = a.id AND t.deleted_at IS NULL
 `;
 
 const mapAccount = (row: AccountRow): AccountWithBalances => ({
   id: row.id,
+  publicId: row.public_id,
+  updatedAt: row.updated_at,
+  deletedAt: row.deleted_at,
   name: row.name,
   number: row.number,
   type: row.type,
@@ -152,17 +165,17 @@ export const createAccountService = (
       });
       if (references[0]) {
         await transaction.execute({
-          sql: "UPDATE accounts SET deleted = 1 WHERE id = ?",
+          sql: "UPDATE accounts SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
           params: [id],
         });
       } else {
         await transaction.execute({
-          sql: "DELETE FROM accounts WHERE id = ?",
+          sql: "UPDATE accounts SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?",
           params: [id],
         });
       }
       await transaction.execute({
-        sql: "UPDATE categories SET deleted = 1 WHERE parent_id = (SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL) AND name = (SELECT name FROM accounts WHERE id = ?)",
+        sql: "UPDATE categories SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE parent_id = (SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL) AND name = (SELECT name FROM accounts WHERE id = ?)",
         params: [id],
       });
     }),

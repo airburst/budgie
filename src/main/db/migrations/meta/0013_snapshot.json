@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "d3a3a5cb-a5d3-63e6-df89-2ab879cf9456",
-  "prevId": "c29294ba-94c2-52d5-ce78-1f2768fe8d6c",
+  "id": "208d806d-aee1-453e-b73d-0b50cd92d540",
+  "prevId": "d3a3a5cb-a5d3-63e6-df89-2ab879cf9456",
   "tables": {
     "account_reconciliations": {
       "name": "account_reconciliations",
@@ -13,6 +13,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "account_id": {
           "name": "account_id",
@@ -57,8 +78,12 @@
           "name": "account_reconciliations_account_id_accounts_id_fk",
           "tableFrom": "account_reconciliations",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -76,6 +101,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
@@ -182,6 +228,27 @@
           "notNull": true,
           "autoincrement": true
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "envelope_id": {
           "name": "envelope_id",
           "type": "integer",
@@ -219,8 +286,12 @@
           "name": "budget_allocations_envelope_id_envelopes_id_fk",
           "tableFrom": "budget_allocations",
           "tableTo": "envelopes",
-          "columnsFrom": ["envelope_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "envelope_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -238,6 +309,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "from_envelope_id": {
           "name": "from_envelope_id",
@@ -289,8 +381,12 @@
           "name": "budget_transfers_from_envelope_id_envelopes_id_fk",
           "tableFrom": "budget_transfers",
           "tableTo": "envelopes",
-          "columnsFrom": ["from_envelope_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "from_envelope_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -298,8 +394,12 @@
           "name": "budget_transfers_to_envelope_id_envelopes_id_fk",
           "tableFrom": "budget_transfers",
           "tableTo": "envelopes",
-          "columnsFrom": ["to_envelope_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "to_envelope_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -317,6 +417,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "parent_id": {
           "name": "parent_id",
@@ -363,8 +484,12 @@
           "name": "categories_parent_id_categories_id_fk",
           "tableFrom": "categories",
           "tableTo": "categories",
-          "columnsFrom": ["parent_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -383,6 +508,27 @@
           "notNull": true,
           "autoincrement": true
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "envelope_id": {
           "name": "envelope_id",
           "type": "integer",
@@ -396,12 +542,22 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
         }
       },
       "indexes": {
         "envelope_categories_category_id_unique": {
           "name": "envelope_categories_category_id_unique",
-          "columns": ["category_id"],
+          "columns": [
+            "category_id"
+          ],
           "isUnique": true
         }
       },
@@ -410,8 +566,12 @@
           "name": "envelope_categories_envelope_id_envelopes_id_fk",
           "tableFrom": "envelope_categories",
           "tableTo": "envelopes",
-          "columnsFrom": ["envelope_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "envelope_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -419,8 +579,12 @@
           "name": "envelope_categories_category_id_categories_id_fk",
           "tableFrom": "envelope_categories",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -438,6 +602,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
@@ -487,6 +672,27 @@
           "notNull": true,
           "autoincrement": true
         },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -520,7 +726,9 @@
       "indexes": {
         "payees_name_unique": {
           "name": "payees_name_unique",
-          "columns": ["name"],
+          "columns": [
+            "name"
+          ],
           "isUnique": true
         }
       },
@@ -529,8 +737,12 @@
           "name": "payees_category_id_categories_id_fk",
           "tableFrom": "payees",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -548,6 +760,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "account_id": {
           "name": "account_id",
@@ -621,6 +854,13 @@
           "autoincrement": false,
           "default": true
         },
+        "transfer_to_account_id": {
+          "name": "transfer_to_account_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -628,13 +868,6 @@
           "notNull": false,
           "autoincrement": false,
           "default": "(CURRENT_TIMESTAMP)"
-        },
-        "transfer_to_account_id": {
-          "name": "transfer_to_account_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {},
@@ -643,8 +876,12 @@
           "name": "scheduled_transactions_account_id_accounts_id_fk",
           "tableFrom": "scheduled_transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -652,8 +889,12 @@
           "name": "scheduled_transactions_category_id_categories_id_fk",
           "tableFrom": "scheduled_transactions",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -661,8 +902,12 @@
           "name": "scheduled_transactions_transfer_to_account_id_accounts_id_fk",
           "tableFrom": "scheduled_transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["transfer_to_account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "transfer_to_account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -705,6 +950,27 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        },
+        "public_id": {
+          "name": "public_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "account_id": {
           "name": "account_id",
@@ -786,8 +1052,12 @@
           "name": "transactions_account_id_accounts_id_fk",
           "tableFrom": "transactions",
           "tableTo": "accounts",
-          "columnsFrom": ["account_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -795,8 +1065,12 @@
           "name": "transactions_category_id_categories_id_fk",
           "tableFrom": "transactions",
           "tableTo": "categories",
-          "columnsFrom": ["category_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -804,8 +1078,12 @@
           "name": "transactions_transfer_transaction_id_transactions_id_fk",
           "tableFrom": "transactions",
           "tableTo": "transactions",
-          "columnsFrom": ["transfer_transaction_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "transfer_transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
