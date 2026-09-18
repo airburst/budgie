@@ -185,6 +185,8 @@ export interface ApplicationAPI {
   deleteSetting: (id: number) => Promise<void>;
   getPreferences: () => Promise<Preferences>;
   setPreferences: (prefs: Preferences) => Promise<Settings[]>;
+  exportPortableData: () => Promise<string>;
+  importPortableData: (document: string) => Promise<void>;
 
   getDefaultBackupFolder: () => Promise<string>;
   createBackup: (folder?: string) => Promise<{ path: string }>;

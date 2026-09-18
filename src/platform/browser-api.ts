@@ -4,6 +4,12 @@ import { createBudgetService } from "@/services/budgets";
 import { createCategoryService } from "@/services/categories";
 import { createEnvelopeService } from "@/services/envelopes";
 import { createPayeeService } from "@/services/payees";
+import {
+  createPortableData,
+  importPortableData,
+  parsePortableData,
+  serializePortableData,
+} from "@/services/portable-data";
 import { createReconciliationService } from "@/services/reconciliation";
 import { createScheduledTransactionService } from "@/services/scheduled-transactions";
 import { createSettingsService } from "@/services/settings";
@@ -66,6 +72,17 @@ export const createBrowserApplicationApi = (
     deleteSetting: settings.delete,
     getPreferences: settings.getPreferences,
     setPreferences: settings.setPreferences,
+    exportPortableData: async () =>
+      serializePortableData(
+        await createPortableData(database, {
+          applicationVersion: "0.16.3",
+          minimumReaderVersion: "0.16.3",
+        }),
+      ),
+    importPortableData: (document) =>
+      parsePortableData(document).then((data) =>
+        importPortableData(database, data),
+      ),
     getPayees: payees.getAll,
     getPayee: payees.getById,
     createPayee: payees.create,

@@ -310,8 +310,46 @@ Complete for the current scope:
 - Existing integer relationships remain intact. Settings and desktop paths
   remain device-local; canonical public-key strategy and provider-specific
   ownership/schema decisions remain in `docs/SYNC_ENGINE_PLAN.md`.
-- Migration, service, IPC, and full-suite regression coverage passes with 338
+- Migration, service, IPC, and full-suite regression coverage passes with 339
   tests.
+
+## Phase 2 Portable Data Package
+
+Initial package core is implemented in `src/services/portable-data.ts`:
+
+- Version 1 UTF-8 JSON data contract with manifest metadata and SHA-256
+  checksum.
+- Strict JSON serialization and parsing helpers verify the checksum at the
+  interchange boundary.
+- Explicit collections for every portable entity, including tombstoned rows.
+- Relationships use stable public IDs rather than local integer IDs.
+- The complete current `Preferences` shape is included provisionally.
+- Preference account shortcuts use account public IDs in the package and are
+  remapped to local IDs on import.
+- `ApplicationAPI` now exposes platform-neutral portable export/import
+  operations; Electron uses shared IPC services and the browser uses the same
+  service contract directly.
+- Structural, duplicate-ID, relationship, format-version, and checksum
+  validation runs before database mutation.
+- Atomic local overwrite uses dependency-ordered upserts and tombstones local
+  rows absent from the imported package.
+- Migrated SQLite coverage proves export, deterministic checksum generation,
+  public-ID relationships, tombstone overwrite behavior, and checksum failure
+  without mutation.
+
+Phase 2 is complete for the current version-1 local-only package scope:
+
+- Settings provides cross-platform JSON download and file-upload adapters with
+  an explicit destructive-import confirmation.
+- A checked-in empty-package golden fixture covers the version-1 wire format.
+- Tests cover Electron/browser shared-service round trips, Unicode, malformed
+  JSON, duplicate IDs, broken relationships, checksum corruption, tombstone
+  overwrite behavior, and a 250-row export.
+- There are no older supported package versions yet; future format versions
+  must add explicit migration handlers and fixtures before release.
+
+Hosted-account replacement semantics remain deferred to
+`docs/SYNC_ENGINE_PLAN.md`.
 
 ## Guardrails
 

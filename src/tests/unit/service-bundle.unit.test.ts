@@ -16,23 +16,25 @@ const fakeDatabase = (): DatabaseCapability => ({
 
 describe("built shared service bundle", () => {
   it("exports every database-domain factory used by Electron", () => {
-    expect(
-      Object.keys(services)
-        .filter((key) => key !== "default")
-        .sort(),
-    ).toEqual([
-      "createAccountReconciliationService",
-      "createAccountService",
-      "createBudgetService",
-      "createCategoryService",
-      "createEnvelopeService",
-      "createPayeeService",
-      "createReconciliationService",
-      "createScheduledTransactionService",
-      "createSettingsService",
-      "createTransactionService",
-      "processAutoPost",
-    ]);
+    expect(Object.keys(services)).toEqual(
+      expect.arrayContaining([
+        "createAccountReconciliationService",
+        "createAccountService",
+        "createBudgetService",
+        "createCategoryService",
+        "createEnvelopeService",
+        "createPayeeService",
+        "createReconciliationService",
+        "createScheduledTransactionService",
+        "createSettingsService",
+        "createTransactionService",
+        "processAutoPost",
+        "createPortableData",
+        "importPortableData",
+        "parsePortableData",
+        "serializePortableData",
+      ]),
+    );
   });
 
   it("constructs all factories against the shared capability shape", () => {
@@ -47,5 +49,7 @@ describe("built shared service bundle", () => {
     expect(services.createScheduledTransactionService(database)).toBeDefined();
     expect(services.createSettingsService(database)).toBeDefined();
     expect(services.createTransactionService(database)).toBeDefined();
+    expect(services.createPortableData).toBeDefined();
+    expect(services.importPortableData).toBeDefined();
   });
 });

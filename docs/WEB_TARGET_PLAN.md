@@ -261,7 +261,9 @@ Prepare distributed databases without designing the sync protocol:
   replicate.
 - Backfill existing rows deterministically and add unique indexes.
 - Centralize writes so metadata cannot be bypassed.
-- Define which preferences are portable and which remain device-specific.
+- Treat the complete current `Preferences` shape as portable for the initial
+  package. Revisit individual fields during web UX design and remove any that
+  prove device-specific through a versioned format change.
 
 Treat this as sync preparation only. Conflict resolution, change feeds,
 devices, accounts, authentication, and remote revision tracking remain out of
@@ -280,9 +282,10 @@ Recommended package:
   minimum reader version, and checksum.
 - Explicit collections for every portable entity.
 - Stable public IDs and relationships rather than SQLite row IDs.
-- Financial data and portable preferences only.
-- Exclusion of desktop paths, backup retention, window state, shortcuts, and
-  other device-specific settings.
+- Financial data and the complete current `Preferences` shape.
+- Desktop paths, backup retention, shortcuts, and other preference fields are
+  included initially; web design may classify and remove device-specific fields
+  in a later package version.
 
 Import is always an atomic overwrite:
 

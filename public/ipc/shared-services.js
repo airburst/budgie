@@ -9,6 +9,10 @@ const {
   createSettingsService,
   createScheduledTransactionService,
   createTransactionService,
+  createPortableData,
+  serializePortableData,
+  parsePortableData,
+  importPortableData,
 } = require("../services.js");
 
 module.exports = function registerSharedServices(ipcMain, database) {
@@ -22,6 +26,18 @@ module.exports = function registerSharedServices(ipcMain, database) {
   const payees = createPayeeService(database);
   const settings = createSettingsService(database);
   const scheduledTransactions = createScheduledTransactionService(database);
+
+  ipcMain.handle("portable:export", async () =>
+    serializePortableData(
+      await createPortableData(database, {
+        applicationVersion: "0.16.3",
+        minimumReaderVersion: "0.16.3",
+      }),
+    ),
+  );
+  ipcMain.handle("portable:import", async (_, document) =>
+    importPortableData(database, await parsePortableData(document)),
+  );
 
   ipcMain.handle("accounts:getAll", () => accounts.getAll());
   ipcMain.handle("accounts:getById", (_, id) => accounts.getById(id));
