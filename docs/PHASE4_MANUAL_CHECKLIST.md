@@ -3,6 +3,14 @@
 Complete these checks on the deployed preview or production origin using a
 fresh disposable browser profile. Do not use a real financial database.
 
+## Verified
+
+- Chrome and Safari local PWA persistence passed.
+- Local PWA installation and offline persistence passed.
+- Private browsing passed.
+- All tested routes rendered except `/settings`; Settings did not display and
+  requires investigation before Phase 5 route approval.
+
 - Safari restart persistence
   - What: OPFS database survives Safari quit/reopen.
   - How: Load, create a disposable record, quit Safari completely, reopen the
@@ -33,6 +41,9 @@ fresh disposable browser profile. Do not use a real financial database.
   - How: Load once online, close the tab, disable networking, reopen the
     origin or installed PWA, and visit each route.
   - Success: Every route loads, lazy chunks render, and local data is usable.
+  - Current result: Partially passed. All tested routes except `/settings`
+    rendered; physical-device testing is intentionally deferred until after
+    mobile-first screen redesign.
 
 - Real-device interaction
   - What: Touch and mobile browser behavior meet the Phase 5 acceptance bar.
@@ -40,6 +51,7 @@ fresh disposable browser profile. Do not use a real financial database.
     landscape, including keyboard-open forms and safe-area edges.
   - Success: No clipped or overlapping content, touch targets are usable,
     focus remains visible, and no workflow depends on hover or gestures.
+  - Current result: Deferred until Phase 5 mobile-first redesign.
 
 - Cloudflare preview and production
   - What: Deployment, origin isolation, and rollback configuration work.

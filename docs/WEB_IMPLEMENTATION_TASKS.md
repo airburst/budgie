@@ -78,17 +78,19 @@ executor recognized all 13 migration rows, and the file contained the expected
 - [x] Verify Safari reload persistence: a second load skipped all 13
       migrations, took approximately 199 ms, and reported approximately 208
       KiB usage with the same approximately 82.5 GB quota.
-- [ ] Verify Safari persistence across browser restart, PWA
-      installation where supported, and storage pressure; record quota,
-      private browsing, and denied-persistence behavior.
+- [ ] Verify Safari persistence across browser restart and storage pressure;
+      record quota and denied-persistence behavior. PWA installation,
+      offline persistence, and private browsing passed in Chrome/Safari;
+      `/settings` did not display and remains an application issue.
 - [ ] Validate WASM and worker loading in Chromium and Safari on localhost,
       Cloudflare preview, and offline service-worker mode.
 - [x] Compare the no-sync baseline with the PowerSync browser VFS spike using
       the same contract before changing the production schema.
 
 Deferred: physical iPhone, iPadOS, Android, Firefox, and Chromium device runs
-are intentionally outside the current phase 0 gate. Reopen that matrix before
-public mobile launch or when browser storage behavior changes materially.
+are intentionally deferred until after the Phase 5 mobile-first redesign.
+Reopen that matrix before public mobile launch or when browser storage behavior
+changes materially.
 
 Finding: Chromium reported `navigator.storage.persisted() === false` on
 localhost during the baseline. The OPFS database still survived reload, but
