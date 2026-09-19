@@ -1,5 +1,6 @@
 import type { DatabaseStatement } from "@/platform/database";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
+import { classifyBrowserDatabaseError } from "./browser-database-errors";
 import { migrateBrowserDatabase } from "./migrate";
 
 type SqliteModule = Awaited<ReturnType<typeof sqlite3InitModule>>;
@@ -32,7 +33,12 @@ export type BrowserDatabaseReady = {
 export type BrowserDatabaseResponse =
   | BrowserDatabaseReady
   | { id: number; type: "result"; value?: unknown }
-  | { id: number; type: "error"; message: string };
+  | {
+      id: number;
+      type: "error";
+      code: string;
+      message: string;
+    };
 
 const worker = self as typeof globalThis & {
   postMessage: (message: BrowserDatabaseResponse) => void;
@@ -55,23 +61,32 @@ const query = (statement: DatabaseStatement) => {
 };
 
 const initialize = async (filename: string) => {
-  sqlite = await sqlite3InitModule();
-  await sqlite.installOpfsSAHPoolVfs({
-    name: "opfs-sahpool",
-    initialCapacity: 4,
-  });
-  db = new sqlite.oo1.DB(`file:${filename}?vfs=opfs-sahpool`, "c");
-  db.exec("PRAGMA foreign_keys = ON;");
-  const migration = migrateBrowserDatabase({
-    exec: (sql) => requireDatabase().exec(sql),
-    selectValues: <T>(sql: string) =>
-      requireDatabase().selectObjects(sql) as T[],
-  });
-  return {
-    type: "ready" as const,
-    sqliteVersion: sqlite.version.libVersion,
-    ...migration,
-  };
+  try {
+    sqlite = await sqlite3InitModule();
+    await sqlite.installOpfsSAHPoolVfs({
+      name: "opfs-sahpool",
+      initialCapacity: 4,
+    });
+    db = new sqlite.oo1.DB(`file:${filename}?vfs=opfs-sahpool`, "c");
+    db.exec("PRAGMA foreign_keys = ON;");
+  } catch (error) {
+    throw classifyBrowserDatabaseError(error);
+  }
+
+  try {
+    const migration = migrateBrowserDatabase({
+      exec: (sql) => requireDatabase().exec(sql),
+      selectValues: <T>(sql: string) =>
+        requireDatabase().selectObjects(sql) as T[],
+    });
+    return {
+      type: "ready" as const,
+      sqliteVersion: sqlite.version.libVersion,
+      ...migration,
+    };
+  } catch (error) {
+    throw classifyBrowserDatabaseError(error, "migration");
+  }
 };
 
 const respond = async (request: BrowserDatabaseRequest) => {
@@ -112,10 +127,15 @@ worker.addEventListener(
         );
       },
       (error: unknown) => {
+        const classified = classifyBrowserDatabaseError(
+          error,
+          event.data.type === "initialize" ? "initialize" : "migration",
+        );
         worker.postMessage({
           id: event.data.id,
           type: "error",
-          message: error instanceof Error ? error.message : String(error),
+          code: classified.code,
+          message: classified.message,
         });
       },
     );

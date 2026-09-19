@@ -18,21 +18,25 @@ export const acquireInstanceLock = async (
       : new BroadcastChannel("budgie-instance-lock");
   let releaseLock: (() => void) | undefined;
   let released = false;
-  const lock = await navigator.locks.request(
-    name,
-    { ifAvailable: true },
-    (held) => {
-      if (!held) return false;
-      return new Promise<boolean>((resolve) => {
-        releaseLock = () => {
-          released = true;
-          resolve(true);
-        };
-      });
-    },
-  );
+  let resolveAcquired: (active: boolean) => void = () => undefined;
+  const acquired = new Promise<boolean>((resolve) => {
+    resolveAcquired = resolve;
+  });
+  void navigator.locks.request(name, { ifAvailable: true }, (held) => {
+    if (!held) {
+      resolveAcquired(false);
+      return false;
+    }
+    resolveAcquired(true);
+    return new Promise<boolean>((resolve) => {
+      releaseLock = () => {
+        released = true;
+        resolve(true);
+      };
+    });
+  });
 
-  if (lock === false) {
+  if (!(await acquired)) {
     channel?.close();
     return { active: false, release: () => undefined };
   }

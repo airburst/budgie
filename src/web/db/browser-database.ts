@@ -4,6 +4,11 @@ import type {
   DatabaseStatement,
   DatabaseTransaction,
 } from "@/platform/database";
+import {
+  BrowserDatabaseError,
+  classifyBrowserDatabaseError,
+  type BrowserDatabaseErrorCode,
+} from "./browser-database-errors";
 import type {
   BrowserDatabaseCommand,
   BrowserDatabaseReady,
@@ -38,7 +43,12 @@ export const createBrowserDatabase = (
       if (!request) return;
       pending.delete(event.data.id);
       if (event.data.type === "error") {
-        request.reject(new Error(event.data.message));
+        request.reject(
+          new BrowserDatabaseError(
+            event.data.code as BrowserDatabaseErrorCode,
+            event.data.message,
+          ),
+        );
       } else if (event.data.type === "result") {
         request.resolve(event.data.value);
       } else {
@@ -47,7 +57,10 @@ export const createBrowserDatabase = (
     },
   );
   worker.addEventListener("error", (event) => {
-    const error = event.error ?? new Error(event.message);
+    const error = classifyBrowserDatabaseError(
+      event.error ?? new Error(event.message),
+      "worker",
+    );
     for (const request of pending.values()) request.reject(error);
     pending.clear();
   });
@@ -108,8 +121,11 @@ export const createBrowserDatabase = (
       await ready;
     },
     close: async () => {
-      await serialize(() => send<void>({ type: "close" }));
-      worker.terminate();
+      try {
+        await serialize(() => send<void>({ type: "close" }));
+      } finally {
+        worker.terminate();
+      }
     },
   };
 };

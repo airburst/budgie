@@ -153,8 +153,17 @@ capability limitation, not treated as a migration failure.
 - [x] Add explicit worker startup failure states and recovery behavior.
 - [x] Add the origin-wide Web Lock/BroadcastChannel coordinator and connect it
       to web startup with an inactive-instance screen.
-- [ ] Add persistent-storage requests and distinct OPFS, quota, corruption,
+- [x] Add persistent-storage requests and distinct OPFS, quota, corruption,
       migration, and private-browsing errors.
+- [x] Add a browser manifest and runtime service worker that caches the loaded
+      offline application assets without replacing an active session.
+- [x] Add automated Chromium coverage for isolated worker startup, OPFS
+      runtime initialization, single-active-page locking, service-worker
+      registration/update, and offline reload.
+- [x] Add a browser ApplicationAPI contract smoke test covering shared account
+      creation and shared-service reads over the SQLite WASM worker.
+- [x] Add a pull-request web-platform gate for lint, type checks, Vitest, and
+      the production-preview Chromium suite.
 - [x] Extract accounts, categories, transactions, reconciliation, scheduled,
       settings, payees, envelopes, and budgets behind shared capability
       services; migrated SQLite coverage exists for the high-risk operations.
@@ -351,8 +360,9 @@ Phase 2 is complete for the current version-1 local-only package scope:
 Hosted-account replacement semantics remain deferred to
 `docs/SYNC_ENGINE_PLAN.md`.
 
-Next resume point: Phase 3 Browser Runtime, beginning with browser startup
-failure/recovery and offline deployment validation.
+Next resume point: Phase 3 Browser Runtime, continuing with browser restart,
+offline navigation, service-worker update, quota, private-browsing, and
+deployment validation in Chromium and Safari.
 
 ## Guardrails
 
