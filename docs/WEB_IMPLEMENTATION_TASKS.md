@@ -364,6 +364,28 @@ Next resume point: Phase 3 Browser Runtime, continuing with browser restart,
 offline navigation, service-worker update, quota, private-browsing, and
 deployment validation in Chromium and Safari.
 
+## Phase 4 Local Implementation Status
+
+Completed in the repository:
+
+- Added an explicit `build:web` boundary and generated-build verification.
+- Added production CSP, frame, referrer, permissions, MIME, and isolation
+  headers through the Vite preview path.
+- Removed inline production scripts and moved theme initialization into React.
+- Generated a versioned service-worker precache containing the HTML, hashed
+  JavaScript, CSS, fonts, worker, WASM, manifest, and icons.
+- Added user-confirmed service-worker activation and reload behavior.
+- Added generated manifest/asset checks, offline route coverage, update-flow
+  coverage, and production-preview header assertions.
+- Added artifact retention and Cloudflare Pages preview/tag deployment
+  workflows; credentials, project variables, Access policy, and DNS remain
+  environment configuration.
+- Added the current route/view/modal map at `docs/WEB_ROUTE_MAP.md`.
+
+Manual Phase 4 acceptance is tracked in
+`docs/PHASE4_MANUAL_CHECKLIST.md`. Phase 5 must not begin until that checklist
+and product approval are complete.
+
 ## Guardrails
 
 - Do not make WAL a shared domain assumption; journal mode belongs to each

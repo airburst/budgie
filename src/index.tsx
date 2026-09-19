@@ -41,7 +41,28 @@ const renderApp = () =>
 const registerBrowserServiceWorker = () => {
   if (window.api || !window.isSecureContext || !("serviceWorker" in navigator))
     return;
-  void navigator.serviceWorker.register("./sw.js", { scope: "./" });
+  void navigator.serviceWorker
+    .register(`./sw.js?version=${encodeURIComponent(__APP_VERSION__)}`, {
+      scope: "./",
+    })
+    .then((registration) => {
+      const announceUpdate = () => {
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          window.dispatchEvent(
+            new CustomEvent("budgie:service-worker-update", {
+              detail: registration,
+            }),
+          );
+        }
+      };
+      registration.addEventListener("updatefound", () => {
+        registration.installing?.addEventListener("statechange", () => {
+          if (registration.installing?.state === "installed") announceUpdate();
+        });
+      });
+      announceUpdate();
+      window.addEventListener("online", () => void registration.update());
+    });
 };
 
 const startupFailure = (error: unknown) => {

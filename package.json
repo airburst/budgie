@@ -12,6 +12,8 @@
     "electron-start": "wait-on http://localhost:3000 && vite build --config vite.main.config.ts && electron .",
     "electron-build": "electron-builder",
     "electron-build:win": "electron-builder --win",
+    "build:web": "vite build --config vite.config.ts",
+    "verify:web": "bun run build:web && bun run scripts/verify-web-build.ts",
     "test": "vitest run",
     "test:e2e": "bun run vite build && playwright test",
     "lint": "eslint --fix",

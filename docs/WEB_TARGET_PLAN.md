@@ -116,13 +116,12 @@ Completed in this work:
 
 Next work, in order:
 
-1. Complete the Chromium and Safari persistence, performance, deployment, and
-   offline checks listed in `docs/WEB_IMPLEMENTATION_TASKS.md`; repository-
-   local migration proof is complete.
-2. Begin Phase 3 Browser Runtime by completing the remaining browser startup,
-   persistence, failure/recovery, and offline deployment checks.
-3. Add browser contract tests against the shared services and complete the
-   worker/runtime release gate.
+1. Complete the manual Phase 4 acceptance checklist in
+   `docs/PHASE4_MANUAL_CHECKLIST.md`.
+2. Record Safari, mobile-device, storage-pressure, performance, and Cloudflare
+   deployment results in `docs/WEB_IMPLEMENTATION_TASKS.md`.
+3. Begin Phase 5 only after product approval of the route and modal redesign
+   map in `docs/WEB_ROUTE_MAP.md`.
 
 Phase 1 local foundation status: complete. The shared platform/API boundary,
 database adapters, domain services, Electron IPC bundle, browser startup
@@ -130,11 +129,16 @@ lifecycle, inactive-tab handling, persistence state, and local contract tests
 are implemented. External phase 0 browser/deployment/performance validation
 remains a separate gate before production web release.
 
-The next coding session should start Phase 3: Browser Runtime. Begin with the
-dedicated SQLite worker startup/error states, bundled migration execution,
-single-tab locking, persistence reporting, resume auto-posting, and offline
-asset validation. Do not select a sync engine or hosting model from this plan;
-those decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
+Phase 4 local implementation status: complete. The web build boundary,
+security headers, deterministic offline precache, user-confirmed service-worker
+updates, generated-artifact checks, Chromium release tests, route map, and
+Cloudflare deployment workflows are implemented. Production approval remains
+blocked only on the manual acceptance checklist and environment credentials /
+policies described there.
+
+The next coding session should begin Phase 5 UX redesign after the manual
+Phase 4 acceptance gate. Do not select a sync engine or hosting model from this
+plan; those decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
 Provider-neutral Sync-Ready Data Structure status: complete for the current
 scope. Existing integer relationships remain intact, while syncable entities

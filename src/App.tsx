@@ -43,35 +43,64 @@ function UpdateListener() {
   const platform = usePlatform();
 
   useEffect(() => {
-    if (!platform.capabilities.nativeUpdates) return;
+    if (platform.capabilities.nativeUpdates) {
+      window.api.onUpdateAvailable((version) => {
+        toast.info(`Version ${version} available`, {
+          duration: Infinity,
+          action: {
+            label: "Download",
+            onClick: () => {
+              void window.api.openExternal(
+                "https://github.com/airburst/budgie/releases/latest",
+              );
+            },
+          },
+        });
+      });
 
-    window.api.onUpdateAvailable((version) => {
-      toast.info(`Version ${version} available`, {
+      window.api.onUpdateDownloaded((version) => {
+        toast.info(`Version ${version} available`, {
+          duration: Infinity,
+          action: {
+            label: "Restart",
+            onClick: () => window.api.restartToUpdate(),
+          },
+        });
+      });
+
+      window.api.onUpdateNotAvailable(() => {
+        toast.success("Budgie is up to date");
+      });
+      return;
+    }
+
+    const onServiceWorkerUpdate = (event: Event) => {
+      const registration = (event as CustomEvent<ServiceWorkerRegistration>)
+        .detail;
+      toast.info("A new Budgie version is ready", {
         duration: Infinity,
         action: {
-          label: "Download",
+          label: "Update",
           onClick: () => {
-            void window.api.openExternal(
-              "https://github.com/airburst/budgie/releases/latest",
+            registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+            navigator.serviceWorker.addEventListener(
+              "controllerchange",
+              () => window.location.reload(),
+              { once: true },
             );
           },
         },
       });
-    });
-
-    window.api.onUpdateDownloaded((version) => {
-      toast.info(`Version ${version} available`, {
-        duration: Infinity,
-        action: {
-          label: "Restart",
-          onClick: () => window.api.restartToUpdate(),
-        },
-      });
-    });
-
-    window.api.onUpdateNotAvailable(() => {
-      toast.success("Budgie is up to date");
-    });
+    };
+    window.addEventListener(
+      "budgie:service-worker-update",
+      onServiceWorkerUpdate,
+    );
+    return () =>
+      window.removeEventListener(
+        "budgie:service-worker-update",
+        onServiceWorkerUpdate,
+      );
   }, [platform.capabilities.nativeUpdates]);
   return null;
 }

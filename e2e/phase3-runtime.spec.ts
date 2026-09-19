@@ -22,6 +22,17 @@ test("starts the isolated browser runtime and registers the service worker", asy
   expect(response?.headers()["cross-origin-embedder-policy"]).toBe(
     "require-corp",
   );
+  expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
+  expect(response?.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(response?.headers()["content-security-policy"]).toContain(
+    "frame-ancestors 'none'",
+  );
+  expect(response?.headers()["content-security-policy"]).not.toContain(
+    "script-src 'unsafe-inline'",
+  );
+  const manifest = await page.request.get("/manifest.webmanifest");
+  expect(manifest.ok()).toBe(true);
+  expect((await manifest.json()).display).toBe("standalone");
   await waitForRuntime(page);
   await waitForServiceWorker(page);
 });
@@ -127,6 +138,15 @@ test("waits for a service-worker update instead of replacing the active session"
       ),
     )
     .toBe(true);
+  await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    window.dispatchEvent(
+      new CustomEvent("budgie:service-worker-update", {
+        detail: registration,
+      }),
+    );
+  });
+  await expect(page.getByText("A new Budgie version is ready")).toBeVisible();
   await expect
     .poll(() =>
       page.evaluate(() => navigator.serviceWorker.controller?.scriptURL),
