@@ -36,6 +36,14 @@ const webArtifactPlugin = (): Plugin => ({
   async closeBundle() {
     const outputDirectory = new URL("./build/", import.meta.url).pathname;
     if (!outputDirectory) return;
+    await writeFile(
+      join(outputDirectory, "_headers"),
+      `/*\n${Object.entries(securityHeaders)
+        .map(([name, value]) => `  ${name}: ${value}`)
+        .join(
+          "\n",
+        )}\n\n/sw.js\n  Cache-Control: no-cache\n\n/index.html\n  Cache-Control: no-cache\n`,
+    );
     const files = await listFiles(outputDirectory);
     const precacheUrls = [
       "./",
@@ -44,7 +52,7 @@ const webArtifactPlugin = (): Plugin => ({
           (file) =>
             `./${relative(outputDirectory, file).replaceAll("\\", "/")}`,
         )
-        .filter((file) => file !== "./sw.js"),
+        .filter((file) => file !== "./sw.js" && file !== "./_headers"),
     ];
     const serviceWorkerPath = join(outputDirectory, "sw.js");
     const source = await readFile("src/public/sw.js", "utf8");

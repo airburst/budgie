@@ -34,6 +34,28 @@ bun run start        # dev: Vite on :3000 + Electron
 | `bun run check-types` | TypeScript type check                  |
 | `bun run db:migrate`  | Generate migration from schema changes |
 
+## Web Deployment
+
+GitHub Actions deploys verified build artifacts to the Cloudflare Pages Direct
+Upload project `budgie-web`, whose production branch must be `main`.
+
+- Repository secrets: `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission)
+  and `CLOUDFLARE_ACCOUNT_ID`.
+- Same-repository pull requests deploy previews using the stable branch alias
+  `pr-<number>`. Fork pull requests build artifacts but do not receive deployment
+  credentials.
+- Pushing a `v*` tag deploys production using the `main` Pages branch. Ordinary
+  pushes to `main` do not deploy production.
+- GitHub environments `preview` and `production` can provide approval gates.
+- Each deployment downloads the verified artifact from its workflow run;
+  artifacts are retained for 30 days.
+
+Run `bun run verify:web` to build and verify the deployment artifact locally.
+The build generates Cloudflare security/isolation headers and the offline
+precache. Keep preview access protection enabled in Cloudflare Access. Use a
+stable preview alias for device testing: browser databases are isolated by
+origin, so a different preview URL starts with separate local data.
+
 ## Convert PNG to icns
 
 https://www.aconvert.com/image/jpg-to-icns/

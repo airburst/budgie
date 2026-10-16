@@ -7,9 +7,24 @@ const requiredFiles = [
   "manifest.webmanifest",
   "sw.js",
   "budgie-icon.svg",
+  "_headers",
 ];
 
 for (const file of requiredFiles) await access(join(buildDirectory, file));
+
+const headers = await readFile(join(buildDirectory, "_headers"), "utf8");
+for (const header of [
+  "Cross-Origin-Opener-Policy: same-origin",
+  "Cross-Origin-Embedder-Policy: require-corp",
+  "Content-Security-Policy: default-src 'self'",
+  "X-Content-Type-Options: nosniff",
+  "X-Frame-Options: DENY",
+  "Referrer-Policy: no-referrer",
+  "Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()",
+]) {
+  if (!headers.includes(`  ${header}`))
+    throw new Error(`Missing Cloudflare header: ${header}`);
+}
 
 const manifest = JSON.parse(
   await readFile(join(buildDirectory, "manifest.webmanifest"), "utf8"),
@@ -40,6 +55,8 @@ if (!serviceWorker.includes("const PRECACHE_URLS = ["))
   throw new Error(
     "The service worker does not contain a generated precache list",
   );
+if (serviceWorker.includes('"./_headers"'))
+  throw new Error("Cloudflare configuration must not be precached");
 
 const files = (await stat(buildDirectory)).isDirectory();
 if (!files) throw new Error("Web build output is not a directory");
