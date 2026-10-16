@@ -21,13 +21,16 @@ jobs:
     needs: create-release
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bunx vite build
       - run: bunx vite build --config vite.main.config.ts
       - name: Build & publish (macOS)
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 30
           max_attempts: 3
@@ -40,13 +43,16 @@ jobs:
     needs: create-release
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bunx vite build
       - run: bunx vite build --config vite.main.config.ts
       - name: Build & publish (Windows)
-        uses: nick-fields/retry@v3
+        uses: nick-fields/retry@v4
         with:
           timeout_minutes: 30
           max_attempts: 3
@@ -67,7 +73,10 @@ jobs:
   # build-linux:
   #   runs-on: ubuntu-latest
   #   steps:
-  #     - uses: actions/checkout@v5
+  #     - uses: actions/checkout@v7
+  #     - uses: actions/setup-node@v7
+  #       with:
+  #         node-version: 24
   #     - uses: oven-sh/setup-bun@v2
   #     - run: bun install
   #     - run: bunx vite build
