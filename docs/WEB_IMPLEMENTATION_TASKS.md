@@ -362,9 +362,9 @@ Phase 2 is complete for the current version-1 local-only package scope:
 Hosted-account replacement semantics remain deferred to
 `docs/SYNC_ENGINE_PLAN.md`.
 
-Next resume point: Phase 3 Browser Runtime, continuing with browser restart,
-offline navigation, service-worker update, quota, private-browsing, and
-deployment validation in Chromium and Safari.
+Next resume point: Phase 5 application shell and navigation design. Mark
+approved the deployed baseline on 2026-10-16 after confirming iPhone rendering,
+Settings, account creation, revisit persistence, and offline operation.
 
 ## Phase 4 Local Implementation Status
 
@@ -385,8 +385,10 @@ Completed in the repository:
 - Added the current route/view/modal map at `docs/WEB_ROUTE_MAP.md`.
 
 Manual Phase 4 acceptance is tracked in
-`docs/PHASE4_MANUAL_CHECKLIST.md`. Phase 5 must not begin until that checklist
-and product approval are complete.
+`docs/PHASE4_MANUAL_CHECKLIST.md`. Baseline approval to begin Phase 5 design was
+given on 2026-10-16. Remaining manual release checks stay open; redesigned routes,
+modals, and individual workflow slices still require product approval before
+implementation.
 
 ## Guardrails
 

@@ -3,13 +3,29 @@
 Complete these checks on the deployed preview or production origin using a
 fresh disposable browser profile. Do not use a real financial database.
 
+## Baseline Sign-Off: 2026-10-16
+
+Mark approved the deployed functional baseline and proceeding to Phase 5 design.
+On an iPhone, the published Cloudflare app renders, including Settings; account
+creation works, data survives a second visit, and offline operation is confirmed.
+Device model, OS/browser versions, and the exact test URL were not recorded.
+Mobile layout remains the expected Phase 5 work, not a baseline failure.
+
+This is approval to begin design, not public-release approval or blanket
+approval of redesigned routes and modals. Unverified restart, quota/storage
+pressure, performance, Access policy, and rollback checks remain release work.
+Persistence across visits does not establish browser eviction protection.
+
 ## Verified
 
 - Chrome and Safari local PWA persistence passed.
 - Local PWA installation and offline persistence passed.
 - Private browsing passed.
-- All tested routes rendered except `/settings`; Settings did not display and
-  requires investigation before Phase 5 route approval.
+- Settings now renders; the previous browser-only failure is resolved.
+- Published iPhone account creation, revisit persistence, and offline operation
+  passed (reported by Mark on 2026-10-16).
+
+## Acceptance Checks
 
 - Safari restart persistence
   - What: OPFS database survives Safari quit/reopen.
@@ -41,9 +57,9 @@ fresh disposable browser profile. Do not use a real financial database.
   - How: Load once online, close the tab, disable networking, reopen the
     origin or installed PWA, and visit each route.
   - Success: Every route loads, lazy chunks render, and local data is usable.
-  - Current result: Partially passed. All tested routes except `/settings`
-    rendered; physical-device testing is intentionally deferred until after
-    mobile-first screen redesign.
+  - Current result: iPhone offline operation and Settings rendering confirmed
+    by Mark on 2026-10-16. Exhaustive offline route coverage and the wider device
+    matrix remain release checks alongside the Phase 5 redesign.
 
 - Real-device interaction
   - What: Touch and mobile browser behavior meet the Phase 5 acceptance bar.
@@ -55,6 +71,9 @@ fresh disposable browser profile. Do not use a real financial database.
 
 - Cloudflare preview and production
   - What: Deployment, origin isolation, and rollback configuration work.
+  - Current result: Automated `web-platform` preview deployment passed; the
+    published app is usable on iPhone. Access policy, production deployment,
+    origin isolation, and rollback acceptance are not yet recorded.
   - How: Deploy a PR preview, verify its URL and Cloudflare Access policy,
     then deploy a tagged artifact and restore the previous artifact.
   - Success: Preview and production use separate origins/databases, only

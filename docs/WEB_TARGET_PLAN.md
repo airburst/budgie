@@ -116,12 +116,14 @@ Completed in this work:
 
 Next work, in order:
 
-1. Complete the manual Phase 4 acceptance checklist in
-   `docs/PHASE4_MANUAL_CHECKLIST.md`.
-2. Record Safari, mobile-device, storage-pressure, performance, and Cloudflare
-   deployment results in `docs/WEB_IMPLEMENTATION_TASKS.md`.
-3. Begin Phase 5 only after product approval of the route and modal redesign
-   map in `docs/WEB_ROUTE_MAP.md`.
+1. Design the Phase 5 application shell and navigation; Mark approved the
+   deployed functional baseline on 2026-10-16 after confirming iPhone rendering,
+   Settings, account creation, revisit persistence, and offline operation.
+2. Obtain product approval of the proposed route/modal changes before
+   implementing each redesign slice; `docs/WEB_ROUTE_MAP.md` is the current
+   inventory, not blanket redesign approval.
+3. Complete and record remaining manual release checks in
+   `docs/PHASE4_MANUAL_CHECKLIST.md` before public release.
 
 Phase 1 local foundation status: complete. The shared platform/API boundary,
 database adapters, domain services, Electron IPC bundle, browser startup
@@ -136,8 +138,8 @@ Cloudflare deployment workflows are implemented. Production approval remains
 blocked only on the manual acceptance checklist and environment credentials /
 policies described there.
 
-The next coding session should begin Phase 5 UX redesign after the manual
-Phase 4 acceptance gate. Do not select a sync engine or hosting model from this
+The next session should begin Phase 5 UX design following the recorded baseline
+sign-off. Do not select a sync engine or hosting model from this
 plan; those decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
 Provider-neutral Sync-Ready Data Structure status: complete for the current
