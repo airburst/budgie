@@ -41,6 +41,8 @@ Upload project `budgie-web`, whose production branch must be `main`.
 
 - Repository secrets: `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission)
   and `CLOUDFLARE_ACCOUNT_ID`.
+- Pushes to the long-running `web-platform` branch deploy the `web-platform`
+  preview alias without requiring a pull request or a merge into `main`.
 - Same-repository pull requests deploy previews using the stable branch alias
   `pr-<number>`. Fork pull requests build artifacts but do not receive deployment
   credentials.

@@ -3,6 +3,8 @@ name: Web Deploy
 on:
   pull_request:
   push:
+    branches:
+      - web-platform
     tags:
       - "v*"
 
@@ -29,12 +31,12 @@ jobs:
           retention-days: 30
 
   deploy-preview:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/web-platform') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     needs: build-web-artifact
     runs-on: ubuntu-latest
     environment: preview
     concurrency:
-      group: web-preview-${{ github.event.number }}
+      group: web-preview-${{ github.event_name == 'push' && 'web-platform' || github.event.number }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
@@ -50,7 +52,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=pr-${{ github.event.number }}
+          command: pages deploy build --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=${{ github.event_name == 'push' && 'web-platform' || format('pr-{0}', github.event.number) }}
 
   deploy-production:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
