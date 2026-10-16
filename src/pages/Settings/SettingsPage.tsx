@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccounts } from "@/hooks/useAccounts";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import {
   ArrowLeftIcon,
@@ -40,6 +41,7 @@ const STATIC_ROUTES: { value: string; label: string }[] = [
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { capabilities } = usePlatform();
   const { preferences, update } = usePreferences();
   const { accounts } = useAccounts();
 
@@ -57,9 +59,19 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
-    window.api.getDefaultBackupFolder().then(setDefaultBackupFolder);
-    window.api.getDataFolder().then(setDataFolder);
-  }, []);
+    if (!capabilities.filesystemBackups) return;
+    void Promise.all([
+      window.api.getDefaultBackupFolder(),
+      window.api.getDataFolder(),
+    ])
+      .then(([backupFolder, folder]) => {
+        setDefaultBackupFolder(backupFolder);
+        setDataFolder(folder);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load filesystem settings", error);
+      });
+  }, [capabilities.filesystemBackups]);
 
   useEffect(() => {
     setBackupFolder(preferences.backupFolder ?? defaultBackupFolder);
@@ -257,74 +269,80 @@ export default function SettingsPage() {
 
           <TabsContent value="advanced">
             <div className="flex flex-col gap-4 mt-4">
-              {/* Backups */}
-              <div className="rounded-md border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Backups
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="backup-folder">Backup folder</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="backup-folder"
-                      value={backupFolder}
-                      onChange={(e) => setBackupFolder(e.target.value)}
-                      onBlur={handleBackupFolderBlur}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleBrowseBackup}
-                    >
-                      <FolderOpen className="size-4" />
-                    </Button>
+              {capabilities.filesystemBackups && (
+                <>
+                  {/* Backups */}
+                  <div className="rounded-md border border-border p-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Backups
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="backup-folder">Backup folder</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="backup-folder"
+                          value={backupFolder}
+                          onChange={(e) => setBackupFolder(e.target.value)}
+                          onBlur={handleBackupFolderBlur}
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleBrowseBackup}
+                        >
+                          <FolderOpen className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="retention">Keep backups for</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="retention"
+                          type="number"
+                          min="1"
+                          value={retentionStr}
+                          onChange={(e) => setRetentionStr(e.target.value)}
+                          onBlur={handleRetentionBlur}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          days
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="retention">Keep backups for</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="retention"
-                      type="number"
-                      min="1"
-                      value={retentionStr}
-                      onChange={(e) => setRetentionStr(e.target.value)}
-                      onBlur={handleRetentionBlur}
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground">days</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Data */}
-              <div className="rounded-md border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Data
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="data-folder">Data folder</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="data-folder"
-                      value={dataFolder}
-                      readOnly
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleBrowseData}
-                    >
-                      <FolderOpen className="size-4" />
-                    </Button>
+                  {/* Data folder */}
+                  <div className="rounded-md border border-border p-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Data
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="data-folder">Data folder</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="data-folder"
+                          value={dataFolder}
+                          readOnly
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleBrowseData}
+                        >
+                          <FolderOpen className="size-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Moving data will restart the app.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Moving data will restart the app.
-                  </p>
-                </div>
-              </div>
+                </>
+              )}
               <DataTransferSection />
             </div>
           </TabsContent>

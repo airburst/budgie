@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 const waitForRuntime = async (page: import("@playwright/test").Page) => {
   await page.waitForFunction(() => Boolean(window.api));
@@ -105,6 +106,31 @@ test("uses shared services through the browser application API", async ({
   expect(account.createdId).toBeGreaterThan(0);
   expect(account.names).toContain("Browser contract account");
   expect(account.collectionLengths).toHaveLength(8);
+});
+
+test("renders browser Settings and accepts a portable data import file", async ({
+  page,
+}) => {
+  await page.goto("/#/settings");
+  await waitForRuntime(page);
+
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "General" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Advanced" })).toBeVisible();
+  await page.getByRole("tab", { name: "Advanced" }).click();
+
+  const importButton = page.getByRole("button", { name: "Import data" });
+  await expect(importButton).toBeVisible();
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await importButton.click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles({
+    name: "budgie-data.json",
+    mimeType: "application/json",
+    buffer: await readFile("src/tests/fixtures/portable-data-v1.json"),
+  });
+
+  await expect(page.getByText("Replace local data?")).toBeVisible();
 });
 
 test("waits for a service-worker update instead of replacing the active session", async ({

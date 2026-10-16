@@ -39,7 +39,12 @@ const renderApp = () =>
   );
 
 const registerBrowserServiceWorker = () => {
-  if (window.api || !window.isSecureContext || !("serviceWorker" in navigator))
+  if (
+    import.meta.env.DEV ||
+    window.api ||
+    !window.isSecureContext ||
+    !("serviceWorker" in navigator)
+  )
     return;
   void navigator.serviceWorker
     .register(`./sw.js?version=${encodeURIComponent(__APP_VERSION__)}`, {

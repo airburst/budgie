@@ -6,6 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePlatform } from "@/hooks/usePlatform";
 import { AboutDialog } from "@/pages/Settings/AboutDialog";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
@@ -22,6 +23,7 @@ const navLinks = [
 
 const Header = () => {
   const navigate = useNavigate();
+  const { capabilities } = usePlatform();
   const [backupOpen, setBackupOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -85,19 +87,27 @@ const Header = () => {
               <DropdownMenuItem onClick={() => navigate("/payees")}>
                 Payees
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setBackupOpen(true)}>
-                Backup...
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setRestoreOpen(true)}>
-                Restore...
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => void window.api.checkForUpdates()}
-              >
-                Check for updates
-              </DropdownMenuItem>
+              {capabilities.filesystemBackups && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setBackupOpen(true)}>
+                    Backup...
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRestoreOpen(true)}>
+                    Restore...
+                  </DropdownMenuItem>
+                </>
+              )}
+              {capabilities.nativeUpdates && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => void window.api.checkForUpdates()}
+                  >
+                    Check for updates
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem onClick={() => setAboutOpen(true)}>
                 About Budgie
               </DropdownMenuItem>
@@ -106,8 +116,12 @@ const Header = () => {
         </div>
       </header>
 
-      <BackupDialog open={backupOpen} onOpenChange={setBackupOpen} />
-      <RestoreDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
+      {capabilities.filesystemBackups && (
+        <>
+          <BackupDialog open={backupOpen} onOpenChange={setBackupOpen} />
+          <RestoreDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
+        </>
+      )}
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>
   );
