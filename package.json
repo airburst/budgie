@@ -23,6 +23,7 @@
     "prepare": "husky",
     "db:migrate": "drizzle-kit generate",
     "db:seed": "bun run src/main/db/seeds/accounts.ts",
+    "export:portable": "bun run scripts/export-portable.ts",
     "spike:powersync": "vite --config vite.powersync-spike.config.ts",
     "changeset": "changeset",
     "version": "changeset version",

@@ -29,3 +29,6 @@
 
 # test database
 test.db
+
+# exported real data (scripts/export-portable.ts)
+budgie-export*.json

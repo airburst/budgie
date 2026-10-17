@@ -24,6 +24,9 @@ Persistence across visits does not establish browser eviction protection.
 - Settings now renders; the previous browser-only failure is resolved.
 - Published iPhone account creation, revisit persistence, and offline operation
   passed (reported by Mark on 2026-10-16).
+- Safari restart persistence and installed-PWA persistence passed (reported by
+  Mark, 2026-10-17). Offline operation held for a short (~3 minute) test; an
+  exhaustive offline route pass remains open.
 
 ## Acceptance Checks
 
@@ -87,3 +90,23 @@ Persistence across visits does not establish browser eviction protection.
     large transaction dataset on representative devices.
   - Success: Results are recorded with browser, OS, device, dataset size, and
     no corruption, timeout, or unacceptable interaction delay.
+
+## Large-dataset testing with real data
+
+Export an Electron database as a Portable Data Package and import it on a
+phone or tablet:
+
+```
+bun run export:portable                      # ~/budgie.db -> ./budgie-export.json
+bun run export:portable path/to/budgie.db -o ~/Desktop/budgie.json --force
+```
+
+The source database is never modified: it is snapshotted with SQLite's backup
+API (safe while Electron is running) and the copy is migrated to the current
+schema before export, so older databases work. The output is real financial
+data written owner-only; `budgie-export*.json` is git-ignored, but don't share
+it. Transfer it with AirDrop/Files, then use Settings -> Import on the web app
+(import replaces the device's data; use a disposable profile).
+
+Record browser, OS, device, dataset size, startup/migration time, and any
+interaction delay against "Persistence/performance baseline" above.
