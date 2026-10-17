@@ -71,9 +71,10 @@ export function DataTransferSection() {
         Export your data to move it between Budgie installations. Importing
         replaces all local data.
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Button
           variant="outline"
+          className="w-full sm:w-auto"
           onClick={handleExport}
           disabled={status === "busy"}
         >
@@ -82,6 +83,7 @@ export function DataTransferSection() {
         </Button>
         <Button
           variant="outline"
+          className="w-full sm:w-auto"
           onClick={() => inputRef.current?.click()}
           disabled={status === "busy"}
         >
@@ -99,7 +101,8 @@ export function DataTransferSection() {
       </div>
       {status !== "idle" && (
         <div
-          className={`flex items-center gap-2 text-sm ${
+          role={status === "error" ? "alert" : "status"}
+          className={`flex items-start gap-2 text-sm break-words ${
             status === "success"
               ? "text-green-600"
               : status === "error"
@@ -107,9 +110,11 @@ export function DataTransferSection() {
                 : "text-muted-foreground"
           }`}
         >
-          {status === "success" && <CheckCircle className="size-4" />}
-          {status === "error" && <XCircle className="size-4" />}
-          <span>{status === "busy" ? "Working…" : message}</span>
+          {status === "success" && <CheckCircle className="size-4 shrink-0" />}
+          {status === "error" && <XCircle className="size-4 shrink-0" />}
+          <span className="min-w-0">
+            {status === "busy" ? "Working…" : message}
+          </span>
         </div>
       )}
       <ConfirmDialog
