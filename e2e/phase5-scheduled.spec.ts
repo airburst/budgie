@@ -318,6 +318,23 @@ test.describe("desktop", () => {
     );
     expect(Math.max(...left) - Math.min(...left)).toBeLessThanOrEqual(1);
 
+    // Row-one contents (amount and actions) share a vertical centre.
+    const offsets = await cards(page).evaluateAll((els) =>
+      els.map((card) => {
+        const amount = card
+          .querySelector('[data-slot="scheduled-amount"]')!
+          .getBoundingClientRect();
+        const action = [...card.querySelectorAll("button")]
+          .reverse()
+          .find((b) => b.getBoundingClientRect().width > 0)!
+          .getBoundingClientRect();
+        return Math.abs(
+          amount.top + amount.height / 2 - (action.top + action.height / 2),
+        );
+      }),
+    );
+    expect(Math.max(...offsets)).toBeLessThanOrEqual(1);
+
     await expect(
       page.getByRole("button", { name: "Record payment for Netflix" }),
     ).toBeVisible();
