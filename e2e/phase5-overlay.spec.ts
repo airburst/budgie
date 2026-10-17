@@ -167,3 +167,50 @@ test("desktop: row click keeps table behavior and edit uses a dialog", async ({
   await expect(dialog.getByText("Edit Transaction")).toBeVisible();
   await expect(drawer(page)).toHaveCount(0);
 });
+
+test.describe("phone touch", () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test("tapping Save while the keyboard is up saves on the first tap", async ({
+    page,
+  }) => {
+    const accountId = await seedTransaction(page);
+    await page.goto(`/#/accounts/${accountId}`);
+
+    await page.getByRole("cell", { name: "Supermarket" }).tap();
+    await drawer(page).getByRole("button", { name: "Edit" }).tap();
+    const notes = drawer(page).getByLabel("Notes");
+    await notes.fill("Saved in one tap");
+
+    // Simulate an open software keyboard: the inset lifts the footer, and
+    // blurring the field dismisses the keyboard (inset back to 0), as on iOS.
+    await page.evaluate(() => {
+      // Set on the popup so the provider's own (0px in automation) value on
+      // the viewport cannot overwrite it.
+      const popup = document.querySelector<HTMLElement>(
+        '[data-slot="drawer-popup"]',
+      )!;
+      popup.style.setProperty("--drawer-keyboard-inset", "300px");
+      document.activeElement?.addEventListener(
+        "focusout",
+        () => popup.style.setProperty("--drawer-keyboard-inset", "0px"),
+        { once: true },
+      );
+    });
+    await expect(notes).toBeFocused();
+
+    const save = drawer(page).getByRole("button", { name: "Save Changes" });
+    await expect
+      .poll(async () => {
+        const box = await save.boundingBox();
+        return box ? box.y + box.height : 999;
+      })
+      .toBeLessThanOrEqual(844 - 300);
+    const box = (await save.boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+
+    await expect(drawer(page)).toBeHidden();
+    await page.getByRole("cell", { name: "Supermarket" }).tap();
+    await expect(drawer(page).getByText("Saved in one tap")).toBeVisible();
+  });
+});

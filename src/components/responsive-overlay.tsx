@@ -194,6 +194,7 @@ function ResponsiveOverlayBody({ className, ...props }: ComponentProps<"div">) {
 
 function ResponsiveOverlayFooter({
   className,
+  onMouseDown,
   ...props
 }: ComponentProps<"div">) {
   const { compact } = useResponsiveOverlay();
@@ -206,10 +207,23 @@ function ResponsiveOverlayFooter({
         "mb-(--drawer-keyboard-inset,0px) grid auto-cols-fr grid-flow-col border-t pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
+      onMouseDown={(event) => {
+        // Pressing a footer button would otherwise move focus off the field,
+        // dismiss the keyboard and drop the footer before the click lands, so
+        // the first tap misses. Keeping focus put keeps the button in place.
+        if ((event.target as Element).closest("button")) {
+          event.preventDefault();
+        }
+        onMouseDown?.(event);
+      }}
       {...props}
     />
   ) : (
-    <DialogFooter className={className} {...props} />
+    <DialogFooter
+      className={className}
+      onMouseDown={onMouseDown}
+      {...props}
+    />
   );
 }
 
