@@ -491,6 +491,18 @@ recorded above. Credit-card sign behavior is unchanged pending clarification.
 Remaining implementation details are tested and reviewed in their own slices,
 not treated as approval to skip acceptance gates.
 
-The request to commit and push this design pack ends with "then continue with".
-The next intended work item was not included. Persist the reviewed plans first;
-confirm the continuation scope before making application changes.
+Mark subsequently approved building **5A: responsive shell and hamburger/sidebar
+navigation**. That slice adds a compact phone header, a scrollable shadcn Base UI
+Sheet for all navigation destinations, 44px minimum phone button targets,
+dynamic viewport sizing and safe-area padding. Desktop navigation and
+Electron-only macOS title-bar spacing are retained.
+
+5A deliberately does not replace account/calendar panels, tables, forms or
+workflow footers. Existing wide page content is contained by the main scroll
+region, not claimed to be fully redesigned or mobile-approved. Those changes
+remain in their corresponding slices.
+
+Automated coverage includes header/capability/focus regression tests and
+Playwright checks at 320px, landscape, the 768px navigation breakpoint,
+desktop resizing and Apple web user agents. Physical-device safe-area and
+native Electron title-bar checks still need manual review.

@@ -1,7 +1,11 @@
 # Web Route Map
 
-The current application uses `HashRouter`. Route redesign is intentionally
-deferred to Phase 5.
+The current application uses `HashRouter`. Phase 5A retains all existing routes
+and adds a mobile hamburger/sidebar navigation below 768px. Desktop retains top
+navigation and the Settings menu. Mobile navigation includes all primary routes,
+Categories, Payees, Settings and About, with native backup/restore/update actions
+only where the platform supports them. It closes after selection, on route
+changes and when resizing to desktop. There are no persistent bottom tabs.
 
 ```mermaid
 flowchart TD

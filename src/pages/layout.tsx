@@ -22,9 +22,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   ]);
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
       <Header />
-      <main className="h-full flex-1 overflow-y-auto">{children}</main>
+      <main className="app-main min-h-0 min-w-0 flex-1 overflow-auto">
+        {children}
+      </main>
     </div>
   );
 };
