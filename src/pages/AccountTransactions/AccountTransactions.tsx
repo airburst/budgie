@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useHotkeys } from "@/hooks/useHotkeys";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Preferences } from "@/types/electron";
@@ -34,6 +35,8 @@ export default function AccountTransactions() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"details" | "edit">("edit");
+  const isMobile = useIsMobile();
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [importData, setImportData] = useState<{
     content: string;
@@ -66,12 +69,21 @@ export default function AccountTransactions() {
   function openAdd() {
     setEditingId(null);
     setFocusAmountOnOpen(false);
+    setFormMode("edit");
     setSheetOpen(true);
   }
 
   function openEdit(id: number, options?: { focusAmount?: boolean }) {
     setEditingId(id);
     setFocusAmountOnOpen(!!options?.focusAmount);
+    setFormMode("edit");
+    setSheetOpen(true);
+  }
+
+  function openDetails(id: number) {
+    setEditingId(id);
+    setFocusAmountOnOpen(false);
+    setFormMode("details");
     setSheetOpen(true);
   }
 
@@ -195,6 +207,7 @@ export default function AccountTransactions() {
             categories={categories}
             openingBalance={account?.clearedBalance ?? account?.balance ?? 0}
             onEdit={openEdit}
+            onView={isMobile ? openDetails : undefined}
             onDelete={(id) => remove.mutate(id)}
             onToggleCleared={(id, cleared) =>
               update.mutate({ id, data: { cleared } })
@@ -209,6 +222,7 @@ export default function AccountTransactions() {
         accountId={accountId}
         account={account}
         focusAmountOnOpen={focusAmountOnOpen}
+        initialMode={formMode}
       />
       {account && (
         <ReconciliationDialog

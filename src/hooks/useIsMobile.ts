@@ -3,8 +3,13 @@ import * as React from "react";
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    undefined,
+  // Read synchronously so phone-only surfaces (e.g. drawers) don't mount as
+  // their desktop variant for one frame first.
+  const [isMobile, setIsMobile] = React.useState<boolean>(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      !window.matchMedia(`(min-width: ${MOBILE_BREAKPOINT}px)`).matches,
   );
 
   React.useEffect(() => {
@@ -17,5 +22,5 @@ export function useIsMobile() {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return !!isMobile;
+  return isMobile;
 }

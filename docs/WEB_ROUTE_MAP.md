@@ -7,6 +7,11 @@ Categories, Payees, Settings and About, with native backup/restore/update action
 only where the platform supports them. It closes after selection, on route
 changes and when resizing to desktop. There are no persistent bottom tabs.
 
+Phase 5B adds no routes. The transaction form now renders through the shared
+`ResponsiveOverlay`: a bottom drawer below 768px and the existing centered
+dialog above it. On phones, tapping a transaction opens read-only details in
+the same surface; Edit is an explicit second step.
+
 ```mermaid
 flowchart TD
   App --> Router[HashRouter + Layout]
@@ -23,7 +28,7 @@ flowchart TD
 
   Home --> AccountForm[Account form dialog]
   Home --> ReconcileDialog[Reconciliation dialog]
-  Accounts --> TransactionForm[Transaction form dialog]
+  Accounts --> TransactionForm[Transaction details/editor: phone drawer, desktop dialog]
   Accounts --> ImportDialog[Import dialog]
   Accounts --> AccountReconcile[Reconciliation dialog]
   Accounts --> DeleteTransaction[Delete confirmation]
@@ -34,7 +39,7 @@ flowchart TD
   Scheduled --> ScheduledForm[Scheduled payment dialog]
   Scheduled --> RecordPayment[Record payment dialog]
   Scheduled --> DeleteScheduled[Delete confirmation]
-  Reconcile --> ReconcileTransaction[Transaction form dialog]
+  Reconcile --> ReconcileTransaction[Transaction editor: phone drawer, desktop dialog]
   Forecast --> ForecastHelp[Forecast help dialog]
   Settings --> About[About dialog]
   Settings --> Backup[Backup dialog]

@@ -506,3 +506,54 @@ Automated coverage includes header/capability/focus regression tests and
 Playwright checks at 320px, landscape, the 768px navigation breakpoint,
 desktop resizing and Apple web user agents. Physical-device safe-area and
 native Electron title-bar checks still need manual review.
+
+### 5B outcome: overlay pilot
+
+Mark approved building **5B**. The official shadcn Base UI Drawer
+(`src/components/ui/drawer.tsx`) is installed from the `base-nova` registry
+against the existing `@base-ui/react` 1.8.0; no Vaul. The registry emitted an
+`import { cn } from "cn"` that also added an unrelated npm package. That was
+removed and the import points at `@/lib/utils`.
+
+`src/components/responsive-overlay.tsx` composes Drawer below 768px and the
+existing Dialog above it from one controlled `open` state. Content is
+`auto` (content-sized) or `expanded` (full dynamic viewport less the top safe
+area). The phone body is the only scrolling region; header and footer stay
+fixed, and the footer pads for the bottom safe area. The drawer is wrapped in
+Base UI's `Drawer.VirtualKeyboardProvider` rather than a custom VisualViewport
+adapter. `useIsMobile` now reads `matchMedia` synchronously so overlays do not
+mount as the desktop variant first.
+
+The transaction form is the pilot:
+
+- **Phone:** tapping a row (outside its checkbox/buttons) opens read-only
+  details (state A, content-sized). Edit switches the same surface to the
+  expanded editor (state B/C). Phones never autofocus: initial focus is the
+  title, so neither opening nor Edit summons the keyboard. Reconciled
+  transactions have no Edit.
+- **Desktop:** behavior is unchanged in 5B. Pencil and double-click still
+  open the editor directly, with existing autofocus. A desktop details dialog
+  is deferred to 5D, together with the card rewrite.
+- **Dismissal:** swipe, Escape, backdrop, the close icon and Cancel on a dirty
+  draft all ask "Discard changes?" (Cancel focused). A cancelled swipe snaps
+  the drawer back with the draft intact. Clean drafts dismiss immediately.
+  Cancel from details-originated edits returns to details. Dismissal is
+  ignored while saving.
+- **Saving:** a ref guard prevents double submit. Failures keep the surface,
+  the draft and a visible `role="alert"` error.
+- **Viewport changes:** draft and mode survive crossing the 768px breakpoint
+  because form state lives above the presentation boundary.
+
+The discard confirmation reuses the existing centered `ConfirmDialog` (a
+nested dialog), which is the accepted AlertDialog-style exception.
+
+Automated coverage: `TransactionForm.test.tsx` (details-first, no
+autofocus, reconciled read-only, dirty Escape/Cancel, failed save, double
+submit, viewport change) and `e2e/phase5-overlay.spec.ts`. The Chromium
+Playwright journey (390x844) covers bottom anchoring, expanded height, a
+44px Save target, the date picker and combobox portals above the drawer,
+Escape closing only the nested list, dirty swipe snap-back, save round-trip
+and no horizontal overflow, plus unchanged desktop behavior. WebKit
+automation cannot start the browser runtime (`window.api` never initialises,
+on the base commit too), so iOS Safari keyboard, swipe and safe-area checks
+remain a **manual physical-device gate** before reusing the overlay in 5C+.

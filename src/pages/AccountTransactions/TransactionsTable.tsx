@@ -22,6 +22,8 @@ type TransactionsTableProps = {
   categories: Category[];
   openingBalance: number;
   onEdit: (id: number, options?: { focusAmount?: boolean }) => void;
+  /** When set, tapping a row (outside its controls) opens read-only details. */
+  onView?: (id: number) => void;
   onDelete: (id: number) => void;
   onToggleCleared: (id: number, cleared: boolean) => void;
 };
@@ -32,6 +34,7 @@ export function TransactionsTable({
   categories,
   openingBalance,
   onEdit,
+  onView,
   onDelete,
   onToggleCleared,
 }: TransactionsTableProps) {
@@ -104,9 +107,17 @@ export function TransactionsTable({
                   key={tx.id}
                   className={cn(
                     isReconciled ? "opacity-60" : "cursor-pointer",
+                    onView && "cursor-pointer",
                     isLastPast && "border-b-4 border-b-sidebar-primary",
                   )}
+                  onClick={(e) => {
+                    if (!onView) return;
+                    if ((e.target as Element).closest("button, input, a"))
+                      return;
+                    onView(tx.id);
+                  }}
                   onDoubleClick={() => {
+                    if (onView) return;
                     if (!isReconciled) onEdit(tx.id, { focusAmount: true });
                   }}
                 >
