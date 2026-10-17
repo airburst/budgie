@@ -1,5 +1,5 @@
 import type { ScheduledTransaction } from "@/types/electron";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
 
@@ -28,14 +28,23 @@ function isoDateOffset(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function income() {
+  return screen.getByText("Income").nextElementSibling as HTMLElement;
+}
+
+function outgoing() {
+  return screen.getByText("Outgoing").nextElementSibling as HTMLElement;
+}
+
 describe("ScheduledSummaryCard", () => {
-  describe("total amount", () => {
-    it("shows £0.00 for an empty list", () => {
+  describe("income and outgoing totals", () => {
+    it("shows zero explicitly on both sides for an empty list", () => {
       render(<ScheduledSummaryCard scheduledTransactions={[]} />);
-      expect(screen.getByText("£0.00")).toBeTruthy();
+      expect(within(income()).getByText("£0.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£0.00")).toBeTruthy();
     });
 
-    it("sums expense amounts (negative) correctly", () => {
+    it("sums expenses as an absolute Outgoing total and zero Income", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
@@ -44,10 +53,11 @@ describe("ScheduledSummaryCard", () => {
           ]}
         />,
       );
-      expect(screen.getByText("-£500.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£500.00")).toBeTruthy();
+      expect(within(income()).getByText("£0.00")).toBeTruthy();
     });
 
-    it("sums income amounts (positive) correctly", () => {
+    it("sums income as Income and zero Outgoing", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
@@ -56,10 +66,11 @@ describe("ScheduledSummaryCard", () => {
           ]}
         />,
       );
-      expect(screen.getByText("£1,500.00")).toBeTruthy();
+      expect(within(income()).getByText("£1,500.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£0.00")).toBeTruthy();
     });
 
-    it("nets income and expenses correctly", () => {
+    it("never nets income against outgoing", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
@@ -68,10 +79,12 @@ describe("ScheduledSummaryCard", () => {
           ]}
         />,
       );
-      expect(screen.getByText("£1,200.00")).toBeTruthy();
+      expect(within(income()).getByText("£2,000.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£800.00")).toBeTruthy();
+      expect(screen.queryByText("£1,200.00")).toBeNull();
     });
 
-    it("excludes inactive transactions from the total", () => {
+    it("excludes paused schedules from both totals", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[
@@ -82,19 +95,44 @@ describe("ScheduledSummaryCard", () => {
               active: false,
               nextDueDate: isoDateOffset(1),
             }),
+            makeTx({
+              id: 3,
+              amount: 900,
+              active: false,
+              nextDueDate: isoDateOffset(1),
+            }),
           ]}
         />,
       );
-      expect(screen.getByText("-£500.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£500.00")).toBeTruthy();
+      expect(within(income()).getByText("£0.00")).toBeTruthy();
     });
 
-    it("shows £0.00 when all transactions are inactive", () => {
+    it("shows zero on both sides when everything is paused", () => {
       render(
         <ScheduledSummaryCard
           scheduledTransactions={[makeTx({ active: false })]}
         />,
       );
-      expect(screen.getByText("£0.00")).toBeTruthy();
+      expect(within(income()).getByText("£0.00")).toBeTruthy();
+      expect(within(outgoing()).getByText("£0.00")).toBeTruthy();
+    });
+  });
+
+  describe("scope label", () => {
+    it("defaults to All accounts", () => {
+      render(<ScheduledSummaryCard scheduledTransactions={[]} />);
+      expect(screen.getByText("All accounts")).toBeTruthy();
+    });
+
+    it("shows the supplied account scope", () => {
+      render(
+        <ScheduledSummaryCard
+          scheduledTransactions={[]}
+          scopeLabel="2 accounts"
+        />,
+      );
+      expect(screen.getByText("2 accounts")).toBeTruthy();
     });
   });
 

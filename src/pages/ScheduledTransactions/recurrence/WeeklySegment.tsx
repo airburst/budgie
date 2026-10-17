@@ -24,7 +24,7 @@ export function WeeklySegment({ selectedDays, onChange }: WeeklySegmentProps) {
           <label
             key={key}
             className={cn(
-              "flex h-9 w-11 cursor-pointer items-center justify-center rounded-md border text-xs font-medium transition-colors select-none",
+              "flex h-11 w-11 cursor-pointer sm:h-9 items-center justify-center rounded-md border text-xs font-medium transition-colors select-none",
               checked
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background text-foreground hover:bg-muted",

@@ -1,127 +1,82 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import type { ScheduledTransaction } from "@/types/electron";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { getDefaultClassNames, labelGridcell } from "react-day-picker";
 
 type ScheduledCalendarProps = {
   scheduledTransactions: ScheduledTransaction[];
+  /** Account scope shared with the list and summary. */
+  scopeLabel?: string;
+  className?: string;
 };
 
-const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+function parseLocalDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y!, m! - 1, d!);
+}
 
+/**
+ * Read-only month view. Dots mark each active schedule's next due date, not
+ * every future recurrence. Days are not interactive: selecting a date does
+ * not filter or record anything.
+ */
 export function ScheduledCalendar({
   scheduledTransactions,
+  scopeLabel = "All accounts",
+  className,
 }: ScheduledCalendarProps) {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-
-  const { dueDates, cells, todayDay, todayMonth, todayYear } = useMemo(() => {
-    const today = new Date();
-    const dueDates = new Set(
+  const dueDates = useMemo(() => {
+    const unique = new Set(
       scheduledTransactions
         .filter((s) => s.active && s.nextDueDate)
         .map((s) => s.nextDueDate!),
     );
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const cells: (number | null)[] = [
-      ...Array(firstDay).fill(null),
-      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-    ];
-    while (cells.length % 7 !== 0) cells.push(null);
-    return {
-      dueDates,
-      cells,
-      todayDay: today.getDate(),
-      todayMonth: today.getMonth(),
-      todayYear: today.getFullYear(),
-    };
-  }, [scheduledTransactions, year, month]);
-
-  function prevMonth() {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else setMonth((m) => m - 1);
-  }
-
-  function nextMonth() {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else setMonth((m) => m + 1);
-  }
-
-  const isToday = (day: number) =>
-    day === todayDay && month === todayMonth && year === todayYear;
-
-  const hasDot = (day: number) => {
-    const iso = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    return dueDates.has(iso);
-  };
+    return [...unique].map(parseLocalDate);
+  }, [scheduledTransactions]);
+  const defaults = getDefaultClassNames();
+  const navButton = cn(
+    buttonVariants({ variant: "ghost" }),
+    "size-11 p-0 select-none aria-disabled:opacity-50 lg:size-7",
+  );
 
   return (
-    <div className="rounded-lg bg-card border border-border p-3 select-none">
-      <div className="flex items-center justify-between mb-3">
-        <Button variant="ghost" size="icon-sm" onClick={prevMonth}>
-          <ChevronLeftIcon />
-        </Button>
-        <span className="text-sm font-semibold">
-          {MONTHS[month]} {year}
-        </span>
-        <Button variant="ghost" size="icon-sm" onClick={nextMonth}>
-          <ChevronRightIcon />
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-7 text-center mb-1">
-        {DAYS.map((d) => (
-          <span
-            key={d}
-            className="text-xs text-muted-foreground font-medium py-1"
-          >
-            {d}
-          </span>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 text-center gap-y-0.5">
-        {cells.map((day, i) => (
-          <div key={i} className="flex flex-col items-center py-0.5">
-            {day !== null ? (
-              <>
-                <span
-                  className={`text-xs w-6 h-6 flex items-center justify-center rounded-full ${
-                    isToday(day)
-                      ? "bg-primary text-primary-foreground font-bold"
-                      : "text-foreground"
-                  }`}
-                >
-                  {day}
-                </span>
-                {hasDot(day) && (
-                  <span className="size-1 rounded-full bg-primary mt-0.5" />
-                )}
-              </>
-            ) : null}
-          </div>
-        ))}
-      </div>
-    </div>
+    <section
+      aria-label="Next due dates calendar"
+      data-slot="scheduled-calendar"
+      className={cn("rounded-lg border border-border bg-card p-3", className)}
+    >
+      <p className="text-xs tracking-wider text-muted-foreground uppercase">
+        Next due dates
+        <span className="normal-case"> · {scopeLabel}</span>
+      </p>
+      <Calendar
+        className="w-full bg-transparent p-0 pt-2 [--cell-size:--spacing(9)] lg:[--cell-size:--spacing(7)]"
+        classNames={{
+          root: cn("w-full", defaults.root),
+          button_previous: cn(navButton, defaults.button_previous),
+          button_next: cn(navButton, defaults.button_next),
+          day: cn(
+            "group/day relative flex aspect-square w-full items-center justify-center rounded-(--cell-radius) p-0 text-sm select-none",
+            defaults.day,
+          ),
+        }}
+        modifiers={{ due: dueDates }}
+        modifiersClassNames={{
+          due: "font-semibold after:absolute after:bottom-1 after:left-1/2 after:size-1.5 after:-translate-x-1/2 after:rounded-full after:bg-primary after:content-['']",
+        }}
+        labels={{
+          labelGridcell: (date, modifiers, options, dateLib) =>
+            `${labelGridcell(date, modifiers, options, dateLib)}${
+              modifiers?.due ? ", payment due" : ""
+            }`,
+        }}
+        showOutsideDays={false}
+      />
+      <p className="pt-2 text-xs text-muted-foreground">
+        A dot marks a schedule&apos;s next due date.
+      </p>
+    </section>
   );
 }
