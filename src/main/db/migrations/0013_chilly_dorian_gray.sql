@@ -16,7 +16,9 @@ ALTER TABLE `categories` ADD `deleted_at` text;--> statement-breakpoint
 ALTER TABLE `envelope_categories` ADD `public_id` text;--> statement-breakpoint
 ALTER TABLE `envelope_categories` ADD `updated_at` text;--> statement-breakpoint
 ALTER TABLE `envelope_categories` ADD `deleted_at` text;--> statement-breakpoint
-ALTER TABLE `envelope_categories` ADD `created_at` text DEFAULT (CURRENT_TIMESTAMP);--> statement-breakpoint
+-- SQLite rejects ADD COLUMN with a non-constant default on a non-empty table, so add the
+-- column plain, backfill it, and let an insert trigger supply the CURRENT_TIMESTAMP default.
+ALTER TABLE `envelope_categories` ADD `created_at` text;--> statement-breakpoint
 ALTER TABLE `envelopes` ADD `public_id` text;--> statement-breakpoint
 ALTER TABLE `envelopes` ADD `updated_at` text;--> statement-breakpoint
 ALTER TABLE `envelopes` ADD `deleted_at` text;--> statement-breakpoint
@@ -29,6 +31,7 @@ ALTER TABLE `scheduled_transactions` ADD `deleted_at` text;--> statement-breakpo
 ALTER TABLE `transactions` ADD `public_id` text;--> statement-breakpoint
 ALTER TABLE `transactions` ADD `updated_at` text;--> statement-breakpoint
 ALTER TABLE `transactions` ADD `deleted_at` text;--> statement-breakpoint
+UPDATE `envelope_categories` SET `created_at` = CURRENT_TIMESTAMP WHERE `created_at` IS NULL;--> statement-breakpoint
 UPDATE `account_reconciliations` SET `public_id` = 'legacy:account_reconciliations:' || `id` WHERE `public_id` IS NULL;--> statement-breakpoint
 UPDATE `accounts` SET `public_id` = 'legacy:accounts:' || `id` WHERE `public_id` IS NULL;--> statement-breakpoint
 UPDATE `budget_allocations` SET `public_id` = 'legacy:budget_allocations:' || `id` WHERE `public_id` IS NULL;--> statement-breakpoint
@@ -110,6 +113,11 @@ CREATE TRIGGER IF NOT EXISTS `transactions_sync_metadata_insert` AFTER INSERT ON
 WHEN NEW.public_id IS NULL OR NEW.updated_at IS NULL
 BEGIN
 	UPDATE transactions SET public_id = COALESCE(NEW.public_id, lower(hex(randomblob(16)))), updated_at = COALESCE(NEW.updated_at, CURRENT_TIMESTAMP) WHERE id = NEW.id;
+END;--> statement-breakpoint
+CREATE TRIGGER IF NOT EXISTS `envelope_categories_created_at_insert` AFTER INSERT ON envelope_categories
+WHEN NEW.created_at IS NULL
+BEGIN
+	UPDATE envelope_categories SET created_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;--> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS `account_reconciliations_sync_metadata_update` AFTER UPDATE ON account_reconciliations
 WHEN NEW.updated_at = OLD.updated_at
