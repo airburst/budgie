@@ -1,16 +1,18 @@
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveOverlay,
+  ResponsiveOverlayBody,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayDescription,
+  ResponsiveOverlayFooter,
+  ResponsiveOverlayHeader,
+  ResponsiveOverlayTitle,
+} from "@/components/responsive-overlay";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { CheckCircle, FolderOpen, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type BackupDialogProps = {
   open: boolean;
@@ -18,6 +20,9 @@ type BackupDialogProps = {
 };
 
 export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
+  const compact = useIsMobile();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const creatingRef = useRef(false);
   const [folder, setFolder] = useState("");
   const [status, setStatus] = useState<"idle" | "busy" | "success" | "error">(
     "idle",
@@ -29,13 +34,20 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     setStatus("idle");
     setMessage("");
     async function loadFolder() {
-      const [prefs, defaultFolder] = await Promise.all([
-        window.api.getPreferences(),
-        window.api.getDefaultBackupFolder(),
-      ]);
-      setFolder(prefs.backupFolder ?? defaultFolder);
+      try {
+        const [prefs, defaultFolder] = await Promise.all([
+          window.api.getPreferences(),
+          window.api.getDefaultBackupFolder(),
+        ]);
+        setFolder(prefs.backupFolder ?? defaultFolder);
+      } catch (e) {
+        setStatus("error");
+        setMessage(
+          e instanceof Error ? e.message : "Could not load backup folder",
+        );
+      }
     }
-    loadFolder();
+    void loadFolder();
   }, [open]);
 
   async function handleBrowse() {
@@ -44,6 +56,9 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
   }
 
   async function handleCreate() {
+    // Guards a double tap before `status` re-renders.
+    if (creatingRef.current) return;
+    creatingRef.current = true;
     setStatus("busy");
     setMessage("");
     try {
@@ -58,21 +73,34 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
     } catch (e) {
       setStatus("error");
       setMessage(e instanceof Error ? e.message : "Backup failed");
+    } finally {
+      creatingRef.current = false;
     }
   }
 
+  // Dismissal (swipe, Escape, backdrop) is ignored while a backup is running.
+  function handleOpenChange(next: boolean) {
+    if (!next && creatingRef.current) return;
+    onOpenChange(next);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create Backup</DialogTitle>
-          <DialogDescription>
+    <ResponsiveOverlay open={open} onOpenChange={handleOpenChange}>
+      <ResponsiveOverlayContent
+        dialogClassName="sm:max-w-md"
+        initialFocus={compact ? titleRef : undefined}
+      >
+        <ResponsiveOverlayHeader>
+          <ResponsiveOverlayTitle ref={titleRef} tabIndex={-1}>
+            Create Backup
+          </ResponsiveOverlayTitle>
+          <ResponsiveOverlayDescription>
             Save a snapshot of your data to the selected folder. Backups older
             than 30 days are removed automatically.
-          </DialogDescription>
-        </DialogHeader>
+          </ResponsiveOverlayDescription>
+        </ResponsiveOverlayHeader>
 
-        <div className="flex flex-col gap-4">
+        <ResponsiveOverlayBody className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="backup-folder">Backup folder</Label>
             <div className="flex gap-2">
@@ -80,9 +108,14 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                 id="backup-folder"
                 value={folder}
                 onChange={(e) => setFolder(e.target.value)}
-                className="flex-1"
+                className="min-w-0 flex-1"
               />
-              <Button variant="outline" size="icon" onClick={handleBrowse}>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Choose backup folder"
+                onClick={handleBrowse}
+              >
                 <FolderOpen className="size-4" />
               </Button>
             </div>
@@ -90,7 +123,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
 
           {status !== "idle" && (
             <div
-              className={`flex items-center gap-2 text-sm ${
+              role={status === "error" ? "alert" : "status"}
+              className={`flex items-start gap-2 text-sm break-words ${
                 status === "success"
                   ? "text-green-600"
                   : status === "error"
@@ -102,13 +136,19 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
                 <CheckCircle className="size-4 shrink-0" />
               )}
               {status === "error" && <XCircle className="size-4 shrink-0" />}
-              <span>{status === "busy" ? "Creating backup…" : message}</span>
+              <span className="min-w-0">
+                {status === "busy" ? "Creating backup…" : message}
+              </span>
             </div>
           )}
-        </div>
+        </ResponsiveOverlayBody>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <ResponsiveOverlayFooter>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={status === "busy"}
+          >
             Close
           </Button>
           <Button
@@ -117,8 +157,8 @@ export function BackupDialog({ open, onOpenChange }: BackupDialogProps) {
           >
             Create Backup
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveOverlayFooter>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }

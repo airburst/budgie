@@ -23,14 +23,14 @@ export function MonthlySegment({ monthDays, onChange }: MonthlySegmentProps) {
   }
 
   return (
-    <div className="grid grid-cols-8 gap-1 w-full">
+    <div className="grid w-full grid-cols-7 gap-1 sm:grid-cols-8">
       {ALL_MONTH_DAYS.map(({ value, label }) => {
         const checked = monthDays.includes(value);
         return (
           <label
             key={value}
             className={cn(
-              "flex h-8 cursor-pointer items-center justify-center rounded-md border text-xs font-medium transition-colors select-none",
+              "flex h-11 cursor-pointer sm:h-8 items-center justify-center rounded-md border text-xs font-medium transition-colors select-none",
               checked
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-background text-foreground hover:bg-muted",

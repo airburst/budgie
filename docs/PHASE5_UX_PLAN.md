@@ -657,6 +657,181 @@ parent drawer must exclude `[data-nested]`.
 Coverage: `ConfirmDialog.test.tsx` (phone and desktop) and the existing 5B–5D
 e2e specs.
 
+### 5E outcome: transfer
+
+- **QIF review (`ImportDialog`):** now a `ResponsiveOverlay`. On phones it is an
+  expanded drawer (title takes initial focus, no keyboard) whose body lists each
+  parsed transaction as a whole-card `label` with a 44px+ checkbox target, payee
+  (truncating), signed amount, date and a text status badge (New / Duplicate /
+  Out of range). From `md` it is the existing wide dialog and review table.
+  Matching, default selection and the created-transaction payload are unchanged.
+  Added the 5B-5D behaviours: a changed selection asks "Discard import?" via the
+  shared `ConfirmDialog` (clean reviews close at once), dismissal is ignored while
+  importing, a ref guard prevents double submit, and a failure keeps the dialog
+  open with a `role="alert"` message ("Import stopped after N of M: ...") instead
+  of an unhandled rejection.
+- **Capability visibility:** added a `qifImport` platform capability (Electron
+  only; the web adapter has no file picker). The Import button and More-menu item
+  on `/accounts/:id` are now hidden where it is false, so web no longer offers an
+  enabled-but-unsupported action (this is a small edit in `AccountTransactions`).
+  No web QIF support was added. Backup/Restore stay gated by `filesystemBackups`.
+- **Native `BackupDialog` / `RestoreDialog`:** drawers on phones, dialogs from
+  `md`, still Electron-only. Backup: labelled folder-browse button, double-tap
+  guard, folder-load errors shown, dismissal blocked while a backup runs. Restore:
+  backups are real `button`s (`aria-pressed`, 44px, name above metadata on phones,
+  keyboard operable), the empty state is unchanged, and the destructive
+  "Restore this backup?" confirmation reuses `ConfirmDialog` with its warning
+  text unchanged. A failed restore now keeps the dialog and selection and shows
+  an inline alert.
+- **Portable import (`DataTransferSection`):** the "Replace local data?" confirmation
+  is the shared `ConfirmDialog` (bottom drawer on phones, Cancel focused) with the
+  description and "Importing replaces all local data" copy unchanged. Phone buttons
+  stack full width; status is `role="status"` / `role="alert"`; errors and file
+  names wrap at 320px. Export/import flow, reload-on-success and failure behaviour
+  are unchanged. `SettingsPage.tsx` is untouched.
+
+Automated coverage: `ImportDialog.test.tsx` (phone drawer/desktop table, cards,
+discard, midway failure, double tap, type mismatch), `DataTransferSection.test.tsx`,
+`NativeBackupDialogs.test.tsx` (phone and desktop, double tap, failure retention,
+warnings), an `AccountTransactions` test for the hidden Import action, and
+`platform.unit.test.ts`. `e2e/phase5-transfer.spec.ts` (Chromium) covers, on the
+real web runtime, the bottom replacement confirmation (all warnings, Cancel
+focused, 44px targets), failed import preserving data, Backup/Restore/Import not
+offered, 320px overflow and the unchanged desktop dialog; and, with a synthetic
+Electron `window.api` stub, the expanded QIF drawer, discard confirmation,
+backup/restore drawers with restore failure retention, 320px overflow and the
+desktop table/dialog. `e2e/phase5-transactions.spec.ts` now asserts Import is
+absent on web.
+
+**Manual gates left:** real Electron compact-window check of QIF review and
+native backup/restore (the e2e uses a stub), and iOS Safari keyboard/safe-area
+checks of the folder input and review drawer (WebKit automation cannot run).
+
+### 5F outcome: reconcile + directories
+
+- **Reconcile `/reconcile/:id`:** the table became a `ul`/`li` subgrid card
+  list (phone: check / payee / amount, then date · category and Edit; `lg`: check /
+  date / payee / category / amount / Edit with an `aria-hidden` caption row;
+  amounts `tabular-nums` and right aligned). The summary is two-by-two on
+  phones and one row from `lg`; Difference also says "Balanced" / "Not
+  balanced" in text. Each card is one native checkbox with a card-wide
+  `<label>` (stretched pseudo-element), so a tap toggles exactly once with no
+  bubbling; a selected card shows a check, "Selected" text and a border, never
+  colour alone. Edit is a separate sibling button (`z-10`) that opens the
+  existing `TransactionForm` editor and never toggles. The `lg` double-click
+  shortcut to edit is kept (ignored on buttons).
+  - The fixed task bar now shows "N selected", Difference, Cancel and Finish.
+    The page reserves its height plus `env(safe-area-inset-bottom)` so the last
+    card scrolls clear, and the inner `h-full overflow-y-auto` scroller was
+    removed (one scroll owner).
+  - **Unchanged:** auto-match and its banner, Auto Balance and Add Transaction,
+    the persisted cleared toggle, the balanced-only Finish with the pending
+    mutation guard, the Enter/Escape/`n` hotkeys, and the `TransactionForm`
+    props.
+- **Categories:** the table is a flat `ul` of subgrid cards. Children follow
+  their parent with a `ml-4` indent (`lg:ml-8`) and a left accent border;
+  because the right-hand tracks are shared, actions and the type column stay
+  aligned. Parent context is visible text ("Sub-category of X", "N
+  sub-categories"). Tapping a card opens read-only details (type, parent,
+  sub-categories) with an explicit Edit. Below `lg`, a 44px ••• menu holds
+  Add sub-category (parents only), Edit and Delete; at `lg` they are direct
+  labelled icon buttons. Delete stays disabled for a parent with children and
+  says why. Delete uses `ConfirmDialog`.
+- **Payees:** cards show name, default category ("No default category" when
+  absent) and a signed default amount. Tap opens read-only details with Edit;
+  ••• menu below `lg`, direct buttons at `lg`; delete uses `ConfirmDialog`.
+- **Forms:** `CategorySheet` (auto height, grows for errors) and `PayeeForm`
+  (expanded) use `ResponsiveOverlay` with the 5C `AccountForm` rules: no
+  phone autofocus, a dirty-draft "Discard changes?" confirmation, dismissal
+  ignored while saving, a double-submit guard and an inline `role="alert"` save
+  error. Payloads are unchanged. A category with a blank name can no longer be
+  created (Save is disabled, as payees already did).
+- **Shared:** `SearchBox` gets a 44px phone input and clear target. The
+  Categories/Payees pages lose their `max-w-3xl` wrapper per the layout contract.
+
+Deviations: Edit from details closes the details surface and opens the
+editor (it does not return to details on Cancel as 5B transactions do), because
+these are two small independent overlays. Wide Reconcile notes show as a line
+under the payee rather than a column.
+
+Automated coverage: `ReconcileCards.test.tsx` (selection toggles once from the
+label and checkbox, Selected text, Edit separate, Finish guard, auto-match,
+pending), `Categories.test.tsx`, `Payees.test.tsx`, `CategoryForm.test.tsx`,
+`PayeeForm.test.tsx`, the unchanged `ReconcilePage.test.tsx`, plus
+`e2e/phase5-reconcile.spec.ts` and `e2e/phase5-directories.spec.ts` (390px
+selection-once with persisted state, 2x2 summary, 44px targets, last card above
+the task bar, 320px no-overflow with long names and amounts, hierarchy, details
+then Edit, confirmed deletes, discard guard, and desktop column alignment).
+
+### 5G outcome: scheduled
+
+- **Page (`/scheduled`):** phones show title/Add, an account filter, the
+  compact summary, a collapsed **Show calendar** disclosure, an explicit
+  **Sort: Next due** menu, then the card list. The disclosure is collapsed on
+  every entry; its open state is plain page state, not a preference. From `lg`
+  the sidebar-style panel (calendar, summary) and the aligned cards return.
+  The two arrangements are chosen with a new `useMinWidth(1024)` hook so each
+  component renders once (no duplicated summary/calendar in the DOM).
+- **Account scope (D8):** one filter drives list, summary and calendar (they
+  previously ignored it for summary/calendar). It is labelled in text: "All
+  accounts", the account name, or "N accounts". The page now stores the
+  _excluded_ accounts, so a refetch (e.g. after recording a payment) no longer
+  resets the filter. Empty ("No subscriptions yet." + Add) and filter-empty
+  ("No subscriptions for {scope}." + Show all accounts) states differ.
+- **Summary:** "Due in next 7 days" keeps the inclusive window, active-only
+  rule and count, but shows **Income** (sum of positive) and **Outgoing**
+  (absolute sum of negative) separately, never netted, with `£0.00` shown
+  explicitly for an empty side. Logic lives in `summarizeDueSoon`
+  (`scheduled-display.ts`) with fixed-time tests for mixed, one-sided, zero,
+  paused, window-edge and filtered fixtures.
+- **Calendar:** now the registry `Calendar` in non-interactive mode (no day
+  buttons, so no date-to-filter interaction). Dots are a modifier on active
+  schedules' next due dates and are labelled for assistive tech ("payment
+  due"). Nav buttons are 44px below `lg`.
+- **`ScheduledTable` → `ScheduledList`:** TanStack sorting state, sorted row
+  model and the null-last date sort are unchanged; only rendering changed to
+  `ul`/`li` subgrid cards. Phone: payee + signed amount, then one wrapping line
+  of next due · recurrence · account (plus Paused / Auto-post as text), then
+  **Record payment** and separate 44px Edit/Delete buttons. `lg`: due / payee /
+  amount / frequency / account / actions in shared tracks, `tabular-nums`,
+  right-aligned amounts. Each value is rendered once and moved with grid
+  placement. A stretched button over the payee opens read-only details at every
+  width; the actions are sibling controls above it. Delete uses the shared
+  `ConfirmDialog` and names the subscription.
+- **Sort:** the menu offers date, payee, amount and account in both
+  directions (radio items that close on selection) at every width; desktop
+  clickable column headers were dropped in favour of this single control
+  (captions are an `aria-hidden` visual aid).
+- **Overlays:** `ScheduledPaymentDialog` is now one `ResponsiveOverlay` with
+  details and edit states (like 5B/5D). Card tap opens read-only **details**
+  (Close / Edit / Record payment); Add and the pencil open the **expanded**
+  editor directly. The editor has the 5B dismissal rules (dirty-draft discard
+  via `ConfirmDialog`, Cancel returns to details, dismissal ignored while
+  saving), a double-submit guard, inline field errors instead of a silently
+  disabled Save, a `role="alert"` save error, no phone autofocus and
+  single-column fields below `sm`. Recurrence controls got 44px phone targets
+  and wrap at 320px. `RecordPaymentDialog` starts on phones in a read-only
+  **confirmation** (payee, signed amount, date, account, category) with
+  Record payment / Change amount / Skip / Cancel; **Change amount** switches to
+  the expanded editable form with the same discard rule. Desktop still opens the
+  editable dialog directly. Recording, skipping and failure handling reuse the
+  existing amount/next-due logic, now with a ref guard and a visible error that
+  keeps the surface open. A last-occurrence note warns that recording or
+  skipping a one-off removes the schedule (existing behaviour, now stated).
+- **Removed on purpose:** the double-click-to-focus-amount shortcut, and the
+  Edit/Delete buttons inside the Record payment dialog (the card and details
+  carry them), so nothing money-related hides behind a hover or double-click.
+  `FrequencyBadge` is reused on cards.
+
+Automated coverage: `scheduled-display`, `ScheduledSummaryCard`,
+`ScheduledList` (all eight sort orders), `ScheduledTransactions` (disclosure,
+ordering, shared filter across list/summary/calendar, empty vs filter-empty,
+card tap vs explicit record), `ScheduledPaymentForm` and `RecordPaymentDialog`
+unit tests, plus `e2e/phase5-scheduled.spec.ts` (390px phone, 320px overflow
+including the editor drawer, 1280px desktop: totals, filter, calendar
+disclosure, sort, 44px targets, aligned columns, record only via the explicit
+action). Chromium only; physical-device keyboard checks remain a manual gate.
+
 ### 5H outcome: budget
 
 - **Phone order:** title (sr-only; the header shows it), month selector on its

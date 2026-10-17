@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useHotkeys } from "@/hooks/useHotkeys";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Preferences } from "@/types/electron";
@@ -41,6 +42,8 @@ export default function AccountTransactions() {
   const accountId = Number(id);
 
   const navigate = useNavigate();
+  // QIF import needs the native file picker; never offer it where it can't run.
+  const { capabilities } = usePlatform();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
@@ -230,10 +233,12 @@ export default function AccountTransactions() {
                   <LineChartIcon />
                   Forecast
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleImport}>
-                  <ImportIcon />
-                  Import
-                </Button>
+                {capabilities.qifImport && (
+                  <Button variant="outline" size="sm" onClick={handleImport}>
+                    <ImportIcon />
+                    Import
+                  </Button>
+                )}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -270,13 +275,15 @@ export default function AccountTransactions() {
                     <EditIcon />
                     Edit account
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="min-h-11 md:min-h-8"
-                    onClick={handleImport}
-                  >
-                    <ImportIcon />
-                    Import
-                  </DropdownMenuItem>
+                  {capabilities.qifImport && (
+                    <DropdownMenuItem
+                      className="min-h-11 md:min-h-8"
+                      onClick={handleImport}
+                    >
+                      <ImportIcon />
+                      Import
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

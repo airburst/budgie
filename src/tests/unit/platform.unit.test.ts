@@ -15,6 +15,7 @@ describe("platform capabilities", () => {
       capabilities: {
         nativeUpdates: true,
         filesystemBackups: true,
+        qifImport: true,
         pwaInstallation: false,
         persistentBrowserStorage: false,
         touchInput: false,
@@ -35,6 +36,7 @@ describe("platform capabilities", () => {
       capabilities: {
         nativeUpdates: false,
         filesystemBackups: false,
+        qifImport: false,
         pwaInstallation: true,
         persistentBrowserStorage: true,
         touchInput: true,
