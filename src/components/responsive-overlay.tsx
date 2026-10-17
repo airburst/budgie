@@ -41,6 +41,29 @@ function useResponsiveOverlay() {
   return context;
 }
 
+/**
+ * Base UI returns focus to the opener when an overlay closes (including a
+ * menu item that opened it). When the opener no longer exists (a deleted card,
+ * a re-created row) focus would be dropped to <body>; park it on the page
+ * heading instead so keyboard and screen-reader users keep their place.
+ */
+function restoreFocusToPageHeading() {
+  // Completion is reported while the popup is still mounted, before Base UI
+  // has moved focus out of it; check once that has settled.
+  window.setTimeout(focusPageHeadingIfFocusLost, 50);
+}
+
+function focusPageHeadingIfFocusLost() {
+  const active = document.activeElement;
+  if (active && active !== document.body) return;
+  const heading =
+    document.querySelector<HTMLElement>("main h1") ??
+    document.querySelector<HTMLElement>("h1");
+  if (!heading) return;
+  if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+  heading.focus({ preventScroll: true });
+}
+
 type ResponsiveOverlayProps = {
   open: boolean;
   onOpenChange: (open: boolean, reason: OverlayDismissReason) => void;
@@ -65,6 +88,9 @@ function ResponsiveOverlay({
         <Drawer
           open={open}
           onOpenChange={(next, details) => onOpenChange(next, details.reason)}
+          onOpenChangeComplete={(isOpen) => {
+            if (!isOpen) restoreFocusToPageHeading();
+          }}
           showSwipeHandle
         >
           {children}
@@ -73,6 +99,9 @@ function ResponsiveOverlay({
         <Dialog
           open={open}
           onOpenChange={(next, details) => onOpenChange(next, details.reason)}
+          onOpenChangeComplete={(isOpen) => {
+            if (!isOpen) restoreFocusToPageHeading();
+          }}
         >
           {children}
         </Dialog>

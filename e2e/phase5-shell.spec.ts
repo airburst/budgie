@@ -125,11 +125,11 @@ test("navigation follows the 768px breakpoint without overflowing the header", a
     .getByRole("button", { name: "About Budgie" })
     .click();
   await expect(page.locator('[data-slot="sheet-content"]')).toBeHidden();
-  await expect(page.locator('[data-slot="dialog-content"]')).toBeVisible();
-  await page
-    .locator('[data-slot="dialog-content"]')
-    .getByRole("button", { name: "Close", exact: true })
-    .click();
+  // About is a content-sized information drawer on phones (5I).
+  await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
+  const about = page.locator('[data-slot="drawer-popup"]:not([data-nested])');
+  await expect(about).toBeVisible();
+  await about.getByRole("button", { name: "Close", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Open navigation" }),
   ).toBeFocused();

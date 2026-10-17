@@ -2,7 +2,7 @@ import {
   IncomeExpensesChart,
   type IncomeExpensesPoint,
 } from "@/pages/Reports/IncomeExpensesChart";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 const data: IncomeExpensesPoint[] = [
@@ -52,5 +52,16 @@ describe("IncomeExpensesChart", () => {
   it("renders without throwing on empty data", () => {
     const { container } = renderChart([]);
     expect(container.querySelector("svg")).not.toBeNull();
+  });
+
+  it("offers income and expenses per month as text behind Show values", () => {
+    renderChart();
+    fireEvent.click(screen.getByRole("button", { name: /show values/i }));
+    const list = screen.getByRole("list", {
+      name: "Income versus expenses values",
+    });
+    expect(list.textContent).toContain("M01");
+    expect(list.textContent).toContain("Income £3200.00");
+    expect(list.textContent).toContain("Expenses £2450.00");
   });
 });

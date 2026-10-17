@@ -1,5 +1,6 @@
 import { useChartFillHeight } from "@/components/chart-card";
 import { ChartLegend } from "@/components/chart-legend";
+import { ChartValues } from "@/components/chart-values";
 import { animatedRenderer, budgieChartTheme } from "@/components/chart-theme";
 import { defineChart, type ChartPoint } from "@tanstack/charts";
 import {
@@ -118,6 +119,7 @@ function buildDefinition(
 
 export function SpendingDonut({ slices, total, formatAmount }: Props) {
   const fillHeight = useChartFillHeight();
+  const totalAmount = slices.reduce((sum, slice) => sum + slice.amount, 0);
   const legendItems = slices.map((slice) => ({
     label: slice.name,
     color: slice.fill,
@@ -141,6 +143,23 @@ export function SpendingDonut({ slices, total, formatAmount }: Props) {
         ariaLabel="Spending by category"
       />
       {fillHeight ? null : <ChartLegend items={legendItems} />}
+      {fillHeight ? null : (
+        <div className="w-full">
+          <ChartValues
+            title="Spending by category"
+            rows={slices.map((slice) => ({
+              label: slice.name,
+              values: [
+                { value: formatAmount(slice.amount), color: slice.fill },
+                {
+                  name: "of total",
+                  value: `${totalAmount > 0 ? Math.round((slice.amount / totalAmount) * 100) : 0}%`,
+                },
+              ],
+            }))}
+          />
+        </div>
+      )}
     </div>
   );
 }

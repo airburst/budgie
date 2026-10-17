@@ -59,8 +59,14 @@ export function DateRangeSelect({ value, onChange }: Props) {
       value={value}
       onValueChange={(val) => val && onChange(computeRange(val))}
     >
-      <SelectTrigger size="sm">
-        <SelectValue />
+      <SelectTrigger
+        size="sm"
+        aria-label="Date range"
+        className="min-h-11 md:min-h-0"
+      >
+        <SelectValue>
+          {PRESETS.find((p) => p.value === value)?.label ?? value}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {PRESETS.map((p) => (

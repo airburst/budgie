@@ -2,7 +2,7 @@ import {
   NetWorthChart,
   type NetWorthPoint,
 } from "@/pages/Reports/NetWorthChart";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 const data: NetWorthPoint[] = [
@@ -43,5 +43,15 @@ describe("NetWorthChart", () => {
   it("renders without throwing on empty data", () => {
     const { container } = renderChart([]);
     expect(container.querySelector("svg")).not.toBeNull();
+  });
+
+  it("offers the plotted values as text behind a Show values control", () => {
+    renderChart();
+    expect(screen.queryByText("£19250.00")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /show values/i }));
+    const list = screen.getByRole("list", { name: "Net worth values" });
+    expect(list.textContent).toContain("M02");
+    expect(list.textContent).toContain("£19250.00");
+    expect(screen.getAllByRole("listitem")).toHaveLength(data.length);
   });
 });
