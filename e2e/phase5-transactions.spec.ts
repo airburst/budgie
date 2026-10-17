@@ -153,6 +153,20 @@ test.describe("desktop", () => {
       );
     expect(Math.max(...edges) - Math.min(...edges)).toBeLessThanOrEqual(1);
 
+    // Single-row desktop cards centre their contents vertically.
+    const offsets = await cards(page).evaluateAll((els) =>
+      els.map((card) => {
+        const box = card.getBoundingClientRect();
+        const amount = card
+          .querySelector('[data-slot="transaction-amount"]')!
+          .getBoundingClientRect();
+        return Math.abs(
+          amount.top + amount.height / 2 - (box.top + box.height / 2),
+        );
+      }),
+    );
+    expect(Math.max(...offsets)).toBeLessThanOrEqual(1);
+
     // Direct desktop actions remain visible instead of collapsing into More.
     await expect(
       page.getByRole("button", { name: "Reconcile", exact: true }),

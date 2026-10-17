@@ -160,7 +160,7 @@ function TransactionCard({
     <li
       data-slot="transaction-card"
       className={cn(
-        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 has-[button:focus-visible]:ring-2 has-[button:focus-visible]:ring-ring",
+        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 lg:items-center has-[button:focus-visible]:ring-2 has-[button:focus-visible]:ring-ring",
         isReconciled && "opacity-60",
       )}
     >
