@@ -642,3 +642,17 @@ covering phone card-tap-vs-cleared-tap, the More menu, the Filter popover
 summary, 320px overflow, and desktop amount alignment, direct buttons, the
 details dialog and the pencil edit. `e2e/phase5-overlay.spec.ts` was updated
 to target the new card button and details dialog instead of table cells.
+
+### Shared destructive confirmation (pre-5E–5H)
+
+`ConfirmDialog` (`src/components/ConfirmDialog.tsx`) is now built on
+`ResponsiveOverlay`: a bottom drawer on phones and the centered dialog from
+`md`. Props are unchanged, so every existing caller got the phone treatment.
+Cancel takes initial focus at every width (Enter never confirms; no keyboard
+opens), and dismissal (swipe, Escape, backdrop) is a Cancel. It remains the
+accepted nested-confirmation exception from 5B. Slices 5E–5H **reuse it for all
+delete/discard/replace confirmations — do not add new confirmation components**.
+Because the nested confirm is also a `drawer-popup`, e2e selectors for the
+parent drawer must exclude `[data-nested]`.
+Coverage: `ConfirmDialog.test.tsx` (phone and desktop) and the existing 5B–5D
+e2e specs.

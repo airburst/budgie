@@ -30,7 +30,9 @@ async function seedTransaction(page: Page) {
   });
 }
 
-const drawer = (page: Page) => page.locator('[data-slot="drawer-popup"]');
+// Top-level drawer only: the nested discard confirmation is also a drawer.
+const drawer = (page: Page) =>
+  page.locator('[data-slot="drawer-popup"]:not([data-nested])');
 
 test("phone: details drawer, explicit edit, dirty guard and save", async ({
   page,
