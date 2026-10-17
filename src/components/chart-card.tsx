@@ -76,6 +76,7 @@ export function ChartCard({ title, badge, children }: Props) {
           <Button
             variant="ghost"
             size="icon-sm"
+            aria-label={`Close ${title} full screen`}
             onClick={() => setMaximised(false)}
           >
             <X className="size-4" />
@@ -84,6 +85,7 @@ export function ChartCard({ title, badge, children }: Props) {
           <Button
             variant="ghost"
             size="icon-sm"
+            aria-label={`View ${title} full screen`}
             onClick={() => setMaximised(true)}
           >
             <Maximize2 className="size-4" />

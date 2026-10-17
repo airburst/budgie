@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full overflow-y-auto p-4 max-w-2xl mx-auto">
+      <div className="mx-auto flex min-w-0 max-w-2xl flex-col p-4">
         <div className="flex items-center gap-3 mb-6">
           <Button
             variant="ghost"
@@ -148,10 +148,10 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="general">
-          <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-            <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
+          <TabsList className="group-data-horizontal/tabs:h-auto md:group-data-horizontal/tabs:h-8">
+            <TabsTrigger value="general" className="min-h-11 md:min-h-0">General</TabsTrigger>
+            <TabsTrigger value="advanced" className="min-h-11 md:min-h-0">Advanced</TabsTrigger>
+            <TabsTrigger value="shortcuts" className="min-h-11 md:min-h-0">Shortcuts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -161,7 +161,11 @@ export default function SettingsPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Appearance
                 </p>
-                <div className="flex items-center justify-between">
+                <div
+                  role="group"
+                  aria-label="Theme"
+                  className="flex flex-wrap items-center justify-between gap-2"
+                >
                   <Label>Theme</Label>
                   <ButtonGroup>
                     <Button
@@ -200,7 +204,7 @@ export default function SettingsPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Startup
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label htmlFor="startup-page">Open on launch</Label>
                   <Select
                     value={startupPage}
@@ -208,7 +212,7 @@ export default function SettingsPage() {
                       savePreference({ startupPage: v as string })
                     }
                   >
-                    <SelectTrigger id="startup-page" className="w-48">
+                    <SelectTrigger id="startup-page" className="w-48 max-w-full">
                       <SelectValue>{startupPageLabel}</SelectValue>
                     </SelectTrigger>
                     <SelectContent align="end">
@@ -242,7 +246,7 @@ export default function SettingsPage() {
 
               {/* Transactions */}
               <div className="rounded-md border border-border p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
                     id="autofill"
                     type="checkbox"
@@ -250,16 +254,16 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       savePreference({ autofillPayees: e.target.checked })
                     }
-                    className="cursor-pointer"
+                    className="size-5 shrink-0 cursor-pointer accent-blue-500"
                   />
                   <Label
                     htmlFor="autofill"
-                    className="cursor-pointer font-normal"
+                    className="min-h-11 flex-1 cursor-pointer font-normal md:min-h-0"
                   >
                     Automatically fill transaction details
                   </Label>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 ml-5">
+                <p className="text-xs text-muted-foreground mt-1 ml-8">
                   When enabled, selecting a payee will auto-fill category and
                   amount. Payee autocomplete is always available.
                 </p>
@@ -284,12 +288,13 @@ export default function SettingsPage() {
                           value={backupFolder}
                           onChange={(e) => setBackupFolder(e.target.value)}
                           onBlur={handleBackupFolderBlur}
-                          className="flex-1"
+                          className="min-w-0 flex-1"
                         />
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={handleBrowseBackup}
+                          aria-label="Browse for backup folder"
                         >
                           <FolderOpen className="size-4" />
                         </Button>
@@ -326,12 +331,13 @@ export default function SettingsPage() {
                           id="data-folder"
                           value={dataFolder}
                           readOnly
-                          className="flex-1"
+                          className="min-w-0 flex-1"
                         />
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={handleBrowseData}
+                          aria-label="Browse for data folder"
                         >
                           <FolderOpen className="size-4" />
                         </Button>

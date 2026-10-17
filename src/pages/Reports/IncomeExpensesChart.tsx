@@ -1,5 +1,6 @@
 import { useChartFillHeight } from "@/components/chart-card";
 import { ChartLegend, useMeasuredHeight } from "@/components/chart-legend";
+import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
   budgieChartTheme,
@@ -118,6 +119,18 @@ export function IncomeExpensesChart(props: Props) {
           ariaLabel="Income versus expenses by month"
         />
         <ChartLegend items={legendItems} />
+        <div className="w-full">
+          <ChartValues
+            title="Income versus expenses"
+            rows={props.data.map((point) => ({
+              label: props.formatMonth(point.month),
+              values: [
+                { name: "Income", value: props.formatAmount(point.income) },
+                { name: "Expenses", value: props.formatAmount(point.expenses) },
+              ],
+            }))}
+          />
+        </div>
       </div>
     );
   }

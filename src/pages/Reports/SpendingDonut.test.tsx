@@ -2,7 +2,7 @@ import {
   SpendingDonut,
   type SpendingSlice,
 } from "@/pages/Reports/SpendingDonut";
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 const slices: SpendingSlice[] = [
@@ -44,5 +44,16 @@ describe("SpendingDonut", () => {
   it("renders without throwing when there is nothing to show", () => {
     const { container } = renderDonut([]);
     expect(container.querySelector("svg")).not.toBeNull();
+  });
+
+  it("offers each category amount and share as text behind Show values", () => {
+    renderDonut();
+    fireEvent.click(screen.getByRole("button", { name: /show values/i }));
+    const list = screen.getByRole("list", {
+      name: "Spending by category values",
+    });
+    expect(list.textContent).toContain("Groceries");
+    expect(list.textContent).toContain("£420.50");
+    expect(list.textContent).toContain("60%");
   });
 });

@@ -1,6 +1,6 @@
 # Phase 5: mobile-first UX proposal
 
-Status: **design direction accepted; implement and review incrementally**
+Status: **Phase 5 implementation complete (5A-5I); pending manual device gates**
 
 Date: 2026-10-17
 
@@ -878,3 +878,86 @@ Save/Cancel without blur-save, Move money drawer, envelope editor and delete
 confirm; 320px overflow with long names; tablet; desktop alignment, inline edit,
 keyboard and mouse-handle reorder). Real touch-drag on a physical phone and
 on-device keyboard behaviour remain manual checks.
+
+### 5I outcome: forecast, reports, settings
+
+- **Forecast (`/forecast/:id`):** chart, end-date picker and the explicit
+  Refresh (which still resets all inclusions) are unchanged. The table became a
+  `ul`/`li` subgrid card list (phone: check / payee + "Included" or "Excluded
+  from forecast" text / signed amount, then date · "Scheduled", then projected
+  balance and a separate Details button; `lg`: check / date / payee / category /
+  amount / balance / Details with an `aria-hidden` caption row). Each card is one
+  native checkbox with a card-wide `<label>` (stretched pseudo-element), so a tap
+  toggles exactly once; Details is a sibling `z-10` button and never toggles.
+  Excluded cards show "—" for the balance in text. Scheduled rows stay italic
+  and are also labelled "Scheduled". Details (`ForecastDetails`) is a read-only
+  `ResponsiveOverlay` with the full date, amount, balance, status, source,
+  category and memo; Close takes initial focus (no keyboard). Toggling or opening
+  details never edits the real transaction or schedule.
+  - **Layout:** the nested `overflow-y-auto` scroller and the fixed footer were
+    removed. The page is one scroll surface (the main region) and the controls
+    (Help, end date, Refresh) are a `sticky bottom-0` bar at the end of the
+    content, so they reserve real layout space, wrap if needed instead of forcing
+    width, use `env(safe-area-inset-bottom)`, and never stack with another fixed
+    footer. Short landscape (844x390) keeps one row of about 56px.
+  - **Help:** `ForecastHelp` is a content-sized information drawer on phones and
+    the dialog from `md` (copy updated for tapping a card and Details).
+- **Reports (`/reports`):** padding is 16px on phones. The date-range and account
+  controls wrap under the heading (a labelled `group`) with 44px phone targets;
+  the date select now shows "Last 90 Days" rather than the raw "90". Charts stack
+  at base width and keep the existing `md` two-column composition. Every chart
+  gets a **Show values** disclosure (`ChartValues`, a shadcn Collapsible) listing
+  the plotted numbers as text (category amount and share, income and expenses per
+  month, net worth per month), so nothing depends on hover or the chart tooltip.
+  The Net Worth chart's 22px axis labels now apply only to the maximised card
+  (they made the phone chart unreadable); the maximise buttons got accessible
+  names. Chart engine, `chart-theme.ts` and the smoke tests are unchanged.
+- **Settings:** reviewed at 320px. The nested scroller was removed (one page
+  scroller), tabs are 44px on phones, Theme/Open-on-launch rows wrap, the
+  autofill row is a 44px target, and the native folder browse buttons are
+  labelled. Native backup/restore/folder settings stay capability-gated (absent
+  on web), portable import/export from 5E is untouched and no web QIF action was
+  added. **About** (`AboutDialog`) is a content-sized information drawer on
+  phones (Close focused) and the dialog from `md`.
+- **Focus restoration:** Chromium already returned focus to the opener after
+  menu-opened forms (account, category, payee, envelope) were cancelled or saved,
+  so no per-form wiring was needed. The remaining gap was an opener that no
+  longer exists (e.g. a deleted card), which dropped focus to `<body>`.
+  `ResponsiveOverlay` now moves focus to the page `h1` when an overlay finishes
+  closing and nothing holds focus. Covered by `responsive-overlay.test.tsx`.
+
+**Final overlay inventory audit** (outside `src/components/ui`): every form,
+details, confirmation and information surface now goes through
+`ResponsiveOverlay` or `ConfirmDialog`; no screen imports `Dialog`,
+`AlertDialog` or `Drawer` directly. Intentional exceptions:
+
+| Surface | Why it stays |
+| --- | --- |
+| Header navigation `Sheet` (5A) | Global navigation is a sheet by design; not a form. |
+| Account chooser, transaction filter and scheduled account filter popovers, `DatePicker` popover | Plan inventory keeps Base UI popover/menu/combobox for choosers (a drawer on phones for the account chooser per 5C); no form data. |
+| `DropdownMenu` actions | Menus, not overlays that hold forms. |
+| `ChartCard` maximised view | A bespoke full-screen chart view (portal, Escape, labelled buttons), not a dialog or form. It could move to an expanded `ResponsiveOverlay` later if a focus trap is wanted. |
+
+Automated coverage: `ForecastPage.test.tsx` (future rows only, signed amounts,
+projected balances, scheduled label, single toggle from label and checkbox,
+exclusion recalculating later balances, Details without toggling, Refresh reset,
+help drawer and dialog), `chart-values.test.tsx` and the three chart tests
+(values lists), `AboutDialog.test.tsx` (phone and desktop), and
+`responsive-overlay.test.tsx` (menu opener focus, removed-opener fallback,
+no focus theft on mount), plus `e2e/phase5-forecast.spec.ts` (390 toggle-once with
+no change to real transactions, Details drawer with the full memo and no
+keyboard, Refresh reset, single scroller and sticky controls with 44px targets,
+last card above the bar, help drawer, 320px overflow and compact controls with a
+long payee and huge amount, 844x390 landscape, desktop column alignment and
+dialogs), `e2e/phase5-reports.spec.ts` (controls under heading, 44px targets,
+stacked cards, tap and keyboard values, 320px overflow, desktop two-column) and
+`e2e/phase5-settings.spec.ts` (320px tabs/targets, web hides native and QIF
+actions, single scroller, About drawer and dialog). `phase5-shell.spec.ts` now
+expects the About drawer on phones. Chromium only.
+
+**Remaining manual gates:** real iOS Safari and Android Chrome checks of the
+sticky Forecast bar (safe area, browser toolbar changes, blank inset below the
+bar at the end of the scroll), the Details/Help/About drawers and the Reports
+disclosures; Electron smoke (Settings tabs, About, backup/restore); touch drag
+reorder from 5H; WebKit automation (cannot run here). With these, Phase 5
+implementation is complete pending manual device gates.
