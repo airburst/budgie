@@ -22,13 +22,13 @@ export function SearchBox({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-input bg-transparent py-2 pl-9 pr-9 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        className="min-h-11 w-full rounded-md border border-input bg-transparent py-2 pl-9 pr-11 text-base md:min-h-0 md:pr-9 md:text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange("")}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+          className="absolute right-0 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground md:right-2 md:size-auto md:p-0.5"
           aria-label="Clear search"
         >
           <XIcon className="size-4" />
