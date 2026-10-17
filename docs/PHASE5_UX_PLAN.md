@@ -656,3 +656,53 @@ Because the nested confirm is also a `drawer-popup`, e2e selectors for the
 parent drawer must exclude `[data-nested]`.
 Coverage: `ConfirmDialog.test.tsx` (phone and desktop) and the existing 5B–5D
 e2e specs.
+
+### 5E outcome: transfer
+
+- **QIF review (`ImportDialog`):** now a `ResponsiveOverlay`. On phones it is an
+  expanded drawer (title takes initial focus, no keyboard) whose body lists each
+  parsed transaction as a whole-card `label` with a 44px+ checkbox target, payee
+  (truncating), signed amount, date and a text status badge (New / Duplicate /
+  Out of range). From `md` it is the existing wide dialog and review table.
+  Matching, default selection and the created-transaction payload are unchanged.
+  Added the 5B-5D behaviours: a changed selection asks "Discard import?" via the
+  shared `ConfirmDialog` (clean reviews close at once), dismissal is ignored while
+  importing, a ref guard prevents double submit, and a failure keeps the dialog
+  open with a `role="alert"` message ("Import stopped after N of M: ...") instead
+  of an unhandled rejection.
+- **Capability visibility:** added a `qifImport` platform capability (Electron
+  only; the web adapter has no file picker). The Import button and More-menu item
+  on `/accounts/:id` are now hidden where it is false, so web no longer offers an
+  enabled-but-unsupported action (this is a small edit in `AccountTransactions`).
+  No web QIF support was added. Backup/Restore stay gated by `filesystemBackups`.
+- **Native `BackupDialog` / `RestoreDialog`:** drawers on phones, dialogs from
+  `md`, still Electron-only. Backup: labelled folder-browse button, double-tap
+  guard, folder-load errors shown, dismissal blocked while a backup runs. Restore:
+  backups are real `button`s (`aria-pressed`, 44px, name above metadata on phones,
+  keyboard operable), the empty state is unchanged, and the destructive
+  "Restore this backup?" confirmation reuses `ConfirmDialog` with its warning
+  text unchanged. A failed restore now keeps the dialog and selection and shows
+  an inline alert.
+- **Portable import (`DataTransferSection`):** the "Replace local data?" confirmation
+  is the shared `ConfirmDialog` (bottom drawer on phones, Cancel focused) with the
+  description and "Importing replaces all local data" copy unchanged. Phone buttons
+  stack full width; status is `role="status"` / `role="alert"`; errors and file
+  names wrap at 320px. Export/import flow, reload-on-success and failure behaviour
+  are unchanged. `SettingsPage.tsx` is untouched.
+
+Automated coverage: `ImportDialog.test.tsx` (phone drawer/desktop table, cards,
+discard, midway failure, double tap, type mismatch), `DataTransferSection.test.tsx`,
+`NativeBackupDialogs.test.tsx` (phone and desktop, double tap, failure retention,
+warnings), an `AccountTransactions` test for the hidden Import action, and
+`platform.unit.test.ts`. `e2e/phase5-transfer.spec.ts` (Chromium) covers, on the
+real web runtime, the bottom replacement confirmation (all warnings, Cancel
+focused, 44px targets), failed import preserving data, Backup/Restore/Import not
+offered, 320px overflow and the unchanged desktop dialog; and, with a synthetic
+Electron `window.api` stub, the expanded QIF drawer, discard confirmation,
+backup/restore drawers with restore failure retention, 320px overflow and the
+desktop table/dialog. `e2e/phase5-transactions.spec.ts` now asserts Import is
+absent on web.
+
+**Manual gates left:** real Electron compact-window check of QIF review and
+native backup/restore (the e2e uses a stub), and iOS Safari keyboard/safe-area
+checks of the folder input and review drawer (WebKit automation cannot run).

@@ -3,6 +3,7 @@ export type PlatformTarget = "electron" | "web";
 export type PlatformCapabilities = {
   nativeUpdates: boolean;
   filesystemBackups: boolean;
+  qifImport: boolean;
   pwaInstallation: boolean;
   persistentBrowserStorage: boolean;
   touchInput: boolean;
@@ -28,6 +29,8 @@ export const createPlatform = (environment: PlatformEnvironment): Platform => {
     capabilities: {
       nativeUpdates: target === "electron",
       filesystemBackups: target === "electron",
+      // QIF import needs a native file picker; the web adapter has none.
+      qifImport: target === "electron",
       pwaInstallation: environment.pwaInstallation,
       persistentBrowserStorage: environment.persistentStorage,
       touchInput: environment.touch,

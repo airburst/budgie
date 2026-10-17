@@ -92,6 +92,7 @@ test.describe("phone", () => {
     await expect(menu.getByText("Reconcile")).toBeVisible();
     await expect(menu.getByText("Forecast")).toBeVisible();
     await expect(menu.getByText("Edit account")).toBeVisible();
+    await expect(menu.getByText("Import", { exact: true })).toHaveCount(0);
   });
 
   test("Filter popover toggles hide cleared and updates the summary", async ({
@@ -159,9 +160,10 @@ test.describe("desktop", () => {
     await expect(
       page.getByRole("button", { name: "Forecast", exact: true }),
     ).toBeVisible();
+    // Web has no QIF file picker, so Import is not offered (see 5E).
     await expect(
       page.getByRole("button", { name: "Import", exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "More actions", exact: true }),
     ).toBeHidden();
