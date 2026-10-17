@@ -230,6 +230,20 @@ test.describe("desktop", () => {
       );
     expect(Math.max(...edges) - Math.min(...edges)).toBeLessThanOrEqual(1);
 
+    // Single-row desktop cards centre their contents vertically.
+    const offsets = await cards(page).evaluateAll((els) =>
+      els.map((card) => {
+        const box = card.getBoundingClientRect();
+        const amount = card
+          .querySelector('[data-slot="reconcile-amount"]')!
+          .getBoundingClientRect();
+        return Math.abs(
+          amount.top + amount.height / 2 - (box.top + box.height / 2),
+        );
+      }),
+    );
+    expect(Math.max(...offsets)).toBeLessThanOrEqual(1);
+
     const tiles = page.locator(
       '[data-slot="reconcile-summary"] > div:visible',
     );
