@@ -656,3 +656,50 @@ Because the nested confirm is also a `drawer-popup`, e2e selectors for the
 parent drawer must exclude `[data-nested]`.
 Coverage: `ConfirmDialog.test.tsx` (phone and desktop) and the existing 5B–5D
 e2e specs.
+
+### 5H outcome: budget
+
+- **Phone order:** title (sr-only; the header shows it), month selector on its
+  own row (44px prev/next with labels), an "Available to budget" summary card
+  with a text state (over-assigned / fully assigned / amount to assign),
+  primary **Add envelope** and **Move money**, then envelope cards. **Fill from
+  last month** sits in a **More actions** menu below `lg` and is a direct button
+  at `lg`+. It now opens a `ConfirmDialog` and reports the result inline
+  ("Filled N envelopes…" / "Nothing to fill…"); the quick-fill semantics (only
+  envelopes with no allocation this month are filled) are unchanged.
+- **Envelope cards:** `EnvelopeRow` is a `li` on a parent subgrid. Phones show
+  name + Available, categories as text (the hover tooltip is gone), a
+  full-width progress bar, then Assigned / Spent, a ••• menu and the drag
+  handle. `lg`+ shows aligned columns (Envelope, Assigned, Progress, Spent,
+  Available, actions) with a caption row. Names wrap; negatives keep their
+  sign (`-£30.00`); "Underfunded" is text, not just an icon.
+- **Assigned amount:** only the explicit value button (44px) starts editing,
+  never the card. Phones get an inline editor with **Save** / **Cancel**, no
+  autofocus and no blur-save; empty input shows an inline error; failed saves
+  keep the editor with the draft; double submit is guarded. Desktop keeps the
+  inline input (autofocus, Enter/blur saves, Escape cancels).
+- **Reordering:** drag stays on the dedicated handle (pointer sensor with a
+  4px activation distance, plus a keyboard sensor). The ••• menu adds **Move up**
+  / **Move down**, disabled at the ends. Drag, keyboard drag and the menu all
+  go through one `persistOrder`, sending `{id, sortOrder: index}` for every
+  envelope to the same `reorder` mutation. A failed save reverts and shows an
+  alert; each move is announced in a polite live region.
+- **Overlays:** `EnvelopeFormDialog` and `MoveMoneyDialog` are now controlled
+  `ResponsiveOverlay`s owned by `BudgetPage` (no embedded triggers). The envelope
+  editor is expanded, keeps every category mapping (including "(mapped)"
+  disabling) and the existing save sequence. Move money is a short drawer with
+  From / To (shadcn Select) / Amount / Notes. Both follow the 5B rules: no phone
+  autofocus, dirty discard via `ConfirmDialog`, ignored dismissal while saving,
+  double-submit guard and inline errors. Delete is a nested `ConfirmDialog`
+  (Cancel focused). The onboarding "Create from scratch" opens the page's form;
+  applying a template is guarded against double taps.
+- **Unchanged:** allocation, transfer, create/update/delete/reorder payloads
+  and arithmetic. New envelopes still get `sortOrder: 0`.
+
+Automated coverage: `BudgetPage`, `EnvelopeRow`, `EnvelopeFormDialog` and
+`MoveMoneyDialog` tests, plus `e2e/phase5-budget.spec.ts` (phone 390: order,
+44px targets, Fill confirmation, menu reorder persisting across reload, amount
+Save/Cancel without blur-save, Move money drawer, envelope editor and delete
+confirm; 320px overflow with long names; tablet; desktop alignment, inline edit,
+keyboard and mouse-handle reorder). Real touch-drag on a physical phone and
+on-device keyboard behaviour remain manual checks.
