@@ -656,3 +656,72 @@ Because the nested confirm is also a `drawer-popup`, e2e selectors for the
 parent drawer must exclude `[data-nested]`.
 Coverage: `ConfirmDialog.test.tsx` (phone and desktop) and the existing 5B–5D
 e2e specs.
+
+### 5G outcome: scheduled
+
+- **Page (`/scheduled`):** phones show title/Add, an account filter, the
+  compact summary, a collapsed **Show calendar** disclosure, an explicit
+  **Sort: Next due** menu, then the card list. The disclosure is collapsed on
+  every entry; its open state is plain page state, not a preference. From `lg`
+  the sidebar-style panel (calendar, summary) and the aligned cards return.
+  The two arrangements are chosen with a new `useMinWidth(1024)` hook so each
+  component renders once (no duplicated summary/calendar in the DOM).
+- **Account scope (D8):** one filter drives list, summary and calendar (they
+  previously ignored it for summary/calendar). It is labelled in text: "All
+  accounts", the account name, or "N accounts". The page now stores the
+  _excluded_ accounts, so a refetch (e.g. after recording a payment) no longer
+  resets the filter. Empty ("No subscriptions yet." + Add) and filter-empty
+  ("No subscriptions for {scope}." + Show all accounts) states differ.
+- **Summary:** "Due in next 7 days" keeps the inclusive window, active-only
+  rule and count, but shows **Income** (sum of positive) and **Outgoing**
+  (absolute sum of negative) separately, never netted, with `£0.00` shown
+  explicitly for an empty side. Logic lives in `summarizeDueSoon`
+  (`scheduled-display.ts`) with fixed-time tests for mixed, one-sided, zero,
+  paused, window-edge and filtered fixtures.
+- **Calendar:** now the registry `Calendar` in non-interactive mode (no day
+  buttons, so no date-to-filter interaction). Dots are a modifier on active
+  schedules' next due dates and are labelled for assistive tech ("payment
+  due"). Nav buttons are 44px below `lg`.
+- **`ScheduledTable` → `ScheduledList`:** TanStack sorting state, sorted row
+  model and the null-last date sort are unchanged; only rendering changed to
+  `ul`/`li` subgrid cards. Phone: payee + signed amount, then one wrapping line
+  of next due · recurrence · account (plus Paused / Auto-post as text), then
+  **Record payment** and separate 44px Edit/Delete buttons. `lg`: due / payee /
+  amount / frequency / account / actions in shared tracks, `tabular-nums`,
+  right-aligned amounts. Each value is rendered once and moved with grid
+  placement. A stretched button over the payee opens read-only details at every
+  width; the actions are sibling controls above it. Delete uses the shared
+  `ConfirmDialog` and names the subscription.
+- **Sort:** the menu offers date, payee, amount and account in both
+  directions (radio items that close on selection) at every width; desktop
+  clickable column headers were dropped in favour of this single control
+  (captions are an `aria-hidden` visual aid).
+- **Overlays:** `ScheduledPaymentDialog` is now one `ResponsiveOverlay` with
+  details and edit states (like 5B/5D). Card tap opens read-only **details**
+  (Close / Edit / Record payment); Add and the pencil open the **expanded**
+  editor directly. The editor has the 5B dismissal rules (dirty-draft discard
+  via `ConfirmDialog`, Cancel returns to details, dismissal ignored while
+  saving), a double-submit guard, inline field errors instead of a silently
+  disabled Save, a `role="alert"` save error, no phone autofocus and
+  single-column fields below `sm`. Recurrence controls got 44px phone targets
+  and wrap at 320px. `RecordPaymentDialog` starts on phones in a read-only
+  **confirmation** (payee, signed amount, date, account, category) with
+  Record payment / Change amount / Skip / Cancel; **Change amount** switches to
+  the expanded editable form with the same discard rule. Desktop still opens the
+  editable dialog directly. Recording, skipping and failure handling reuse the
+  existing amount/next-due logic, now with a ref guard and a visible error that
+  keeps the surface open. A last-occurrence note warns that recording or
+  skipping a one-off removes the schedule (existing behaviour, now stated).
+- **Removed on purpose:** the double-click-to-focus-amount shortcut, and the
+  Edit/Delete buttons inside the Record payment dialog (the card and details
+  carry them), so nothing money-related hides behind a hover or double-click.
+  `FrequencyBadge` is reused on cards.
+
+Automated coverage: `scheduled-display`, `ScheduledSummaryCard`,
+`ScheduledList` (all eight sort orders), `ScheduledTransactions` (disclosure,
+ordering, shared filter across list/summary/calendar, empty vs filter-empty,
+card tap vs explicit record), `ScheduledPaymentForm` and `RecordPaymentDialog`
+unit tests, plus `e2e/phase5-scheduled.spec.ts` (390px phone, 320px overflow
+including the editor drawer, 1280px desktop: totals, filter, calendar
+disclosure, sort, 44px targets, aligned columns, record only via the explicit
+action). Chromium only; physical-device keyboard checks remain a manual gate.

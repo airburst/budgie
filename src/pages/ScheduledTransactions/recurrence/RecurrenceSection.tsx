@@ -58,7 +58,7 @@ export function RecurrenceSection({
   return (
     <div className="flex flex-col gap-3">
       {showOccurrence ? (
-        <div className="grid grid-cols-[1fr_3fr] gap-3 items-start">
+        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-[1fr_3fr]">
           <div className="flex flex-col gap-1.5">
             <Label>Occurrence</Label>
             <Select
@@ -78,7 +78,9 @@ export function RecurrenceSection({
             </Select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label className="invisible select-none">Days</Label>
+            <Label className="invisible hidden select-none sm:block">
+              Days
+            </Label>
             <div className="flex items-start">{segment}</div>
           </div>
         </div>
@@ -89,7 +91,7 @@ export function RecurrenceSection({
       {config.frequency !== "Once" && (
         <div className="flex flex-col gap-2">
           <Label>End Condition</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {(
               [
                 ["never", "Never"],
@@ -101,7 +103,7 @@ export function RecurrenceSection({
                 key={val}
                 type="button"
                 onClick={() => set({ endCondition: val })}
-                className={`flex-1 py-1.5 text-xs font-medium rounded-md border transition-colors ${
+                className={`min-h-11 flex-1 px-2 py-1.5 text-xs sm:min-h-0 font-medium rounded-md border transition-colors ${
                   config.endCondition === val
                     ? "bg-primary text-primary-foreground border-primary"
                     : "border-border bg-background text-foreground hover:bg-muted"
