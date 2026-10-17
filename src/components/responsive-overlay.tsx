@@ -200,7 +200,10 @@ function ResponsiveOverlayFooter({
   return compact ? (
     <DrawerFooter
       className={cn(
-        "grid auto-cols-fr grid-flow-col border-t pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]",
+        // VirtualKeyboardProvider publishes the software-keyboard height on the
+        // drawer viewport; lifting the footer by it keeps Save reachable while
+        // typing, and the scrolling body shrinks to make room.
+        "mb-(--drawer-keyboard-inset,0px) grid auto-cols-fr grid-flow-col border-t pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]",
         className,
       )}
       {...props}

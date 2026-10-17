@@ -73,6 +73,22 @@ test("phone: details drawer, explicit edit, dirty guard and save", async ({
   expect(saveBox!.y + saveBox!.height).toBeLessThanOrEqual(844);
   expect(saveBox!.height).toBeGreaterThanOrEqual(44);
 
+  // A software keyboard (simulated via the inset Base UI publishes) lifts the
+  // footer so Save stays tappable above it.
+  const viewport = page.locator('[data-slot="drawer-viewport"]');
+  await viewport.evaluate((el) =>
+    el.style.setProperty("--drawer-keyboard-inset", "300px"),
+  );
+  await expect
+    .poll(async () => {
+      const box = await save.boundingBox();
+      return box ? box.y + box.height : 999;
+    })
+    .toBeLessThanOrEqual(844 - 300);
+  await viewport.evaluate((el) =>
+    el.style.removeProperty("--drawer-keyboard-inset"),
+  );
+
   // Date picker portal stacks above the drawer and is interactive.
   await drawer(page)
     .getByRole("button", { name: /\d{2}\/\d{2}\/\d{4}/ })
