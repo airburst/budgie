@@ -706,3 +706,59 @@ absent on web.
 **Manual gates left:** real Electron compact-window check of QIF review and
 native backup/restore (the e2e uses a stub), and iOS Safari keyboard/safe-area
 checks of the folder input and review drawer (WebKit automation cannot run).
+
+### 5F outcome: reconcile + directories
+
+- **Reconcile `/reconcile/:id`:** the table became a `ul`/`li` subgrid card
+  list (phone: check / payee / amount, then date · category and Edit; `lg`: check /
+  date / payee / category / amount / Edit with an `aria-hidden` caption row;
+  amounts `tabular-nums` and right aligned). The summary is two-by-two on
+  phones and one row from `lg`; Difference also says "Balanced" / "Not
+  balanced" in text. Each card is one native checkbox with a card-wide
+  `<label>` (stretched pseudo-element), so a tap toggles exactly once with no
+  bubbling; a selected card shows a check, "Selected" text and a border, never
+  colour alone. Edit is a separate sibling button (`z-10`) that opens the
+  existing `TransactionForm` editor and never toggles. The `lg` double-click
+  shortcut to edit is kept (ignored on buttons).
+  - The fixed task bar now shows "N selected", Difference, Cancel and Finish.
+    The page reserves its height plus `env(safe-area-inset-bottom)` so the last
+    card scrolls clear, and the inner `h-full overflow-y-auto` scroller was
+    removed (one scroll owner).
+  - **Unchanged:** auto-match and its banner, Auto Balance and Add Transaction,
+    the persisted cleared toggle, the balanced-only Finish with the pending
+    mutation guard, the Enter/Escape/`n` hotkeys, and the `TransactionForm`
+    props.
+- **Categories:** the table is a flat `ul` of subgrid cards. Children follow
+  their parent with a `ml-4` indent (`lg:ml-8`) and a left accent border;
+  because the right-hand tracks are shared, actions and the type column stay
+  aligned. Parent context is visible text ("Sub-category of X", "N
+  sub-categories"). Tapping a card opens read-only details (type, parent,
+  sub-categories) with an explicit Edit. Below `lg`, a 44px ••• menu holds
+  Add sub-category (parents only), Edit and Delete; at `lg` they are direct
+  labelled icon buttons. Delete stays disabled for a parent with children and
+  says why. Delete uses `ConfirmDialog`.
+- **Payees:** cards show name, default category ("No default category" when
+  absent) and a signed default amount. Tap opens read-only details with Edit;
+  ••• menu below `lg`, direct buttons at `lg`; delete uses `ConfirmDialog`.
+- **Forms:** `CategorySheet` (auto height, grows for errors) and `PayeeForm`
+  (expanded) use `ResponsiveOverlay` with the 5C `AccountForm` rules: no
+  phone autofocus, a dirty-draft "Discard changes?" confirmation, dismissal
+  ignored while saving, a double-submit guard and an inline `role="alert"` save
+  error. Payloads are unchanged. A category with a blank name can no longer be
+  created (Save is disabled, as payees already did).
+- **Shared:** `SearchBox` gets a 44px phone input and clear target. The
+  Categories/Payees pages lose their `max-w-3xl` wrapper per the layout contract.
+
+Deviations: Edit from details closes the details surface and opens the
+editor (it does not return to details on Cancel as 5B transactions do), because
+these are two small independent overlays. Wide Reconcile notes show as a line
+under the payee rather than a column.
+
+Automated coverage: `ReconcileCards.test.tsx` (selection toggles once from the
+label and checkbox, Selected text, Edit separate, Finish guard, auto-match,
+pending), `Categories.test.tsx`, `Payees.test.tsx`, `CategoryForm.test.tsx`,
+`PayeeForm.test.tsx`, the unchanged `ReconcilePage.test.tsx`, plus
+`e2e/phase5-reconcile.spec.ts` and `e2e/phase5-directories.spec.ts` (390px
+selection-once with persisted state, 2x2 summary, 44px targets, last card above
+the task bar, 320px no-overflow with long names and amounts, hierarchy, details
+then Edit, confirmed deletes, discard guard, and desktop column alignment).
