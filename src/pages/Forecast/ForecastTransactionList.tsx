@@ -96,7 +96,7 @@ function ForecastCard({
       data-slot="forecast-card"
       data-included={row.included}
       className={cn(
-        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring",
+        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 lg:items-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring",
         row.isScheduled && "italic",
         !row.included && "bg-muted/40 text-muted-foreground",
       )}
@@ -183,7 +183,7 @@ function ForecastCard({
       </p>
 
       {/* Details is an independent sibling above the card-wide label. */}
-      <div className="relative z-10 col-start-3 row-span-2 row-start-2 flex justify-end self-end lg:col-start-7 lg:row-span-1 lg:row-start-1 lg:self-start">
+      <div className="relative z-10 col-start-3 row-span-2 row-start-2 flex justify-end self-end lg:col-start-7 lg:row-span-1 lg:row-start-1 lg:self-center">
         <Button
           variant="ghost"
           size="icon-sm"

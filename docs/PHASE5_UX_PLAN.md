@@ -1,6 +1,6 @@
 # Phase 5: mobile-first UX proposal
 
-Status: **Phase 5 implementation complete (5A-5I); pending manual device gates**
+Status: **Phase 5 implementation complete (5A-5I); manual review recorded below**
 
 Date: 2026-10-17
 
@@ -961,3 +961,28 @@ bar at the end of the scroll), the Details/Help/About drawers and the Reports
 disclosures; Electron smoke (Settings tabs, About, backup/restore); touch drag
 reorder from 5H; WebKit automation (cannot run here). With these, Phase 5
 implementation is complete pending manual device gates.
+
+### Manual review outcome (2026-10-17)
+
+Mark reviewed the merged result by hand:
+
+- **5B overlay pilot:** passed on a physical device before 5C+ reused the overlay.
+- **WebKit / iOS Safari:** gestures and overlays looked good.
+- **Electron:** smoke test passed after the fixes below.
+- **ChartCard maximised view:** works well as it is. The documented exception
+  stands; it is not moved to `ResponsiveOverlay`.
+- **Not recorded:** Android Chrome, the sticky Forecast bar's end-of-scroll safe
+  area inset, and touch-drag reorder on Budget were not separately reported.
+
+Issues found while testing, fixed on `web-platform`:
+
+- **Migration `0013`** (#9): `ADD created_at ... DEFAULT (CURRENT_TIMESTAMP)` on
+  `envelope_categories` fails once the table has rows, so databases with envelope
+  mappings could not start (empty test databases passed). The column is now added
+  plain, existing rows are backfilled, and an insert trigger supplies the default.
+  `migration-upgrade.test.ts` upgrades a populated database to guard this.
+- **Row centring** (#10 and follow-up): transaction, scheduled, forecast and
+  reconcile cards used `items-start`, so at `lg` the text sat a few pixels above
+  the action buttons that set the row height. They now use `lg:items-center`
+  (phone multi-row layouts are unchanged), with a desktop e2e assertion on each
+  that the amount shares the card's vertical centre.

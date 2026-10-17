@@ -447,7 +447,7 @@ function ReconcileCard({
         onEdit({ focusAmount: true });
       }}
       className={cn(
-        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring",
+        "relative col-span-full grid grid-cols-subgrid items-start gap-y-1 rounded-lg border bg-card px-4 py-3 transition-colors hover:bg-accent/50 lg:items-center has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-ring",
         checked && "border-primary bg-primary/10 hover:bg-primary/15",
       )}
     >
