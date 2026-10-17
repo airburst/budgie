@@ -595,3 +595,50 @@ Automated coverage: unit tests for `account-display`, `AccountsList`,
 spec covers tap navigation against the menu, 44px targets, column alignment,
 no overflow at 320px, chooser close and select, the Select portal above the
 drawer, the tablet popover and the desktop sidebar with aligned columns.
+
+### 5D outcome: transactions
+
+- **Header:** `/accounts/:id` now shows "Transactions" with a primary **Add**
+  button and a labelled **Filter** button (a `Popover` holding the existing
+  hide-reconciled/hide-cleared checkboxes, same preference keys). The Filter
+  button's visible text and `aria-label` both summarise the active state (e.g.
+  "Filter · Hiding cleared"), so the state is conveyed in text, not colour
+  alone. Below `lg`, Reconcile/Forecast/Edit account/Import collapse into a
+  single **More actions** `DropdownMenu`; at `lg` and above the direct buttons
+  stay visible and More is hidden. The `f`/`r` hotkeys are unchanged.
+- **`TransactionsTable` → `TransactionsList`:** the table became a `ul`/`li`
+  subgrid card list, following the 5C `AccountsList` pattern. Phones show
+  payee + one signed amount on the first row, then date · category · status
+  text (never colour-only) plus a one-line notes preview and the running
+  balance (only when the transaction isn't reconciled or cleared, matching
+  prior table semantics). `lg` and above expose the same fields as aligned
+  columns (date / payee / category / amount / balance / status / actions)
+  with an `aria-hidden` caption row; amount and balance are `tabular-nums`
+  and right-aligned across every card.
+  - A stretched `<button>` labelled with the payee opens the existing
+    read-only details flow at **every** width (previously phone-only);
+    tapping the card never toggles the cleared control, which is a separate
+    labelled sibling control (`aria-label="Mark {payee} cleared"`, 44px on
+    phones) preserving the exact prior eligibility rules (reconciled rows
+    can't be uncleared; future-dated rows can't be cleared).
+  - Desktop keeps a direct pencil (`aria-label="Edit {payee}"`) that opens
+    edit immediately; reconciled rows show neither edit nor delete, on every
+    width. Delete remains behind the phone ••• menu when there's more than
+    one action, or as a direct icon button at `lg`.
+  - Future-dated transactions get an explicit "Upcoming" divider row (text,
+    replacing the old border-only separator), shown only when the list mixes
+    past and future transactions, matching the previous boundary condition.
+- **Details everywhere:** `TransactionForm`'s `details` mode was already
+  width-agnostic; only `AccountTransactions`'s `onView` handler was
+  phone-gated, so ungating it was a one-line change — at `lg`+,
+  `ResponsiveOverlay` renders the details view in a dialog instead of a
+  drawer.
+
+Automated coverage: `TransactionsList.test.tsx` (card button opens details,
+cleared control doesn't, signed amounts, reconciled rows hide edit/delete,
+notes preview, Upcoming label) and an extended `AccountTransactions.test.tsx`
+(More menu contents, Filter summary text), plus `e2e/phase5-transactions.spec.ts`
+covering phone card-tap-vs-cleared-tap, the More menu, the Filter popover
+summary, 320px overflow, and desktop amount alignment, direct buttons, the
+details dialog and the pencil edit. `e2e/phase5-overlay.spec.ts` was updated
+to target the new card button and details dialog instead of table cells.

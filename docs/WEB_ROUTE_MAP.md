@@ -18,6 +18,12 @@ Phase 5C adds no routes. `/` lists accounts as cards. Tapping a card goes to
 between `/accounts/:id` routes or back to `/`. The accounts sidebar appears
 only at 1024px and above.
 
+Phase 5D adds no routes. `/accounts/:id` renders transactions as cards
+instead of a table, with a Filter popover and a More-actions menu in the
+header. Tapping a card opens the existing read-only details view through
+`ResponsiveOverlay` at every width (previously phone-only); the dialog
+variant now serves desktop details as well as edit.
+
 ```mermaid
 flowchart TD
   App --> Router[HashRouter + Layout]

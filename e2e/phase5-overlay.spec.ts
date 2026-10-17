@@ -39,7 +39,7 @@ test("phone: details drawer, explicit edit, dirty guard and save", async ({
   const accountId = await seedTransaction(page);
   await page.goto(`/#/accounts/${accountId}`);
 
-  await page.getByRole("cell", { name: "Supermarket" }).click();
+  await page.getByRole("button", { name: "Supermarket", exact: true }).click();
   await expect(drawer(page)).toBeVisible();
   await expect(drawer(page).getByText("Transaction Details")).toBeVisible();
   await expect(drawer(page).getByRole("textbox")).toHaveCount(0);
@@ -140,7 +140,7 @@ test("phone: details drawer, explicit edit, dirty guard and save", async ({
 
   await save.click();
   await expect(drawer(page)).toBeHidden();
-  await page.getByRole("cell", { name: "Supermarket" }).click();
+  await page.getByRole("button", { name: "Supermarket", exact: true }).click();
   await expect(drawer(page).getByText("Edited on a phone")).toBeVisible();
 
   expect(
@@ -148,19 +148,25 @@ test("phone: details drawer, explicit edit, dirty guard and save", async ({
   ).toBeLessThanOrEqual(391);
 });
 
-test("desktop: row click keeps table behavior and edit uses a dialog", async ({
+test("desktop: card tap opens a details dialog; edit uses the pencil", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   const accountId = await seedTransaction(page);
   await page.goto(`/#/accounts/${accountId}`);
 
-  await page.getByRole("cell", { name: "Supermarket" }).click();
+  await page.getByRole("button", { name: "Supermarket", exact: true }).click();
+  const detailsDialog = page.getByRole("dialog");
+  await expect(detailsDialog).toBeVisible();
+  await expect(detailsDialog.getByText("Transaction Details")).toBeVisible();
+  await detailsDialog
+    .locator('[data-slot="dialog-footer"]')
+    .getByRole("button", { name: "Close" })
+    .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
   await page
-    .getByRole("row", { name: /Supermarket/ })
-    .getByRole("button", { name: "Edit transaction" })
+    .getByRole("button", { name: "Edit Supermarket" })
     .click();
   const dialog = page.locator('[data-slot="dialog-content"]');
   await expect(dialog).toBeVisible();
@@ -177,7 +183,7 @@ test.describe("phone touch", () => {
     const accountId = await seedTransaction(page);
     await page.goto(`/#/accounts/${accountId}`);
 
-    await page.getByRole("cell", { name: "Supermarket" }).tap();
+    await page.getByRole("button", { name: "Supermarket", exact: true }).tap();
     await drawer(page).getByRole("button", { name: "Edit" }).tap();
     const notes = drawer(page).getByLabel("Notes");
     await notes.fill("Saved in one tap");
@@ -210,7 +216,7 @@ test.describe("phone touch", () => {
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
     await expect(drawer(page)).toBeHidden();
-    await page.getByRole("cell", { name: "Supermarket" }).tap();
+    await page.getByRole("button", { name: "Supermarket", exact: true }).tap();
     await expect(drawer(page).getByText("Saved in one tap")).toBeVisible();
   });
 });
