@@ -7,6 +7,11 @@ import AccountTransactions from "./AccountTransactions";
 const mockUseTransactions = vi.fn();
 const mockUseAccounts = vi.fn();
 const mockUsePreferences = vi.fn();
+let qifImport = true;
+
+vi.mock("@/hooks/usePlatform", () => ({
+  usePlatform: () => ({ capabilities: { qifImport } }),
+}));
 
 vi.mock("@/hooks/useTransactions", () => ({
   useTransactions: (...args: unknown[]) => mockUseTransactions(...args),
@@ -64,6 +69,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  qifImport = true;
   mockUseTransactions.mockReturnValue({
     transactions: [],
     categories: [],
@@ -112,6 +118,19 @@ describe("AccountTransactions header", () => {
 
     fireEvent.click(within(menu).getByText("Edit account"));
     expect(screen.queryByText("Reconciliation dialog open")).toBeNull();
+  });
+
+  it("hides Import where QIF import is unsupported (web)", async () => {
+    qifImport = false;
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+
+    const menu = (await screen.findByText("Edit account")).closest(
+      '[data-slot="dropdown-menu-content"]',
+    ) as HTMLElement;
+    expect(within(menu).queryByText("Import")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Import" })).toBeNull();
   });
 
   it("shows an unlabelled Filter button with no active filters", () => {
