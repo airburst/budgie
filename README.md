@@ -21,12 +21,14 @@ Desktop personal finance app. Electron 40 + React 19 + TypeScript + Tailwind v4 
 ```bash
 bun install
 bun run start        # dev: Vite on :3000 + Electron
+bun run dev          # dev: web app only, Vite on :3000 with hot reload
 ```
 
 ## Scripts
 
 | Command               | Description                            |
 | --------------------- | -------------------------------------- |
+| `bun run dev`         | Web app dev server (hot reload)        |
 | `bun run start`       | Dev server + Electron                  |
 | `bun run build`       | Production build                       |
 | `bun run test`        | Run all tests (Vitest)                 |
