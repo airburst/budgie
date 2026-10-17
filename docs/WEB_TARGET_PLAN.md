@@ -365,6 +365,13 @@ Security baseline:
 
 ## 10. Phase 5: Incremental UX Redesign
 
+The [Phase 5 UX proposal and annotated mockups](./PHASE5_UX_PLAN.md) expand this
+scope into a mobile-first design, decision register, per-workflow overlay plan,
+and implementation/acceptance sequence. Mark accepted the design direction on
+2026-10-17, with hamburger/sidebar navigation instead of bottom tabs and separate
+scheduled income/outgoing totals. Implementation remains incremental, with
+per-slice validation and review; see the proposal's decision register.
+
 Approve each slice independently across phone portrait, phone landscape where
 useful, and tablet orientations:
 

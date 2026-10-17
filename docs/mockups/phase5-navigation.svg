@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="960" viewBox="0 0 950 960" role="img" aria-labelledby="title desc">
+  <title id="title">Budgie reviewed phone navigation: hamburger and sidebar</title>
+  <desc id="desc">A 390-pixel phone with an open left navigation sidebar. Accounts is selected, other routes are listed below. No persistent bottom navigation tabs.</desc>
+  <defs><style>
+    text{font-family:Arial,sans-serif;fill:#f4f4f5;font-size:16px}.sub{fill:#b4b4bd;font-size:13px}.note{fill:#364152;font-size:15px}.heading{fill:#172033;font-size:21px;font-weight:700}.blue{fill:#92b9ff}
+  </style></defs>
+  <rect width="950" height="960" fill="#edf0f5"/>
+  <text x="40" y="44" class="heading">04 / Hamburger navigation, accepted 17 Oct</text>
+  <text x="40" y="74" class="note">Global destinations stay separate from the account chooser.</text>
+  <g transform="translate(40 110)">
+    <rect width="390" height="800" rx="24" fill="#121215" stroke="#51515b"/>
+    <text x="20" y="27" class="sub">9:41</text><text x="310" y="27" class="sub">5G 100%</text>
+    <text x="16" y="72" font-size="24">☰</text><text x="58" y="72" font-weight="700">Accounts</text>
+    <rect x="16" y="110" width="358" height="130" rx="12" fill="#242428"/>
+    <rect y="40" width="390" height="740" fill="#000" opacity=".5"/>
+    <path d="M0 40H288Q312 40 312 64V776H0Z" fill="#242428" stroke="#51515b"/>
+    <text x="20" y="83" font-size="22" font-weight="700">Budgie</text>
+    <rect x="252" y="51" width="44" height="44" rx="8" fill="#303038"/><text x="274" y="79" text-anchor="middle">✕</text>
+    <rect x="12" y="116" width="288" height="48" rx="9" fill="#283756"/>
+    <text x="28" y="146" class="blue">Accounts</text><text x="274" y="146" class="blue">✓</text>
+    <text x="28" y="202">Subscriptions</text><text x="28" y="258">Budget</text><text x="28" y="314">Reports</text>
+    <path d="M20 342H292" stroke="#51515b"/>
+    <text x="28" y="382">Categories</text><text x="28" y="438">Payees</text>
+    <path d="M20 466H292" stroke="#51515b"/>
+    <text x="28" y="506">Settings</text><text x="28" y="562">About Budgie</text>
+    <text x="28" y="718" class="sub">Native actions only where supported</text>
+    <rect x="137" y="782" width="116" height="4" rx="2" fill="#71717a"/>
+  </g>
+  <text x="474" y="164" class="heading">Navigation contract</text>
+  <text x="474" y="208" class="note">• Header button opens the sidebar.</text>
+  <text x="474" y="246" class="note">• Active route is indicated, not color-only.</text>
+  <text x="474" y="284" class="note">• Tap a destination to navigate and close.</text>
+  <text x="474" y="322" class="note">• Explicit Close and focus restoration.</text>
+  <text x="474" y="360" class="note">• Sidebar scrolls on shorter screens.</text>
+  <text x="474" y="398" class="note">• No persistent bottom navigation tabs.</text>
+  <text x="474" y="464" class="heading">Keep existing desktop navigation</text>
+  <text x="474" y="506" class="note">Use a shadcn Base UI Sheet/sidebar.</text>
+  <text x="474" y="544" class="note">Do not hand-roll a navigation overlay.</text>
+  <text x="474" y="582" class="note">Account switching remains on the account card.</text>
+  <text x="474" y="620" class="note">Task footers stay on reconcile / forecast.</text>
+</svg>

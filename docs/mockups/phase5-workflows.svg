@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1330" height="1080" viewBox="0 0 1330 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Budgie phase 5: subscriptions, budget and reconciliation</title>
+  <desc id="desc">Three 390-pixel phone layouts show a collapsed calendar, responsive envelope cards and reconciliation selection with a dedicated task footer.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,sans-serif;fill:#f4f4f5;font-size:14px}.h{font-size:23px;font-weight:700}.sub{fill:#b4b4bd;font-size:13px}.label{fill:#b4b4bd;font-size:11px;letter-spacing:.6px}.money{font-variant-numeric:tabular-nums;font-weight:700}.blue{fill:#92b9ff}.green{fill:#70d6ac}.red{fill:#ff999f}.panel{fill:#242428;stroke:#414148}.card{fill:#1d1d21;stroke:#414148}.line{stroke:#414148}.note{fill:#364152;font-size:14px}.caption{fill:#172033;font-size:18px;font-weight:700}.nav{fill:#b4b4bd;font-size:11px}.btn{fill:#315fe3}
+    </style>
+    <g id="phone"><rect width="390" height="800" rx="24" fill="#121215" stroke="#51515b"/><text x="20" y="27" class="sub">9:41</text><text x="310" y="27" class="sub">5G  100%</text></g>
+    <g id="nav">
+      <rect x="137" y="75" width="116" height="4" rx="2" fill="#71717a"/>
+    </g>
+  </defs>
+  <rect width="1330" height="1080" fill="#edf0f5"/>
+  <text x="40" y="42" class="caption">02 / Same card language, different workflow actions</text>
+  <text x="40" y="68" class="note">PROPOSAL · 390px phone frames · whole-card taps have an explicit meaning in each workflow</text>
+  <g transform="translate(40 110)">
+    <use href="#phone"/>
+    <text x="16" y="71" font-size="24">☰</text><text x="58" y="71" class="h">Subscriptions</text><rect x="290" y="42" width="84" height="44" rx="9" class="btn"/><text x="332" y="69" text-anchor="middle">+ Add</text>
+    <rect x="16" y="101" width="358" height="44" rx="9" class="card"/><text x="32" y="129">Accounts: All accounts</text><text x="347" y="129">⌄</text>
+    <rect x="16" y="161" width="358" height="100" rx="12" class="panel"/>
+    <text x="32" y="187" class="label">DUE IN NEXT 7 DAYS · ALL ACCOUNTS</text>
+    <text x="32" y="210" class="sub">Income</text><text x="358" y="210" text-anchor="end" class="sub">Outgoing</text>
+    <text x="32" y="235" class="money green">£0.00</text><text x="358" y="235" text-anchor="end" class="money">£94.99</text>
+    <text x="32" y="252" class="label">3 TRANSACTIONS</text>
+    <rect x="16" y="277" width="358" height="44" rx="9" class="card"/><text x="32" y="305">Show calendar</text><text x="347" y="305">⌄</text>
+    <text x="16" y="355" class="sub">3 schedules</text><text x="374" y="355" text-anchor="end" class="blue">Sort: Next due ↑</text>
+    <rect x="16" y="375" width="358" height="102" rx="12" class="card"/>
+    <text x="32" y="404" font-weight="700">Broadband</text><text x="358" y="404" text-anchor="end" class="money">−£35.00</text>
+    <text x="32" y="430" class="sub">18 Oct · Monthly</text><text x="32" y="455" class="sub">Current Account · Manual</text>
+    <rect x="16" y="489" width="358" height="102" rx="12" class="card"/>
+    <text x="32" y="518" font-weight="700">Gym membership</text><text x="358" y="518" text-anchor="end" class="money">−£45.00</text>
+    <text x="32" y="544" class="sub">20 Oct · Monthly</text><text x="32" y="569" class="sub">Current Account · Auto-post</text>
+    <rect x="16" y="603" width="358" height="96" rx="12" class="card"/>
+    <text x="32" y="631" font-weight="700">Streaming</text><text x="358" y="631" text-anchor="end" class="money">−£14.99</text>
+    <text x="32" y="657" class="sub">22 Oct · Monthly</text><text x="32" y="682" class="sub">Credit Card · Auto-post</text>
+    <use href="#nav" y="711"/>
+  </g>
+  <g transform="translate(470 110)">
+    <use href="#phone"/><text x="16" y="71" font-size="24">☰</text><text x="58" y="71" class="h">Budget</text><text x="348" y="70" font-size="23">•••</text>
+    <rect x="16" y="101" width="358" height="44" rx="9" class="card"/><text x="38" y="129">‹</text><text x="195" y="129" text-anchor="middle">October 2026</text><text x="344" y="129">›</text>
+    <rect x="16" y="161" width="358" height="92" rx="12" class="panel"/><text x="32" y="188" class="label">AVAILABLE TO BUDGET</text><text x="32" y="229" font-size="28" class="money">£320.00</text>
+    <rect x="16" y="269" width="175" height="48" rx="9" class="btn"/><text x="103" y="299" text-anchor="middle">+ Add envelope</text>
+    <rect x="199" y="269" width="175" height="48" rx="9" class="card"/><text x="286" y="299" text-anchor="middle">Move money</text>
+    <rect x="16" y="337" width="358" height="164" rx="12" class="card"/>
+    <text x="32" y="367" font-weight="700">Groceries</text><text x="358" y="367" text-anchor="end" class="money green">£145.00</text>
+    <text x="358" y="389" text-anchor="end" class="sub">Available</text>
+    <rect x="32" y="407" width="326" height="8" rx="4" fill="#3f3f46"/><rect x="32" y="407" width="214" height="8" rx="4" fill="#70d6ac"/>
+    <text x="32" y="443" class="sub">Assigned £420.00</text><text x="358" y="443" text-anchor="end" class="sub">Spent £275.00</text>
+    <text x="32" y="481" class="blue">Edit assigned</text><text x="334" y="481" class="blue">•••</text>
+    <rect x="16" y="513" width="358" height="164" rx="12" class="card"/>
+    <text x="32" y="543" font-weight="700">Eating out</text><text x="358" y="543" text-anchor="end" class="money red">−£12.00</text>
+    <text x="358" y="565" text-anchor="end" class="sub">Over budget</text>
+    <rect x="32" y="583" width="326" height="8" rx="4" fill="#ff999f"/>
+    <text x="32" y="619" class="sub">Assigned £100.00</text><text x="358" y="619" text-anchor="end" class="sub">Spent £112.00</text>
+    <text x="32" y="657" class="blue">Edit assigned</text><text x="334" y="657" class="blue">•••</text>
+    <use href="#nav" y="711"/>
+  </g>
+  <g transform="translate(900 110)">
+    <use href="#phone"/><text x="16" y="71" class="h">‹ Reconcile</text><text x="348" y="70" font-size="23">•••</text>
+    <text x="16" y="104" class="sub">Current Account · statement 17 Oct</text>
+    <rect x="16" y="127" width="175" height="80" rx="10" class="panel"/><text x="30" y="152" class="sub">Opening</text><text x="30" y="184" class="money">£4,000.00</text>
+    <rect x="199" y="127" width="175" height="80" rx="10" class="panel"/><text x="213" y="152" class="sub">Cleared</text><text x="213" y="184" class="money">£4,210.60</text>
+    <rect x="16" y="215" width="175" height="80" rx="10" class="panel"/><text x="30" y="240" class="sub">Statement</text><text x="30" y="272" class="money">£4,210.60</text>
+    <rect x="199" y="215" width="175" height="80" rx="10" class="panel"/><text x="213" y="240" class="sub">Difference</text><text x="213" y="272" class="money green">£0.00</text>
+    <text x="16" y="331" font-weight="700">Select matching transactions</text>
+    <rect x="16" y="349" width="358" height="112" rx="12" fill="#202f4d" stroke="#81abff"/>
+    <text x="32" y="378" font-weight="700">✓ Supermarket</text><text x="358" y="378" text-anchor="end" class="money">−£42.80</text>
+    <text x="32" y="404" class="sub">17 Oct · Groceries</text><text x="32" y="440" class="blue">Selected</text><text x="332" y="440" class="blue">Edit</text>
+    <rect x="16" y="473" width="358" height="112" rx="12" class="card"/>
+    <text x="32" y="502" font-weight="700">□ Coffee shop</text><text x="358" y="502" text-anchor="end" class="money">−£4.50</text>
+    <text x="32" y="528" class="sub">17 Oct · Eating out</text><text x="32" y="564" class="sub">Not selected</text><text x="332" y="564" class="blue">Edit</text>
+    <text x="16" y="622" class="sub">More records scroll above the action bar</text>
+    <rect y="672" width="390" height="128" fill="#1a1a1e"/><path d="M0 672H390" class="line"/>
+    <text x="16" y="699" class="sub">1 selected</text><text x="374" y="699" text-anchor="end" class="green">Difference £0.00</text>
+    <rect x="16" y="715" width="175" height="48" rx="9" class="card"/><text x="103" y="745" text-anchor="middle">Cancel</text>
+    <rect x="199" y="715" width="175" height="48" rx="9" class="btn"/><text x="286" y="745" text-anchor="middle">Finish</text>
+    <rect x="137" y="782" width="116" height="4" rx="2" fill="#71717a"/>
+  </g>
+  <text x="40" y="946" class="caption">D. Calendar is optional, not lost</text><text x="40" y="974" class="note">Summary, calendar and list share account scope.</text><text x="40" y="997" class="note">Card tap shows details; Record is explicit.</text>
+  <text x="470" y="946" class="caption">E. Budget actions get their own rows</text><text x="470" y="974" class="note">More: Fill from last month. Envelope menu:</text><text x="470" y="997" class="note">Edit / Move up / Move down; no drag-only action.</text>
+  <text x="900" y="946" class="caption">F. Card tap selects exactly once</text><text x="900" y="974" class="note">Edit is separate. Finish keeps existing guards.</text><text x="900" y="997" class="note">Task footer remains; no bottom navigation tabs.</text>
+  <text x="40" y="1048" class="note">Review D4-D5 and D8 in PHASE5_UX_PLAN.md · At 320px / enlarged text, money and metadata may move to additional rows.</text>
+</svg>
