@@ -12,6 +12,12 @@ Phase 5B adds no routes. The transaction form now renders through the shared
 dialog above it. On phones, tapping a transaction opens read-only details in
 the same surface; Edit is an explicit second step.
 
+Phase 5C adds no routes. `/` lists accounts as cards. Tapping a card goes to
+`/accounts/:id`. Below 1024px that page shows a "Selected account" card whose
+**Change account** chooser (a drawer on phones, a popover on tablets) moves
+between `/accounts/:id` routes or back to `/`. The accounts sidebar appears
+only at 1024px and above.
+
 ```mermaid
 flowchart TD
   App --> Router[HashRouter + Layout]

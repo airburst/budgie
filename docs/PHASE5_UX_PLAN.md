@@ -557,3 +557,41 @@ and no horizontal overflow, plus unchanged desktop behavior. WebKit
 automation cannot start the browser runtime (`window.api` never initialises,
 on the base commit too), so iOS Safari keyboard, swipe and safe-area checks
 remain a **manual physical-device gate** before reusing the overlay in 5C+.
+
+### 5C outcome: accounts
+
+- **Root `/`:** `AccountsTable` is now `AccountsList`. It shows an
+  "All accounts · total balance" summary (the existing un-converted sum,
+  labelled "Account balances, not available cash") and then one card per account.
+  The cards share a parent grid through `subgrid`, so balance columns line up
+  on every breakpoint. On phones, a card has the name, `Type · •• 1234` and the
+  balance, plus a second row with Cleared, the last reconcile date and
+  Remaining credit (credit cards with a limit only). At `lg` the same cells
+  become aligned columns (Balance, Cleared, Last reconciled, Remaining credit),
+  with a caption row above them.
+- **Card interaction:** the account name is a stretched link, so tapping
+  anywhere on the card navigates. Actions sit above the link (`z-10`) and never
+  navigate. Below `lg` they are a 44px ••• menu (Edit account / Reconcile); at
+  `lg` they are direct icon buttons. Loading (skeletons), error (`role="alert"`
+  with Try again) and empty states are separate.
+- **`/accounts/:id`:** below `lg` a "Selected account" context card replaces
+  the sidebar. It shows the name, summary, balance, cleared balance and
+  **Change account**. The `AccountsMenu` sidebar now appears only at `lg` and
+  above, on both pages.
+- **Account chooser:** a bottom drawer on phones and a popover on tablets.
+  Neither autofocuses an input. It contains All accounts → Overview, the
+  accounts (the current one is `aria-current` with "✓ Selected") and Add
+  account. Search appears only from 6 accounts, because short lists are faster
+  to scan. Choosing the current account or Close leaves the route unchanged.
+- **Overlays:** `AccountForm` (expanded) and the reconcile setup (auto) now use
+  `ResponsiveOverlay`. The account form gets the 5B dismissal rules: a
+  dirty-draft discard confirmation, an ignored dismissal while saving, a
+  double-submit guard and an inline save error. Its payloads are unchanged.
+  Close-account remains a nested confirmation. Phones never autofocus. Desktop
+  reconcile keeps the balance autofocus.
+
+Automated coverage: unit tests for `account-display`, `AccountsList`,
+`AccountChooser` and `AccountForm`, and `e2e/phase5-accounts.spec.ts`. That
+spec covers tap navigation against the menu, 44px targets, column alignment,
+no overflow at 320px, chooser close and select, the Select portal above the
+drawer, the tablet popover and the desktop sidebar with aligned columns.

@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 export function useAccounts() {
   const qc = useQueryClient();
 
-  const { data: accounts = [] } = useQuery({
+  const {
+    data: accounts = [],
+    isPending: isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["accounts"],
     queryFn: () => window.api.getAccounts(),
   });
@@ -31,5 +36,5 @@ export function useAccounts() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 
-  return { accounts, create, update, remove };
+  return { accounts, isLoading, isError, refetch, create, update, remove };
 }

@@ -28,6 +28,10 @@ vi.mock("@/components/AccountsMenu/accounts-menu", () => ({
   default: () => <div>Accounts menu</div>,
 }));
 
+vi.mock("@/components/AccountsMenu/account-context-card", () => ({
+  AccountContextCard: () => <div>Selected account</div>,
+}));
+
 vi.mock("./TransactionForm", () => ({
   TransactionForm: () => null,
 }));

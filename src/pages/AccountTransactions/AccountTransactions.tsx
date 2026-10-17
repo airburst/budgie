@@ -1,3 +1,4 @@
+import { AccountContextCard } from "@/components/AccountsMenu/account-context-card";
 import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -111,9 +112,14 @@ export default function AccountTransactions() {
 
   return (
     <Layout>
-      <div className="flex flex-row h-full">
+      <div className="flex h-full min-h-0 flex-row">
         <AccountsMenu />
-        <div className="flex flex-col flex-1 overflow-y-auto p-4">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
+          <AccountContextCard
+            account={account}
+            accounts={accounts}
+            className="mb-6 lg:hidden"
+          />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
             {/* Action buttons */}
