@@ -6,7 +6,8 @@ const requiredFiles = [
   "index.html",
   "manifest.webmanifest",
   "sw.js",
-  "budgie-icon.svg",
+  "favicon.ico",
+  "icons/apple-touch-icon.png",
   "_headers",
 ];
 
@@ -33,7 +34,12 @@ const manifest = JSON.parse(
   short_name?: string;
   start_url?: string;
   display?: string;
-  icons?: Array<{ src?: string; type?: string }>;
+  icons?: Array<{
+    src?: string;
+    type?: string;
+    sizes?: string;
+    purpose?: string;
+  }>;
 };
 
 if (
@@ -48,6 +54,24 @@ if (
 for (const icon of manifest.icons) {
   if (!icon.src || !icon.type) throw new Error("Manifest icon is incomplete");
   await access(join(buildDirectory, icon.src.replace(/^\.\//, "")));
+}
+
+// Android needs 192 and 512 PNGs plus a maskable one; iOS uses the
+// apple-touch-icon link (checked with the HTML references below).
+const hasIcon = (size: string, purpose: string) =>
+  manifest.icons?.some(
+    (icon) =>
+      icon.type === "image/png" &&
+      icon.sizes === size &&
+      (icon.purpose ?? "any").split(" ").includes(purpose),
+  ) ?? false;
+for (const [size, purpose] of [
+  ["192x192", "any"],
+  ["512x512", "any"],
+  ["512x512", "maskable"],
+] as const) {
+  if (!hasIcon(size, purpose))
+    throw new Error(`Manifest is missing a ${size} ${purpose} PNG icon`);
 }
 
 const serviceWorker = await readFile(join(buildDirectory, "sw.js"), "utf8");
