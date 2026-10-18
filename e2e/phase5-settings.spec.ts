@@ -82,13 +82,29 @@ test.describe("settings on a phone", () => {
     );
     const version = nav.getByText(/^Version \d/);
     await expect(version).toBeVisible();
-    const box = (await version.boundingBox())!;
-    const sheet = (await nav.boundingBox())!;
+    // The sheet slides in; measure both rects in one frame and wait for the
+    // slide to settle so the two boxes are never read at different moments.
+    const measure = () =>
+      page.evaluate(() => {
+        const dialog = document.querySelector('[role="dialog"]')!;
+        const line = [...dialog.querySelectorAll("p")].find((p) =>
+          /^Version \d/.test(p.textContent ?? ""),
+        )!;
+        const b = line.getBoundingClientRect();
+        const s = dialog.getBoundingClientRect();
+        return {
+          offset: Math.abs(b.x + b.width / 2 - (s.x + s.width / 2)),
+          lineTop: b.y,
+          sheetTop: s.y,
+          sheetHeight: s.height,
+        };
+      });
     // Centred along the bottom of the menu.
-    expect(
-      Math.abs(box.x + box.width / 2 - (sheet.x + sheet.width / 2)),
-    ).toBeLessThanOrEqual(2);
-    expect(box.y).toBeGreaterThan(sheet.y + sheet.height * 0.7);
+    await expect
+      .poll(async () => (await measure()).offset)
+      .toBeLessThanOrEqual(2);
+    const m = await measure();
+    expect(m.lineTop).toBeGreaterThan(m.sheetTop + m.sheetHeight * 0.7);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 });

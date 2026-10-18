@@ -220,10 +220,10 @@ each chart is its own component with a smoke test beside it.
 
 Two gotchas, both learned the hard way:
 
-- `@tanstack/charts` is pinned to an exact version because it is a **0.x alpha** and minor
-  releases may break APIs. Re-read the mark option types in `node_modules/@tanstack/charts/dist`
-  before trusting any online example — the published catalog examples track `main`, not the
-  release.
+- `@tanstack/charts` reached 1.x (stable compatibility contract), so it uses a caret range.
+  It was pinned exactly while it was a 0.x alpha. Re-read the mark option types in
+  `node_modules/@tanstack/charts/dist` before trusting any online example — the published
+  catalog examples track `main`, not the release.
 - When a chart has a tooltip you **must** use the `defineChart({ chart: () => spec, ...options })`
   form. The two-argument `defineChart(spec, options)` overload widens the tooltip host token to
   `string`, which then fails to satisfy `RendererChart`'s `"dom"` requirement.
