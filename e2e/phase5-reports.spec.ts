@@ -53,7 +53,9 @@ async function seedReports(page: Page) {
   });
   await page.goto("/#/reports");
   await page.reload();
-  await expect(page.getByText("Spending by Category", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Spending by Category", { exact: true }),
+  ).toBeVisible();
 }
 
 async function overflow(page: Page) {
@@ -64,12 +66,40 @@ async function overflow(page: Page) {
   );
 }
 
-const filters = (page: Page) => page.getByRole("group", { name: "Report filters" });
+const filters = (page: Page) =>
+  page.getByRole("group", { name: "Report filters" });
 const chartCard = (page: Page, title: string) =>
   page.locator('[data-slot="card"]').filter({ hasText: title }).first();
 
 test.describe("reports on a phone (390x844)", () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test("time-series charts are tall enough to scrub and keep horizontal drags", async ({
+    page,
+  }) => {
+    await seedReports(page);
+    for (const title of [
+      "Net worth over time",
+      "Income versus expenses by month",
+    ]) {
+      const chart = page.locator(`svg[aria-label="${title}"]`);
+      await chart.scrollIntoViewIfNeeded();
+      const box = (await chart.boundingBox())!;
+      // 2:1 charts were ~170px tall here; a finger needs more to scrub.
+      expect(box.height, title).toBeGreaterThanOrEqual(240);
+      // pan-y: vertical swipes scroll, horizontal drags stay on the chart.
+      const touchAction = await chart.evaluate((el) => {
+        let node: Element | null = el;
+        while (node) {
+          const value = getComputedStyle(node).touchAction;
+          if (value !== "auto") return value;
+          node = node.parentElement;
+        }
+        return "auto";
+      });
+      expect(touchAction, title).toBe("pan-y");
+    }
+  });
 
   test("controls sit under the heading and meet 44px targets", async ({
     page,
@@ -85,7 +115,9 @@ test.describe("reports on a phone (390x844)", () => {
       filters(page).getByRole("combobox", { name: "Date range" }),
       filters(page).locator('[data-slot="input-group"]'),
     ]) {
-      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(43.5);
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(
+        43.5,
+      );
     }
     // The visible label names the preset rather than its raw value.
     await expect(filters(page)).toContainText("Last 90 Days");
@@ -96,7 +128,10 @@ test.describe("reports on a phone (390x844)", () => {
     page,
   }) => {
     await seedReports(page);
-    const spending = (await chartCard(page, "Spending by Category").boundingBox())!;
+    const spending = (await chartCard(
+      page,
+      "Spending by Category",
+    ).boundingBox())!;
     const income = (await chartCard(page, "Income vs Expenses").boundingBox())!;
     const worth = (await chartCard(page, "Net Worth Trend").boundingBox())!;
     expect(Math.abs(spending.x - income.x)).toBeLessThan(1);
@@ -107,7 +142,9 @@ test.describe("reports on a phone (390x844)", () => {
     const incomeCard = chartCard(page, "Income vs Expenses");
     const trigger = incomeCard.getByRole("button", { name: /show values/i });
     expect((await trigger.boundingBox())!.height).toBeGreaterThanOrEqual(43.5);
-    await expect(incomeCard.getByRole("list", { name: /values/ })).toHaveCount(0);
+    await expect(incomeCard.getByRole("list", { name: /values/ })).toHaveCount(
+      0,
+    );
     await trigger.tap();
     const list = incomeCard.getByRole("list", {
       name: "Income versus expenses values",
@@ -131,7 +168,11 @@ test.describe("reports on a phone (390x844)", () => {
   }) => {
     await page.setViewportSize({ width: 320, height: 568 });
     await seedReports(page);
-    for (const card of ["Spending by Category", "Income vs Expenses", "Net Worth Trend"]) {
+    for (const card of [
+      "Spending by Category",
+      "Income vs Expenses",
+      "Net Worth Trend",
+    ]) {
       await chartCard(page, card)
         .getByRole("button", { name: /show values/i })
         .click();
@@ -150,10 +191,13 @@ test.describe("reports on desktop (1280x800)", () => {
       .boundingBox())!;
     const group = (await filters(page).boundingBox())!;
     // Heading and controls share a row on desktop.
-    expect(Math.abs(group.y + group.height / 2 - (heading.y + heading.height / 2))).toBeLessThan(
-      30,
-    );
-    const spending = (await chartCard(page, "Spending by Category").boundingBox())!;
+    expect(
+      Math.abs(group.y + group.height / 2 - (heading.y + heading.height / 2)),
+    ).toBeLessThan(30);
+    const spending = (await chartCard(
+      page,
+      "Spending by Category",
+    ).boundingBox())!;
     const income = (await chartCard(page, "Income vs Expenses").boundingBox())!;
     expect(Math.abs(spending.y - income.y)).toBeLessThan(1);
     expect(income.x).toBeGreaterThan(spending.x + spending.width - 1);

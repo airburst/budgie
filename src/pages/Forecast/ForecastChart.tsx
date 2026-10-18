@@ -61,6 +61,16 @@ function buildDefinition(rows: readonly Row[]) {
   // Points in the last 15% would push a start-anchored label off the edge.
   const labelAtEnd = (row: Row) => (row.at.getTime() - first) / timeSpan > 0.85;
 
+  // Fit the left margin to the widest y label so the labels start at the
+  // chart's left edge, in line with the transaction cards below, instead of
+  // floating in a fixed 60px gutter. ~6.5px per glyph at the 11px tick size.
+  const tickPadding = 4;
+  const widestLabel = Math.max(
+    formatCurrency(low).length,
+    formatCurrency(high).length,
+  );
+  const marginLeft = Math.max(28, Math.ceil(widestLabel * 6.5) + tickPadding);
+
   return defineChart(
     {
       marks: [
@@ -141,11 +151,11 @@ function buildDefinition(rows: readonly Row[]) {
           grid: true,
           axis: {
             line: false,
-            ticks: { size: 0, padding: 4, format: formatCurrency },
+            ticks: { size: 0, padding: tickPadding, format: formatCurrency },
           },
         },
       },
-      margin: chartMargin,
+      margin: { ...chartMargin, left: marginLeft },
       theme: budgieChartTheme,
     },
     {

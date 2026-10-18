@@ -16,10 +16,12 @@ type ConfirmDialogProps = {
   description: string;
   onConfirm: () => void;
   confirmLabel?: string;
+  /** Destructive by default; use "default" for reversible-ish actions like Skip. */
+  confirmVariant?: "destructive" | "default";
 };
 
 /**
- * Destructive confirmation: bottom drawer on phones, centered dialog from `md`.
+ * Confirmation (destructive unless `confirmVariant` says otherwise): bottom drawer on phones, centered dialog from `md`.
  * Cancel takes initial focus at every width so Enter never confirms by accident
  * and no keyboard opens. Dismissal (swipe, Escape, backdrop) is a Cancel.
  */
@@ -30,6 +32,7 @@ export function ConfirmDialog({
   description,
   onConfirm,
   confirmLabel = "Delete",
+  confirmVariant = "destructive",
 }: ConfirmDialogProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
@@ -58,7 +61,7 @@ export function ConfirmDialog({
           >
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
+          <Button variant={confirmVariant} onClick={handleConfirm}>
             {confirmLabel}
           </Button>
         </ResponsiveOverlayFooter>

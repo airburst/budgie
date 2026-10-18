@@ -46,7 +46,10 @@ export function DatePicker({
         <CalendarIcon className="size-4" />
         {date ? format(date, "dd/MM/yyyy") : <span>{placeholder}</span>}
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      {/* The popup shrink-wraps to a narrow trigger (e.g. the 10rem Forecast
+          end date), crushing the day cells; keep a calendar-sized minimum and let the
+          calendar (w-fit by default) fill it. */}
+      <PopoverContent className="w-auto min-w-72 p-0 [&_.rdp-root]:w-full">
         <Calendar
           mode="single"
           selected={date}

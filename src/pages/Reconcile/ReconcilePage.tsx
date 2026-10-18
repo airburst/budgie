@@ -10,7 +10,6 @@ import { TransactionForm } from "@/pages/AccountTransactions/TransactionForm";
 import type { Transaction } from "@/types/electron";
 import {
   ArrowLeftIcon,
-  CheckIcon,
   PencilIcon,
   PlusIcon,
   ScaleIcon,
@@ -466,12 +465,6 @@ function ReconcileCard({
         >
           {tx.payee}
         </label>
-        {checked && (
-          <p className="flex items-center gap-1 text-xs font-medium text-primary">
-            <CheckIcon className="size-3.5" />
-            Selected
-          </p>
-        )}
         {tx.notes?.trim() && (
           <p className="truncate text-xs text-muted-foreground">{tx.notes}</p>
         )}

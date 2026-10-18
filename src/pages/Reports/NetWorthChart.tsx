@@ -3,8 +3,13 @@ import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
   budgieChartTheme,
+  CHART_FOCUS_DISTANCE,
+  CHART_TOUCH,
+  PHONE_ASPECT,
   type ChartConfig,
 } from "@/components/chart-theme";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { barY, defineChart, type ChartPoint } from "@tanstack/charts";
 import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
@@ -73,6 +78,7 @@ function buildDefinition(
       theme: budgieChartTheme,
     }),
     focus: "group-x",
+    maxFocusDistance: CHART_FOCUS_DISTANCE,
     tooltip: {
       use: tooltip,
       anchor: "group-center",
@@ -93,14 +99,19 @@ function buildDefinition(
 
 export function NetWorthChart(props: Props) {
   const fillHeight = useChartFillHeight();
+  const isMobile = useIsMobile();
   const chart = (
     <RendererChart
       definition={buildDefinition(props, Boolean(fillHeight))}
       renderer={animatedRenderer}
-      aspectRatio={fillHeight ? undefined : 2}
+      aspectRatio={fillHeight ? undefined : isMobile ? PHONE_ASPECT : 2}
       height={fillHeight}
       initialWidth={720}
-      className={fillHeight ? "w-full h-full" : "w-full max-h-62.5"}
+      className={cn(
+        "w-full",
+        CHART_TOUCH,
+        fillHeight ? "h-full" : isMobile ? "max-h-80" : "max-h-62.5",
+      )}
       ariaLabel="Net worth over time"
     />
   );

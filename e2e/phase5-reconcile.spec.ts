@@ -23,11 +23,7 @@ async function seedReconcile(page: Page) {
     });
     if (!account) throw new Error("Account was not created");
     const today = new Date().toISOString().slice(0, 10);
-    const make = (
-      payee: string,
-      amount: number,
-      notes: string | null = null,
-    ) =>
+    const make = (payee: string, amount: number, notes: string | null = null) =>
       window.api.createTransaction({
         accountId: account.id,
         date: today,
@@ -75,9 +71,7 @@ test.describe("phone", () => {
     await page.goto(reconcileUrl(accountId));
     await expect(cards(page)).toHaveCount(3);
 
-    const tiles = page.locator(
-      '[data-slot="reconcile-summary"] > div:visible',
-    );
+    const tiles = page.locator('[data-slot="reconcile-summary"] > div:visible');
     await expect(tiles).toHaveCount(4);
     const boxes = await tiles.evaluateAll((els) =>
       els.map((el) => {
@@ -100,14 +94,17 @@ test.describe("phone", () => {
     await expect(cards(page)).toHaveCount(3);
 
     const salary = card(page, "Salary");
-    await expect(salary.getByText("Selected")).toHaveCount(0);
+    await expect(salary).toHaveAttribute("data-selected", "false");
     await expect(taskBar(page)).toContainText("0 selected");
+    const heightBefore = (await salary.boundingBox())!.height;
 
     // Tap the middle of the card (not the checkbox or Edit button).
     await salary.tap();
     await expect(checkbox(page, "Salary")).toBeChecked();
-    await expect(salary.getByText("Selected")).toBeVisible();
+    await expect(salary).toHaveAttribute("data-selected", "true");
     await expect(taskBar(page)).toContainText("1 selected");
+    // Selecting must not change the card's height (no layout shift).
+    expect((await salary.boundingBox())!.height).toBeCloseTo(heightBefore, 0);
     // A double toggle would settle back to unchecked; give it time to.
     await page.waitForTimeout(400);
     await expect(checkbox(page, "Salary")).toBeChecked();
@@ -124,9 +121,9 @@ test.describe("phone", () => {
     await page.getByRole("button", { name: "Edit Supermarket" }).tap();
     await expect(drawer(page)).toBeVisible();
     await expect(drawer(page).getByText("Edit Transaction")).toBeVisible();
-    expect(
-      await page.evaluate(() => document.activeElement?.tagName),
-    ).not.toBe("INPUT");
+    expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe(
+      "INPUT",
+    );
     await expect(taskBar(page)).toContainText("0 selected");
     expect((await clearedState(page, accountId)).Supermarket).toBe(false);
   });
@@ -244,16 +241,20 @@ test.describe("desktop", () => {
     );
     expect(Math.max(...offsets)).toBeLessThanOrEqual(1);
 
-    const tiles = page.locator(
-      '[data-slot="reconcile-summary"] > div:visible',
-    );
+    const tiles = page.locator('[data-slot="reconcile-summary"] > div:visible');
     const tops = await tiles.evaluateAll((els) =>
       els.map((el) => Math.round(el.getBoundingClientRect().y)),
     );
     expect(Math.max(...tops) - Math.min(...tops)).toBeLessThanOrEqual(1);
 
     const supermarket = card(page, "Supermarket");
+    const heightBefore = (await supermarket.boundingBox())!.height;
     await supermarket.click();
+    await expect(supermarket).toHaveAttribute("data-selected", "true");
+    expect((await supermarket.boundingBox())!.height).toBeCloseTo(
+      heightBefore,
+      0,
+    );
     await expect(checkbox(page, "Supermarket")).toBeChecked();
     await page.waitForTimeout(400);
     await expect(checkbox(page, "Supermarket")).toBeChecked();
@@ -261,7 +262,9 @@ test.describe("desktop", () => {
 
     await page.getByRole("button", { name: "Edit Supermarket" }).click();
     await expect(
-      page.locator('[data-slot="dialog-content"]').getByText("Edit Transaction"),
+      page
+        .locator('[data-slot="dialog-content"]')
+        .getByText("Edit Transaction"),
     ).toBeVisible();
   });
 });

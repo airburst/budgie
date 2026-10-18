@@ -4,8 +4,13 @@ import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
   budgieChartTheme,
+  CHART_FOCUS_DISTANCE,
+  CHART_TOUCH,
+  PHONE_ASPECT,
   type ChartConfig,
 } from "@/components/chart-theme";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import {
   barY,
   defineChart,
@@ -85,6 +90,7 @@ function buildDefinition({
       theme: budgieChartTheme,
     }),
     focus: "group-x",
+    maxFocusDistance: CHART_FOCUS_DISTANCE,
     tooltip: {
       use: tooltip,
       anchor: "group-center",
@@ -104,6 +110,7 @@ function buildDefinition({
 
 export function IncomeExpensesChart(props: Props) {
   const fillHeight = useChartFillHeight();
+  const isMobile = useIsMobile();
   const [chartAreaRef, chartAreaHeight] = useMeasuredHeight<HTMLDivElement>();
   const legendItems = Object.values(config);
 
@@ -113,9 +120,13 @@ export function IncomeExpensesChart(props: Props) {
         <RendererChart
           definition={buildDefinition(props)}
           renderer={animatedRenderer}
-          aspectRatio={16 / 9}
+          aspectRatio={isMobile ? PHONE_ASPECT : 16 / 9}
           initialWidth={520}
-          className="w-full max-h-75"
+          className={cn(
+            "w-full",
+            CHART_TOUCH,
+            isMobile ? "max-h-80" : "max-h-75",
+          )}
           ariaLabel="Income versus expenses by month"
         />
         <ChartLegend items={legendItems} />
@@ -146,7 +157,7 @@ export function IncomeExpensesChart(props: Props) {
             renderer={animatedRenderer}
             height={chartAreaHeight}
             initialWidth={520}
-            className="h-full w-full"
+            className={cn("h-full w-full", CHART_TOUCH)}
             ariaLabel="Income versus expenses by month"
           />
         ) : null}

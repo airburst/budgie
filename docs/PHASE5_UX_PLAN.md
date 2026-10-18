@@ -986,3 +986,34 @@ Issues found while testing, fixed on `web-platform`:
   the action buttons that set the row height. They now use `lg:items-center`
   (phone multi-row layouts are unchanged), with a desktop e2e assertion on each
   that the amount shares the card's vertical centre.
+
+### Large-dataset review (2026-10-18)
+
+Mark imported a large export on phone/iPad and desktop and reported the issues
+below; all fixed in one PR except the two that need a physical device.
+
+- **Subscriptions skip:** Skip is now a visible icon on every card (beside Record on
+  phones, in the action cluster on desktop) and a button in the details surface.
+  Both confirm first (shared `ConfirmDialog`, `confirmVariant="default"`) and say
+  where the due date will move; a last occurrence warns it removes the schedule.
+  Cards without a next due date offer no Skip. Chosen over an ellipsis menu so no
+  action is hidden behind an extra tap.
+- **Crossover squash:** at `lg` the two-pane page left the payee ~56px wide. `lg` now
+  has four columns (due / payee / amount / actions) with frequency and account on a
+  second line under the payee; the six-column row starts at `xl`. e2e at 1024px.
+- **Desktop status:** auto-post text is dropped at `lg+` (cards are one row at `xl`);
+  Paused stays as a badge beside the payee. Phones keep the status line.
+- **Reconcile growth:** the "Selected" text line made selected cards taller. Removed;
+  the native checkbox, tint and border carry the state. e2e asserts equal height.
+- **Forecast calendar:** the popover shrink-wrapped to the 10rem trigger. `DatePicker`
+  now has a calendar-sized minimum and the calendar fills it.
+- **Forecast chart:** the left margin fits the widest y label so labels start at the
+  card edge.
+- **Reports on phones:** charts use a squarer aspect (1.25), `touch-action: pan-y`,
+  and `maxFocusDistance` 120 so a fingertip need not land on a bar.
+
+Deferred until captures/device are available (not verifiable here, no WebKit):
+
+- Reports charts overflowing their labels in WebKit (worst on iPad).
+- iPad landscape: the on-screen keyboard covers ~33% of the screen and hides most of
+  the reconcile dialog (low priority).

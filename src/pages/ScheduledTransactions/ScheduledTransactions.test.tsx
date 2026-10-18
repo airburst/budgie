@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ScheduledTransactions from "./ScheduledTransactions";
 
 const mockUseScheduled = vi.fn();
+const mockSkip = vi.fn();
 
 vi.mock("@/hooks/useScheduledTransactions", () => ({
   useScheduledTransactions: () => mockUseScheduled(),
@@ -20,12 +21,16 @@ vi.mock("./ScheduledPaymentForm", () => ({
     editingId: number | null;
     initialMode?: string;
     onRecord?: (id: number) => void;
+    onSkip?: (id: number) => void;
   }) =>
     props.open ? (
       <div data-testid="sheet">
         sheet:{String(props.editingId)}:{props.initialMode}
         <button onClick={() => props.onRecord?.(props.editingId!)}>
           sheet-record
+        </button>
+        <button onClick={() => props.onSkip?.(props.editingId!)}>
+          sheet-skip
         </button>
       </div>
     ) : null,
@@ -80,6 +85,7 @@ const scheduled = [
 const viewport = { desktop: false };
 
 beforeEach(() => {
+  mockSkip.mockReset();
   viewport.desktop = false;
   vi.stubGlobal(
     "matchMedia",
@@ -95,6 +101,7 @@ beforeEach(() => {
     scheduled,
     accounts,
     remove: { mutate: vi.fn() },
+    skip: { mutate: mockSkip },
   });
 });
 
@@ -109,6 +116,54 @@ function cards() {
 function summary() {
   return screen.getByRole("region", { name: "Due in next 7 days" });
 }
+
+describe("ScheduledTransactions page skip", () => {
+  it("asks before skipping, then skips only that schedule", () => {
+    render(<ScheduledTransactions />);
+    fireEvent.click(screen.getByRole("button", { name: "Skip Netflix" }));
+    expect(mockSkip).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("Skip this payment?")).toBeTruthy();
+    expect(dialog.textContent).toContain("Netflix due");
+    expect(dialog.textContent).toContain("Nothing is recorded");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Skip" }));
+    expect(mockSkip).toHaveBeenCalledTimes(1);
+    expect(mockSkip.mock.calls[0]![0]).toMatchObject({ id: 1 });
+  });
+
+  it("Cancel leaves the schedule alone", () => {
+    render(<ScheduledTransactions />);
+    fireEvent.click(screen.getByRole("button", { name: "Skip Netflix" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(mockSkip).not.toHaveBeenCalled();
+  });
+
+  it("warns that skipping the last occurrence removes the schedule", () => {
+    mockUseScheduled.mockReturnValue({
+      scheduled: [
+        makeTx({ id: 9, payee: "Once off", rrule: "FREQ=DAILY;COUNT=1" }),
+      ],
+      accounts,
+      remove: { mutate: vi.fn() },
+      skip: { mutate: mockSkip },
+    });
+    render(<ScheduledTransactions />);
+    fireEvent.click(screen.getByRole("button", { name: "Skip Once off" }));
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "removes the schedule",
+    );
+  });
+
+  it("skipping from the details sheet closes it and confirms first", () => {
+    render(<ScheduledTransactions />);
+    fireEvent.click(screen.getByRole("button", { name: "Netflix" }));
+    fireEvent.click(screen.getByRole("button", { name: "sheet-skip" }));
+    expect(screen.queryByTestId("sheet")).toBeNull();
+    expect(screen.getByText("Skip this payment?")).toBeTruthy();
+    expect(mockSkip).not.toHaveBeenCalled();
+  });
+});
 
 describe("ScheduledTransactions page (phone)", () => {
   it("collapses the calendar on entry and toggles it", () => {
