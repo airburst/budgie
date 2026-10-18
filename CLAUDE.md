@@ -16,14 +16,26 @@ Both commands must exit cleanly (zero errors) before work is done.
 typescript-eslint has no TypeScript 7 support yet (its peer range is `>=4.8.4 <6.1.0`, pending
 the new compiler API in TS 7.1), so the project installs both:
 
-| Package | Version | Used by |
-| --- | --- | --- |
-| `typescript` | 6.0.3 | typescript-eslint, editor language service |
-| `typescript7` (alias of `typescript@7.0.2`) | 7.0.2 | `bun run check-types` |
+| Package                                     | Version | Used by                                    |
+| ------------------------------------------- | ------- | ------------------------------------------ |
+| `typescript`                                | 6.0.3   | typescript-eslint, editor language service |
+| `typescript7` (alias of `typescript@7.0.2`) | 7.0.2   | `bun run check-types`                      |
 
 `check-types` therefore calls `node node_modules/typescript7/bin/tsc --noEmit` explicitly —
 `node_modules/.bin/tsc` resolves to TS 6. Do not "simplify" it back to `tsc --noEmit`.
 Collapse this to a single `typescript@7` dependency once typescript-eslint supports TS 7.
+
+---
+
+## Platforms and releases
+
+Budgie ships as Electron **and** a web PWA from one codebase (see
+`docs/ARCHITECTURE.md`). Electron IPC must return the same shapes as the web
+API: delegate to the shared services in `public/ipc/shared-services.js`, never
+hand-write SQL there. After changing `src/services` or `src/main/db`, rebuild
+`public/services.js` / `public/db.js`. Web changes also need
+`bun run verify:web` and `bun run test:e2e` (Chromium). Releases are `v*` tags
+on `main`; see `docs/RELEASE_RUNBOOK.md`.
 
 ---
 

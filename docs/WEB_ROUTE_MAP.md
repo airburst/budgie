@@ -1,53 +1,23 @@
 # Web Route Map
 
-The current application uses `HashRouter`. Phase 5A retains all existing routes
-and adds a mobile hamburger/sidebar navigation below 768px. Desktop retains top
-navigation and the Settings menu. Mobile navigation includes all primary routes,
-Categories, Payees, Settings and About, with native backup/restore/update actions
-only where the platform supports them. It closes after selection, on route
-changes and when resizing to desktop. There are no persistent bottom tabs.
+The application uses `HashRouter` (required for `file://` in Electron). Routes
+are identical on every platform; only their layout changes by width.
 
-Phase 5B adds no routes. The transaction form now renders through the shared
-`ResponsiveOverlay`: a bottom drawer below 768px and the existing centered
-dialog above it. On phones, tapping a transaction opens read-only details in
-the same surface; Edit is an explicit second step.
-
-Phase 5C adds no routes. `/` lists accounts as cards. Tapping a card goes to
-`/accounts/:id`. Below 1024px that page shows a "Selected account" card whose
-**Change account** chooser (a drawer on phones, a popover on tablets) moves
-between `/accounts/:id` routes or back to `/`. The accounts sidebar appears
-only at 1024px and above.
-
-Phase 5D adds no routes. `/accounts/:id` renders transactions as cards
-instead of a table, with a Filter popover and a More-actions menu in the
-header. Tapping a card opens the existing read-only details view through
-`ResponsiveOverlay` at every width (previously phone-only); the dialog
-variant now serves desktop details as well as edit.
-
-Phase 5E adds no routes. The QIF import review (`/accounts/:id`) is a
-`ResponsiveOverlay` (expanded drawer on phones) and is offered only where the
-platform has a file picker (Electron). Native Backup/Restore remain Electron-only
-overlays, and portable import replacement uses the shared `ConfirmDialog`.
-
-Phase 5F adds no routes. `/reconcile/:id` lists transactions as selectable cards
-with a separate Edit button that opens the transaction editor overlay.
-`/categories` and `/payees` are card lists whose details, create and edit forms
-are `ResponsiveOverlay`s, with deletes confirmed through `ConfirmDialog`.
-
-Phase 5G adds no routes. `/scheduled` renders subscriptions as cards. Tapping one
-opens read-only details in the scheduled payment overlay (edit and record
-payment are explicit steps), and delete uses `ConfirmDialog`. One account filter
-drives the list, summary and calendar.
-
-Phase 5H adds no routes. `/budget` envelope create/edit and Move money are
-controlled `ResponsiveOverlay`s owned by the page; Fill from last month and
-envelope deletion use `ConfirmDialog`.
-
-Phase 5I adds no routes. `/forecast/:id` lists projected rows as cards (whole
-card toggles inclusion, a separate Details button opens a read-only overlay) and
-Help is an information overlay. `/reports` wraps its controls under the heading
-and gives each chart a text "Show values" list. About (header and settings) is an
-information overlay: a content-sized drawer on phones, a dialog from 768px.
+- **Below 768px (phone):** hamburger/sidebar navigation (no persistent bottom
+  tabs). The header bar carries the page title, a back arrow on detail routes,
+  and the primary action. The menu lists all primary routes, Categories,
+  Payees and Settings, with the app version at the bottom; native
+  backup/restore/update actions appear only where the platform supports them.
+- **768px and up:** top navigation and the Settings menu; About is a dialog.
+- **Lists** (accounts, transactions, reconcile, forecast, scheduled,
+  categories, payees, budget envelopes) render as cards. Tapping a card opens
+  read-only details; edit, record, skip and delete are explicit actions and
+  deletes go through `ConfirmDialog`.
+- **Forms and details** use `ResponsiveOverlay`: a bottom drawer on phones, a
+  centred dialog from 768px. `ConfirmDialog` is the shared destructive confirm.
+- **Reports** wraps its controls, and every chart has a text "Show values" list.
+- **Web only:** QIF import and backup/restore are hidden (no file-picker
+  adapter); portable import/export is available in Settings on every platform.
 
 ```mermaid
 flowchart TD

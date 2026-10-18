@@ -36,6 +36,25 @@ Rules enforced by the workflows:
    to home screen (see PHASE4_MANUAL_CHECKLIST.md "Home screen icon and name").
 6. Edit the GitHub release notes (they are created empty).
 
+## Release history
+
+- `v1.0.0` (2026-10-18): web deployed; the Windows build failed (a Windows-only
+  path bug in the web-artifact plugin), so the GitHub release was never
+  published and was deleted. The tag remains.
+- `v1.0.1`: first complete release (web + macOS + Windows).
+
+Before tagging, cheaply catch platform-only build failures: the Release
+workflow builds mac and Windows only on a tag, so a failure leaves a draft
+release and the web already live. Fix forward with the next patch tag.
+
+## Desktop auto-update
+
+The Electron updater reads GitHub Releases without credentials. While the
+repository is **private** it gets 404s and, because errors are swallowed,
+installed apps never see updates. Until that is resolved (see `docs/BACKLOG.md`)
+tell desktop users to install new versions from the Releases page. macOS builds
+are unsigned: updates only notify; Windows would auto-download.
+
 ## Previews
 
 Run the Web Deploy workflow manually, choosing the branch in "Use workflow

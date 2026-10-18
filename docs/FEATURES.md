@@ -1,5 +1,20 @@
 # Budgie Features
 
+Budgie runs as an Electron desktop app and as an installable, offline-first web
+app (PWA) with a mobile-first interface. Features are the same on both unless
+marked.
+
+## Platforms
+
+- **Desktop (Electron):** SQLite file in your data folder, automatic backups,
+  QIF import, auto-update notifications.
+- **Web / PWA:** data lives in the browser (OPFS) on that device only; works
+  offline once loaded. Clearing site data deletes it, so export regularly.
+- **Phone, tablet and desktop layouts:** cards, drawers and a header that carries
+  the title, back arrow and primary action on phones.
+- **Portable data:** Settings → Export/Import moves your data between desktop and
+  browser (import replaces the device's data).
+
 ## Accounts
 
 Multiple account types: bank, credit card, loan, investment, cash. Each tracks balance, currency (default GBP), optional interest rate and credit limit. Accounts appear in the sidebar grouped by type with running balances.
@@ -10,7 +25,7 @@ Full transaction register per account. Each transaction has: date, payee, amount
 
 - **Transfers** — linked paired transactions between accounts via `transferTransactionId`. Outgoing creates matching incoming automatically.
 - **Payee auto-complete** — remembers last category and amount per payee.
-- **QIF import** — import transactions from QIF files via file chooser dialog.
+- **QIF import** (desktop only) — import transactions from QIF files via file chooser dialog.
 
 ## Categories
 
@@ -23,6 +38,7 @@ Recurring payments using RRule (RFC 5545). Features:
 - **Recurrence patterns** — daily, weekly, monthly with interval/day-of-week/day-of-month controls
 - **Auto-post** — automatically creates transactions N days in advance of due date
 - **Calendar view** — visual upcoming schedule
+- **Skip** — move a schedule to its next date without posting (confirms first)
 - **Record payment** — manually post a single occurrence
 - **Active/inactive** — pause without deleting
 
@@ -63,13 +79,13 @@ Financial analysis with interactive charts:
 - **Net worth trend** — area chart with gradient fill, computed from account balances
 - **Summary stats** — total assets, total debt, monthly surplus, savings rate
 
-Filters: date range presets (30/60/90 days, this/last month, this year) and multi-account selection. Charts expand to full screen.
+Filters: date range presets (30/60/90 days, this/last month, this year) and multi-account selection. Charts expand to full screen, and each chart has a text "Show values" list.
 
 ## Forecasting
 
 Projects future account balance based on scheduled transactions. Shows day-by-day balance projection from current date forward.
 
-## Backups
+## Backups (desktop)
 
 - **Auto-backup** — creates backup on app quit
 - **Manual backup** — create/restore/delete from settings
@@ -82,6 +98,7 @@ Projects future account balance based on scheduled transactions. Shows day-by-da
 - Custom data folder location (move database between directories)
 - Backup folder configuration
 - Dark/light mode (follows system preference)
+- Portable data export/import (all platforms)
 
 ## Dark Mode
 
