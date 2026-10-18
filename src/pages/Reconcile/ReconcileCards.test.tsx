@@ -137,16 +137,18 @@ describe("Reconcile cards", () => {
     ).toBeNull();
   });
 
-  it("toggles exactly once from the card label and shows Selected text", () => {
+  it("toggles exactly once from the card label and marks the card selected", () => {
     renderPage();
-    expect(screen.queryByText("Selected")).toBeNull();
+    const salaryCard = () =>
+      screen.getByText("Salary", { selector: "label" }).closest("li")!;
+    expect(salaryCard().dataset.selected).toBe("false");
 
     fireEvent.click(screen.getByText("Salary", { selector: "label" }));
 
     expect(updateTransaction).toHaveBeenCalledTimes(1);
     expect(updateTransaction).toHaveBeenCalledWith(11, { cleared: true });
     expect(checkbox("Salary").checked).toBe(true);
-    expect(screen.getByText("Selected")).toBeTruthy();
+    expect(salaryCard().dataset.selected).toBe("true");
     expect(
       document.querySelector('[data-slot="reconcile-task-bar"]')?.textContent,
     ).toContain("1 selected");
@@ -154,7 +156,7 @@ describe("Reconcile cards", () => {
     fireEvent.click(checkbox("Salary"));
     expect(updateTransaction).toHaveBeenCalledTimes(2);
     expect(updateTransaction).toHaveBeenLastCalledWith(11, { cleared: false });
-    expect(screen.queryByText("Selected")).toBeNull();
+    expect(salaryCard().dataset.selected).toBe("false");
   });
 
   it("Edit is a separate control that does not toggle selection", () => {

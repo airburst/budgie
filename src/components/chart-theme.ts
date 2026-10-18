@@ -43,3 +43,14 @@ export const chartMargin = {
   bottom: 32,
   left: 60,
 } as const;
+
+/**
+ * Touch tuning for scrubbing a chart to read a value at a date. On phones a
+ * 2:1 plot is only ~170px tall, so use a squarer one; `pan-y` keeps horizontal
+ * drags with the chart (not cancelled by the browser) while vertical swipes
+ * still scroll the page; and a wider focus radius means a fingertip needn't
+ * land right on a bar.
+ */
+export const PHONE_ASPECT = 1.25;
+export const CHART_TOUCH = "touch-pan-y";
+export const CHART_FOCUS_DISTANCE = 120;

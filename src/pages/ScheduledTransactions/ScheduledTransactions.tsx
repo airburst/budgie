@@ -1,3 +1,4 @@
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -7,6 +8,7 @@ import {
 import { useMinWidth } from "@/hooks/useMinWidth";
 import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { CalendarDaysIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
+import { formatDate } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import Layout from "../layout";
 import { AccountFilter } from "./AccountFilter";
@@ -15,12 +17,13 @@ import { ScheduledCalendar } from "./ScheduledCalendar";
 import { ScheduledList } from "./ScheduledList";
 import { ScheduledPaymentDialog } from "./ScheduledPaymentForm";
 import { ScheduledSummaryCard } from "./ScheduledSummaryCard";
+import { nextDueDateAfter } from "./schedule-advance";
 import { accountScopeLabel } from "./scheduled-display";
 
 type SheetMode = "details" | "edit";
 
 export default function ScheduledTransactions() {
-  const { scheduled, accounts, remove } = useScheduledTransactions();
+  const { scheduled, accounts, remove, skip } = useScheduledTransactions();
   const isDesktop = useMinWidth(1024);
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -29,6 +32,10 @@ export default function ScheduledTransactions() {
 
   const [recordOpen, setRecordOpen] = useState(false);
   const [recordingId, setRecordingId] = useState<number | null>(null);
+
+  // Skip always asks first: it moves the due date and can't be undone.
+  const [skippingId, setSkippingId] = useState<number | null>(null);
+  const skipping = scheduled.find((s) => s.id === skippingId) ?? null;
 
   // Collapsed on entry; expanded state lives only as long as this view.
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -121,6 +128,18 @@ export default function ScheduledTransactions() {
     openRecord(id);
   }
 
+  function skipFromDetails(id: number) {
+    setSheetOpen(false);
+    setSkippingId(id);
+  }
+
+  const skipNext = skipping ? nextDueDateAfter(skipping) : null;
+  const skipDescription = skipping
+    ? skipNext
+      ? `${skipping.payee} due ${formatDate(skipping.nextDueDate!)} moves to ${formatDate(skipNext)}. Nothing is recorded.`
+      : `This is the last occurrence of ${skipping.payee}, so skipping it removes the schedule. Nothing is recorded.`
+    : "This will move the schedule to its next date.";
+
   const emptyContent =
     scheduled.length === 0 ? (
       <div className="flex flex-col items-center justify-center gap-4 rounded-md border border-border px-4 py-12 text-center">
@@ -191,6 +210,7 @@ export default function ScheduledTransactions() {
       accounts={accounts}
       onView={openView}
       onRecord={openRecord}
+      onSkip={setSkippingId}
       onEdit={openEdit}
       onDelete={(id) => remove.mutate(id)}
       emptyContent={emptyContent}
@@ -262,6 +282,17 @@ export default function ScheduledTransactions() {
         editingId={editingId}
         initialMode={sheetMode}
         onRecord={recordFromDetails}
+        onSkip={skipFromDetails}
+      />
+
+      <ConfirmDialog
+        open={skipping !== null}
+        onOpenChange={(open) => !open && setSkippingId(null)}
+        title="Skip this payment?"
+        description={skipDescription}
+        confirmLabel="Skip"
+        confirmVariant={skipNext ? "default" : "destructive"}
+        onConfirm={() => skipping && skip.mutate(skipping)}
       />
 
       <RecordPaymentDialog

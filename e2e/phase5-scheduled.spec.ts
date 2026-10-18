@@ -37,6 +37,7 @@ async function seedSchedules(page: Page) {
       amount: number,
       days: number,
       active = true,
+      autoPost = false,
     ) =>
       window.api.createScheduledTransaction({
         accountId,
@@ -46,13 +47,13 @@ async function seedSchedules(page: Page) {
         amount,
         rrule: "FREQ=MONTHLY",
         nextDueDate: offset(days),
-        autoPost: false,
-        daysInAdvance: null,
+        autoPost,
+        daysInAdvance: autoPost ? 2 : null,
         notes: null,
         active,
       });
     await schedule(current, "Netflix", -12.99, 2);
-    await schedule(current, "Gym", -30, 5, false);
+    await schedule(current, "Gym", -30, 5, false, true);
     await schedule(savings, "Salary", 2000, 3);
     await schedule(savings, "Rent", -800, 4);
   });
@@ -63,6 +64,14 @@ const cards = (page: Page) => page.locator('[data-slot="scheduled-card"]');
 // Exclude nested confirmations; they are also drawer-popups.
 const drawer = (page: Page) =>
   page.locator('[data-slot="drawer-popup"]:not([data-nested])');
+const nextDue = (page: Page, payee: string) =>
+  page.evaluate(
+    async (name) =>
+      (await window.api.getScheduledTransactions()).find(
+        (s) => s.payee === name,
+      )?.nextDueDate ?? null,
+    payee,
+  );
 const transactionCount = (page: Page) =>
   page.evaluate(async () => (await window.api.getTransactions()).length);
 const summary = (page: Page) => page.locator('[data-slot="scheduled-summary"]');
@@ -166,10 +175,12 @@ test.describe("phone", () => {
   test("status is text and card actions are 44px targets", async ({ page }) => {
     await seedSchedules(page);
     const gym = cards(page).filter({ hasText: "Gym" });
-    await expect(gym.getByText("Paused")).toBeVisible();
+    await expect(gym.getByText("Paused").locator("visible=true")).toBeVisible();
+    await expect(gym.getByText("Auto-post 2 days ahead")).toBeVisible();
 
     for (const name of [
       "Record payment for Netflix",
+      "Skip Netflix",
       "Edit Netflix",
       "Delete Netflix",
     ]) {
@@ -226,6 +237,39 @@ test.describe("phone", () => {
     await drawer(page).getByRole("button", { name: "Change amount" }).tap();
     await expect(drawer(page).getByLabel("Deposit")).toHaveValue("2000.00");
     expect(await transactionCount(page)).toBe(0);
+  });
+
+  test("skip asks first, then moves the due date without recording", async ({
+    page,
+  }) => {
+    await seedSchedules(page);
+    const before = await nextDue(page, "Netflix");
+
+    await page.getByRole("button", { name: "Skip Netflix" }).tap();
+    await expect(drawer(page).getByText("Skip this payment?")).toBeVisible();
+    await expect(drawer(page)).toContainText("Nothing is recorded");
+    await drawer(page).getByRole("button", { name: "Cancel" }).tap();
+    await expect(drawer(page)).toHaveCount(0);
+    expect(await nextDue(page, "Netflix")).toBe(before);
+
+    await page.getByRole("button", { name: "Skip Netflix" }).tap();
+    await drawer(page).getByRole("button", { name: "Skip", exact: true }).tap();
+    await expect(drawer(page)).toHaveCount(0);
+    await expect.poll(() => nextDue(page, "Netflix")).not.toBe(before);
+    expect(await transactionCount(page)).toBe(0);
+  });
+
+  test("details offer Skip too, and it confirms before acting", async ({
+    page,
+  }) => {
+    await seedSchedules(page);
+    const before = await nextDue(page, "Netflix");
+    await page.getByRole("button", { name: "Netflix", exact: true }).tap();
+    await drawer(page).getByRole("button", { name: "Skip", exact: true }).tap();
+    await expect(drawer(page).getByText("Skip this payment?")).toBeVisible();
+    expect(await nextDue(page, "Netflix")).toBe(before);
+    await drawer(page).getByRole("button", { name: "Skip", exact: true }).tap();
+    await expect.poll(() => nextDue(page, "Netflix")).not.toBe(before);
   });
 
   test("delete asks for confirmation first", async ({ page }) => {
@@ -318,7 +362,7 @@ test.describe("desktop", () => {
     );
     expect(Math.max(...left) - Math.min(...left)).toBeLessThanOrEqual(1);
 
-    // Row-one contents (amount and actions) share a vertical centre.
+    // Single-row cards: amount and actions share the card's vertical centre.
     const offsets = await cards(page).evaluateAll((els) =>
       els.map((card) => {
         const amount = card
@@ -338,6 +382,34 @@ test.describe("desktop", () => {
     await expect(
       page.getByRole("button", { name: "Record payment for Netflix" }),
     ).toBeVisible();
+  });
+
+  test("desktop drops auto-post text, keeps Paused, and skip confirms", async ({
+    page,
+  }) => {
+    await seedSchedules(page);
+    await expect(cards(page)).toHaveCount(4);
+    const gym = cards(page).filter({ hasText: "Gym" });
+    await expect(gym.getByText("Paused", { exact: true })).toBeVisible();
+    await expect(gym.getByText(/Auto-post/)).toBeHidden();
+    await expect(
+      page.locator('[data-slot="scheduled-status"]').first(),
+    ).toBeHidden();
+
+    // One compact row: no second line for status.
+    const heights = await cards(page).evaluateAll((els) =>
+      els.map((el) => el.getBoundingClientRect().height),
+    );
+    expect(Math.max(...heights)).toBeLessThanOrEqual(70);
+
+    const before = await nextDue(page, "Netflix");
+    await page.getByRole("button", { name: "Skip Netflix" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Skip this payment?")).toBeVisible();
+    expect(await nextDue(page, "Netflix")).toBe(before);
+    await dialog.getByRole("button", { name: "Skip", exact: true }).click();
+    await expect.poll(() => nextDue(page, "Netflix")).not.toBe(before);
+    expect(await transactionCount(page)).toBe(0);
   });
 
   test("sort, details dialog and record dialog", async ({ page }) => {
@@ -371,5 +443,65 @@ test.describe("desktop", () => {
     expect(await transactionCount(page)).toBe(0);
     await record.getByRole("button", { name: "Record", exact: true }).click();
     await expect.poll(() => transactionCount(page)).toBe(1);
+  });
+});
+
+test.describe("crossover (1024px)", () => {
+  test.use({ viewport: { width: 1024, height: 800 } });
+
+  test("payee keeps a readable width; frequency and account sit beneath it", async ({
+    page,
+  }) => {
+    await seedSchedules(page);
+    await expect(cards(page)).toHaveCount(4);
+
+    const widths = await cards(page).evaluateAll((els) =>
+      els.map(
+        // The payee cell (button + badge), not the shrink-wrapped button.
+        (el) =>
+          el.querySelector("button")!.parentElement!.getBoundingClientRect()
+            .width,
+      ),
+    );
+    // "Netflix" never wraps into a sliver; the column has room to spare.
+    expect(Math.min(...widths)).toBeGreaterThanOrEqual(180);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      ),
+    ).toBeLessThanOrEqual(0);
+
+    // Account and frequency sit on a second line directly under the payee.
+    const netflix = cards(page).filter({ hasText: "Netflix" });
+    const payeeBox = (await netflix
+      .getByRole("button", { name: "Netflix", exact: true })
+      .boundingBox())!;
+    const repeatsBox = (await netflix
+      .locator("p")
+      .filter({ hasText: "Repeats" })
+      .boundingBox())!;
+    const accountBox = (await netflix
+      .locator("p")
+      .filter({ hasText: "Account" })
+      .boundingBox())!;
+    expect(repeatsBox.y).toBeGreaterThan(payeeBox.y + payeeBox.height - 1);
+    expect(Math.abs(repeatsBox.x - payeeBox.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(accountBox.y - repeatsBox.y)).toBeLessThanOrEqual(1);
+
+    // Amount and actions stay centred against the two-line card.
+    const offsets = await cards(page).evaluateAll((els) =>
+      els.map((card) => {
+        const box = card.getBoundingClientRect();
+        const amount = card
+          .querySelector('[data-slot="scheduled-amount"]')!
+          .getBoundingClientRect();
+        return Math.abs(
+          amount.top + amount.height / 2 - (box.top + box.height / 2),
+        );
+      }),
+    );
+    expect(Math.max(...offsets)).toBeLessThanOrEqual(1);
   });
 });

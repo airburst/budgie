@@ -1,5 +1,6 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Amount } from "@/components/ui/amount";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,6 +24,7 @@ import {
   ArrowUpIcon,
   PencilIcon,
   ReceiptText,
+  SkipForwardIcon,
   Trash2Icon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -41,6 +43,8 @@ type ScheduledListProps = {
   onView: (id: number) => void;
   /** Explicit action; the only way to record money from the list. */
   onRecord: (id: number) => void;
+  /** Asks to move the schedule to its next date; the caller confirms. */
+  onSkip: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   /** Rendered instead of cards when there is nothing to show. */
@@ -56,15 +60,18 @@ const features = tableFeatures({
 
 const columnHelper = createColumnHelper<typeof features, EnrichedRow>();
 
-// Phone: payee | amount. Desktop: due / payee / amount / frequency / account / actions.
+// Phone: payee | amount. lg (two-pane page, so narrow): due / payee / amount /
+// actions, with frequency and account on a second line under the payee.
+// xl: due / payee / amount / frequency / account / actions in one row.
 const LIST_COLUMNS =
-  "grid-cols-[minmax(0,1fr)_auto] gap-x-3 lg:grid-cols-[6rem_minmax(0,1fr)_7rem_6rem_minmax(8rem,12rem)_auto] lg:gap-x-4";
+  "grid-cols-[minmax(0,1fr)_auto] gap-x-3 lg:grid-cols-[5.5rem_minmax(0,1fr)_6.5rem_auto] lg:gap-x-4 xl:grid-cols-[6rem_minmax(14rem,1fr)_7rem_6rem_minmax(7rem,11rem)_auto]";
 
 export function ScheduledList({
   scheduledTransactions,
   accounts,
   onView,
   onRecord,
+  onSkip,
   onEdit,
   onDelete,
   emptyContent,
@@ -187,9 +194,9 @@ export function ScheduledList({
               <span>Due</span>
               <span>Payee</span>
               <span className="text-right">Amount</span>
-              <span>Frequency</span>
-              <span>Account</span>
-              <span />
+              <span className="hidden xl:block">Frequency</span>
+              <span className="hidden xl:block">Account</span>
+              <span className="lg:col-start-4 xl:col-start-6" />
             </div>
             <ul
               aria-label="Subscriptions"
@@ -201,6 +208,7 @@ export function ScheduledList({
                   item={row.original}
                   onView={onView}
                   onRecord={onRecord}
+                  onSkip={onSkip}
                   onEdit={onEdit}
                   onDeleteRequest={() => setPendingDelete(row.original)}
                 />
@@ -229,6 +237,7 @@ type ScheduledCardProps = {
   item: EnrichedRow;
   onView: (id: number) => void;
   onRecord: (id: number) => void;
+  onSkip: (id: number) => void;
   onEdit: (id: number) => void;
   onDeleteRequest: () => void;
 };
@@ -237,6 +246,7 @@ function ScheduledCard({
   item,
   onView,
   onRecord,
+  onSkip,
   onEdit,
   onDeleteRequest,
 }: ScheduledCardProps) {
@@ -252,56 +262,81 @@ function ScheduledCard({
       )}
     >
       {/* Whole-card tap opens read-only details; it never records money. */}
-      <button
-        type="button"
-        onClick={() => onView(item.id)}
-        className="col-start-1 row-start-1 min-w-0 text-left font-medium break-words outline-none after:absolute after:inset-0 after:rounded-lg after:content-[''] lg:col-start-2"
-      >
-        {item.payee}
-      </button>
+      <div className="col-start-1 row-start-1 min-w-0 lg:col-start-2 lg:flex lg:items-center lg:gap-2">
+        <button
+          type="button"
+          onClick={() => onView(item.id)}
+          className="min-w-0 text-left font-medium break-words outline-none after:absolute after:inset-0 after:rounded-lg after:content-['']"
+        >
+          {item.payee}
+        </button>
+        {/* Desktop drops auto-post text but keeps Paused: the dashed border alone isn't a text cue. */}
+        {!item.active && (
+          <Badge variant="secondary" className="hidden lg:inline-flex">
+            Paused
+          </Badge>
+        )}
+      </div>
       <p
         data-slot="scheduled-amount"
-        className="col-start-2 row-start-1 text-right font-semibold tabular-nums lg:col-start-3"
+        className="col-start-2 row-start-1 text-right font-semibold tabular-nums lg:col-start-3 lg:row-span-2 lg:row-start-1 xl:row-span-1 xl:row-start-1"
       >
         <span className="sr-only">Amount </span>
         <Amount value={item.amount} />
       </p>
 
-      {/* Phone: one wrapping metadata line. Desktop: each cell is its own column. */}
+      {/* Phone: one wrapping metadata line. lg: due beside the payee, frequency
+          and account on a line below it. xl: every cell is its own column. */}
       <div className="col-span-full flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground lg:contents lg:text-sm">
-        <p className="lg:col-start-1 lg:row-start-1">
+        <p className="lg:col-start-1 lg:row-span-2 lg:row-start-1 xl:row-span-1 xl:row-start-1">
           <span className="lg:sr-only">Next due </span>
           {item.nextDueDate ? formatDate(item.nextDueDate) : "not set"}
         </p>
-        <p className="lg:col-start-4 lg:row-start-1">
-          <span className="sr-only">Repeats </span>
-          <FrequencyBadge rruleStr={item.rrule} />
-        </p>
-        <p className="min-w-0 break-words lg:col-start-5 lg:row-start-1">
-          <span className="sr-only">Account </span>
-          {item.accountName}
-        </p>
+        <div className="contents lg:col-start-2 lg:row-start-2 lg:flex lg:flex-wrap lg:items-center lg:gap-x-3 lg:gap-y-1 xl:contents">
+          <p className="xl:col-start-4 xl:row-start-1">
+            <span className="sr-only">Repeats </span>
+            <FrequencyBadge rruleStr={item.rrule} />
+          </p>
+          <p className="min-w-0 break-words xl:col-start-5 xl:row-start-1">
+            <span className="sr-only">Account </span>
+            {item.accountName}
+          </p>
+        </div>
         {status.length > 0 && (
           <p
             data-slot="scheduled-status"
-            className="font-medium text-foreground lg:col-start-2 lg:row-start-2 lg:text-xs"
+            className="font-medium text-foreground lg:hidden"
           >
             {status.join(" · ")}
           </p>
         )}
       </div>
 
-      <div className="relative z-10 col-span-full flex items-center justify-between gap-2 lg:col-span-1 lg:col-start-6 lg:row-start-1 lg:justify-end">
-        <Button
-          variant="ghost"
-          className="min-h-11 border-border lg:size-8 lg:min-h-0 lg:border-transparent lg:p-0"
-          aria-label={`Record payment for ${item.payee}`}
-          title="Record payment"
-          onClick={() => onRecord(item.id)}
-        >
-          <ReceiptText />
-          <span className="lg:sr-only">Record payment</span>
-        </Button>
+      <div className="relative z-10 col-span-full flex items-center justify-between gap-2 lg:col-span-1 lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:justify-end xl:col-start-6 xl:row-span-1 xl:row-start-1">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            className="min-h-11 border-border lg:size-8 lg:min-h-0 lg:border-transparent lg:p-0"
+            aria-label={`Record payment for ${item.payee}`}
+            title="Record payment"
+            onClick={() => onRecord(item.id)}
+          >
+            <ReceiptText />
+            <span className="lg:sr-only">Record payment</span>
+          </Button>
+          {item.nextDueDate && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11 lg:size-8"
+              title="Skip"
+              aria-label={`Skip ${item.payee}`}
+              onClick={() => onSkip(item.id)}
+            >
+              <SkipForwardIcon />
+            </Button>
+          )}
+        </div>
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"

@@ -102,8 +102,7 @@ async function expectHitTarget(
 
 async function transactionsSnapshot(page: Page, accountId: number) {
   return page.evaluate(
-    async (id) =>
-      JSON.stringify(await window.api.getTransactionsByAccount(id)),
+    async (id) => JSON.stringify(await window.api.getTransactionsByAccount(id)),
     accountId,
   );
 }
@@ -173,9 +172,9 @@ test.describe("forecast on a phone (390x844)", () => {
     await expect(cards(page).first()).toBeVisible();
 
     const bar = controls(page);
-    expect(
-      await bar.evaluate((el) => getComputedStyle(el).position),
-    ).toBe("sticky");
+    expect(await bar.evaluate((el) => getComputedStyle(el).position)).toBe(
+      "sticky",
+    );
     const viewport = page.viewportSize()!;
     const barBox = (await bar.boundingBox())!;
     // Pinned to the bottom of the viewport before any scrolling.
@@ -194,14 +193,15 @@ test.describe("forecast on a phone (390x844)", () => {
     );
 
     // Only <main> scrolls: no nested overflow scroller inside the page.
-    const nested = await page.evaluate(() =>
-      [...document.querySelectorAll("main *")].filter((el) => {
-        const style = getComputedStyle(el);
-        return (
-          /(auto|scroll)/.test(style.overflowY) &&
-          el.scrollHeight > el.clientHeight + 1
-        );
-      }).length,
+    const nested = await page.evaluate(
+      () =>
+        [...document.querySelectorAll("main *")].filter((el) => {
+          const style = getComputedStyle(el);
+          return (
+            /(auto|scroll)/.test(style.overflowY) &&
+            el.scrollHeight > el.clientHeight + 1
+          );
+        }).length,
     );
     expect(nested).toBe(0);
 
@@ -252,7 +252,9 @@ test.describe("forecast on a phone (390x844)", () => {
     expect(details.y).toBeGreaterThanOrEqual(amount.y + amount.height - 1);
 
     // End date + Refresh share one compact row with Help (no tall wrap).
-    expect((await controls(page).boundingBox())!.height).toBeLessThanOrEqual(80);
+    expect((await controls(page).boundingBox())!.height).toBeLessThanOrEqual(
+      80,
+    );
 
     await controls(page).getByRole("button", { name: "Help" }).tap();
     await expect(drawer(page)).toBeVisible();
@@ -322,7 +324,9 @@ test.describe("forecast on desktop (1280x800)", () => {
     const boiler = card(page, "Boiler service");
     await boiler.locator("label").click();
     await expect(boiler).toContainText("Excluded from forecast");
-    await boiler.getByRole("button", { name: "Details for Boiler service" }).click();
+    await boiler
+      .getByRole("button", { name: "Details for Boiler service" })
+      .click();
     const dialog = page.locator('[data-slot="dialog-content"]');
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText(MEMO);
@@ -331,5 +335,38 @@ test.describe("forecast on desktop (1280x800)", () => {
 
     await controls(page).getByRole("button", { name: "Help" }).click();
     await expect(dialog).toContainText("Forecast Help");
+  });
+
+  test("end-date calendar is not squeezed to the trigger's width", async ({
+    page,
+  }) => {
+    const accountId = await seedForecast(page);
+    await page.goto(`/#/forecast/${accountId}`);
+    await controls(page)
+      .getByRole("button", { name: /\d{2}\/\d{2}\/\d{4}/ })
+      .click();
+    const popover = page.locator('[data-slot="popover-content"]');
+    await expect(popover).toBeVisible();
+    const box = (await popover.boundingBox())!;
+    // min-w-72 at the app's root font size (~273px); the trigger is 160px.
+    expect(box.width).toBeGreaterThanOrEqual(270);
+    // Seven day cells across, each wide enough to hit.
+    const cell = (await popover.locator("td button").first().boundingBox())!;
+    expect(cell.width).toBeGreaterThanOrEqual(32);
+  });
+
+  test("chart y labels start at the card edge, not in a fixed gutter", async ({
+    page,
+  }) => {
+    const accountId = await seedForecast(page);
+    await page.goto(`/#/forecast/${accountId}`);
+    await expect(cards(page).first()).toBeVisible();
+    const cardLeft = (await cards(page).first().boundingBox())!.x;
+    const labelLeft = await page
+      .locator('svg[aria-label="Forecast balance over time"] text')
+      .evaluateAll((els) =>
+        Math.min(...els.map((el) => el.getBoundingClientRect().left)),
+      );
+    expect(Math.abs(labelLeft - cardLeft)).toBeLessThanOrEqual(6);
   });
 });

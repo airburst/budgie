@@ -27,7 +27,7 @@ import { useScheduledTransactions } from "@/hooks/useScheduledTransactions";
 import { formatDate } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { computeNextOccurrenceAfter } from "./recurrence/buildRRule";
+import { advanceScheduledTransaction, nextDueDateAfter } from "./schedule-advance";
 
 type RecordPaymentDialogProps = {
   open: boolean;
@@ -118,17 +118,7 @@ export function RecordPaymentDialog({
 
   async function advanceSchedule() {
     if (!sched) return;
-    const newNextDueDate = sched.nextDueDate
-      ? computeNextOccurrenceAfter(sched.rrule, sched.nextDueDate)
-      : null;
-    if (newNextDueDate === null) {
-      // Exhausted (e.g. a "once" schedule): it will never occur again.
-      await window.api.deleteScheduledTransaction(sched.id);
-    } else {
-      await window.api.updateScheduledTransaction(sched.id, {
-        nextDueDate: newNextDueDate,
-      });
-    }
+    await advanceScheduledTransaction(sched);
   }
 
   const recordMutation = useMutation({
@@ -238,9 +228,7 @@ export function RecordPaymentDialog({
   const category = categories.find((c) => c.id === Number(form.categoryId));
   const amount =
     (parseFloat(form.deposit) || 0) - (parseFloat(form.withdrawal) || 0);
-  const isLastOccurrence =
-    !sched.nextDueDate ||
-    computeNextOccurrenceAfter(sched.rrule, sched.nextDueDate) === null;
+  const isLastOccurrence = nextDueDateAfter(sched) === null;
 
   return (
     <ResponsiveOverlay open={open} onOpenChange={handleOverlayOpenChange}>

@@ -61,6 +61,7 @@ function renderList(
   const handlers = {
     onView: vi.fn(),
     onRecord: vi.fn(),
+    onSkip: vi.fn(),
     onEdit: vi.fn(),
     onDelete: vi.fn(),
   };
@@ -131,6 +132,31 @@ describe("ScheduledList", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit Netflix" }));
     expect(onEdit).toHaveBeenCalledWith(1);
     expect(onView).not.toHaveBeenCalled();
+  });
+
+  it("Skip is its own explicit action and is offered only with a due date", () => {
+    const { onSkip, onView, onRecord } = renderList([
+      makeTx({ id: 1, payee: "Netflix" }),
+      makeTx({ id: 2, payee: "Undated", nextDueDate: null }),
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Skip Netflix" }));
+    expect(onSkip).toHaveBeenCalledWith(1);
+    expect(onView).not.toHaveBeenCalled();
+    expect(onRecord).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Skip Undated" })).toBeNull();
+  });
+
+  it("marks paused schedules with a Paused badge beside the payee", () => {
+    renderList();
+    const gym = screen.getByRole("button", { name: "Gym" }).closest("li")!;
+    const badges = within(gym).getAllByText("Paused");
+    expect(badges.some((el) => el.getAttribute("data-slot") === "badge")).toBe(
+      true,
+    );
+    const netflix = screen
+      .getByRole("button", { name: "Netflix" })
+      .closest("li")!;
+    expect(within(netflix).queryByText("Paused")).toBeNull();
   });
 
   it("confirms before deleting", () => {

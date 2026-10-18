@@ -1,5 +1,6 @@
 import type { ScheduledTransaction } from "@/types/electron";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { advanceScheduledTransaction } from "@/pages/ScheduledTransactions/schedule-advance";
 import { useAccounts } from "./useAccounts";
 import { useCategories } from "./useCategories";
 
@@ -39,5 +40,12 @@ export function useScheduledTransactions() {
       qc.invalidateQueries({ queryKey: ["scheduled_transactions"] }),
   });
 
-  return { scheduled, accounts, categories, create, update, remove };
+  // Moves the schedule to its next date; nothing is recorded.
+  const skip = useMutation({
+    mutationFn: (s: ScheduledTransaction) => advanceScheduledTransaction(s),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["scheduled_transactions"] }),
+  });
+
+  return { scheduled, accounts, categories, create, update, remove, skip };
 }

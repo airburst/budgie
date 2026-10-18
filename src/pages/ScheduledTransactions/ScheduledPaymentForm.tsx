@@ -50,6 +50,8 @@ type ScheduledPaymentDialogProps = {
   initialMode?: Mode;
   /** Explicit Record payment action from the details view. */
   onRecord?: (id: number) => void;
+  /** Details only: asks the caller to confirm and skip to the next date. */
+  onSkip?: (id: number) => void;
 };
 
 function makeEmpty() {
@@ -79,6 +81,7 @@ export function ScheduledPaymentDialog({
   editingId,
   initialMode = "edit",
   onRecord,
+  onSkip,
 }: ScheduledPaymentDialogProps) {
   const { scheduled, accounts, categories, create, update } =
     useScheduledTransactions();
@@ -320,9 +323,18 @@ export function ScheduledPaymentDialog({
               />
             </ResponsiveOverlayBody>
             <ResponsiveOverlayFooter className="grid-flow-row grid-cols-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                variant="outline"
+                className="order-last col-span-2 md:order-none md:col-span-1"
+                onClick={() => onOpenChange(false)}
+              >
                 Close
               </Button>
+              {onSkip && editing.nextDueDate && (
+                <Button variant="outline" onClick={() => onSkip(editing.id)}>
+                  Skip
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setMode("edit")}>
                 Edit
               </Button>
