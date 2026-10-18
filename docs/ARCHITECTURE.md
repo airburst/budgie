@@ -1,58 +1,83 @@
 # Budgie Architecture
 
-Electron 40 + React 19 + TypeScript + Tailwind v4 + better-sqlite3 + Drizzle ORM. Single-user desktop personal finance app.
+React 19 + TypeScript + Tailwind v4 + SQLite + Drizzle ORM. Single-user personal
+finance app shipping on two platforms from one codebase:
+
+- **Electron** (desktop): better-sqlite3, `~/budgie.db`, IPC.
+- **Web / PWA** (https://budget.fairhursts.net): SQLite WASM in a worker on OPFS,
+  installable and fully offline.
+
+Both run the same UI and the same domain services. Local-first: there is no
+server and no sync; data lives on the device (portable export/import moves it).
 
 ---
 
-## Process Map
+## Layers
 
 ```
-public/electron.js   Main process (CJS, Node.js) — window, IPC handlers, DB
-public/preload.js    Preload (CJS, sandboxed)    — contextBridge API surface
-src/                 Renderer (Vite + React)      — all UI code
+src/                       Renderer (Vite + React) — all UI, both platforms
+  platform/                ApplicationAPI + DatabaseCapability contracts (platform-neutral)
+  services/                Async domain services (accounts, transactions, budgets, ...)
+  web/                     Browser runtime: worker database, migrations, instance lock
+public/electron.js         Electron main process (CJS) — window, DB, backups, updates
+public/preload.js          Preload — contextBridge exposes window.api
+public/ipc/                IPC handlers
+public/services.js         Built CJS bundle of src/services for Electron (committed)
+public/services-adapter.js better-sqlite3 -> DatabaseCapability adapter
 ```
 
-`contextIsolation: true`. Renderer has zero Node access. All DB access goes through IPC.
+The renderer talks only to `window.api` (type `ApplicationAPI`,
+`src/types/electron.d.ts`):
 
----
+- Electron: `preload.js` forwards to IPC; `public/ipc/shared-services.js`
+  registers one handler per channel over the shared services bundle.
+- Web: `src/platform/browser-api.ts` calls the same services directly over the
+  worker database.
 
-## IPC Pattern
+`contextIsolation: true`; the renderer has no Node access. Shared services own
+atomic financial operations (transfers, reconciliation, auto-post, soft
+deletes). Because the Electron handlers must return the same shapes as the
+web API, **delegate to the shared service; never hand-write SQL in
+`shared-services.js`** (a raw `SELECT *` there once broke desktop Reports).
 
-One handler file per entity in `public/ipc/`. Four files change together for each entity:
+### Electron-only boundaries
 
-| File                      | Purpose                          |
-| ------------------------- | -------------------------------- |
-| `public/ipc/<entity>.js`  | Handler (CJS) — CRUD via Drizzle |
-| `public/electron.js`      | Register handler                 |
-| `public/preload.js`       | Expose on `window.api`           |
-| `src/types/electron.d.ts` | TypeScript interface             |
+Backups (`backups.js`), QIF import (`import.js`), data-folder and update
+handlers stay native. The web build reports these as unsupported and the UI
+hides them.
+
+### Legacy per-entity handlers
+
+`public/ipc/<entity>.js` (accounts, transactions, ...) predate the shared
+services. Electron registers `shared-services.js` instead; the legacy files
+remain mainly for the integration test suite and as reference.
 
 Channel naming: `<entity>:<verb>` — e.g. `accounts:getAll`, `transactions:create`.
 
-### Handler Files
+---
 
-| File                         | Entity                                             |
-| ---------------------------- | -------------------------------------------------- |
-| `accounts.js`                | Accounts + computed balances                       |
-| `categories.js`              | Categories (hierarchical)                          |
-| `transactions.js`            | Transactions + reconciliation + date-range queries |
-| `scheduled-transactions.js`  | Scheduled transactions + auto-post                 |
-| `account-reconciliations.js` | Reconciliation checkpoints                         |
-| `settings.js`                | Preferences                                        |
-| `backups.js`                 | Backup/restore + folder management                 |
-| `payees.js`                  | Payees + upsert                                    |
-| `import.js`                  | QIF file import                                    |
-| `envelopes.js`               | Envelopes (active/inactive)                        |
-| `envelope-categories.js`     | Envelope↔category mappings                         |
-| `budget-allocations.js`      | Monthly budget allocations + quickFill             |
-| `budget-transfers.js`        | Budget transfers between envelopes                 |
+## Web runtime and PWA
+
+- **Database:** `src/web/db/` — SQLite WASM (`opfs-sahpool`) in a dedicated
+  worker, serialized RPC transactions, Drizzle migrations bundled from the same
+  SQL files as Electron (`migrations.ts`, `migrate.ts`).
+- **Single instance:** `src/web/runtime/instance-lock.ts` (Web Locks +
+  BroadcastChannel); extra tabs show an inactive state and cannot mutate data.
+- **Startup states:** storage unavailable / private browsing / quota failures
+  are surfaced explicitly; Budgie never claims eviction protection.
+- **Offline:** `sw.js` is generated at build time with a precache of every
+  output file; updates are applied only after the user confirms the prompt.
+- **Headers:** `_headers` (generated by `vite.config.ts`) sets strict CSP,
+  COOP/COEP (required for OPFS/WASM workers), referrer/permissions policies,
+  `no-cache` on `sw.js`/`index.html`, immutable cache on `/assets/*`.
+- **No** analytics, remote logging, third-party scripts or CDN runtime assets.
+- Clearing site data deletes the local database; no encryption at rest.
 
 ---
 
 ## Database
 
-- File: `~/budgie.db` (configurable via `config.json`)
-- WAL mode enabled
+- Electron: `~/budgie.db` (configurable via `config.json`), WAL mode. Web: OPFS.
 - Schema: `src/main/db/schema.ts` — Drizzle `sqliteTable` definitions
 - Migrations: `src/main/db/migrations/` — generated with `bun run db:migrate`
 
@@ -72,7 +97,7 @@ Channel naming: `<entity>:<verb>` — e.g. `accounts:getAll`, `transactions:crea
 | `budgetAllocations`      | Monthly assigned amounts per envelope                           |
 | `budgetTransfers`        | Transfers between envelopes within a month                      |
 
-To add a table: edit `schema.ts`, run `bun run db:migrate`, rebuild `public/db.js` with `bun run vite build --config vite.main.config.ts`.
+To add a table: edit `schema.ts`, run `bun run db:migrate`, rebuild `public/db.js` (`bun run vite build --config vite.main.config.ts`), and rebuild `public/services.js` (`bun run vite build --config vite.services.config.ts`). Migrations are forward-only and shared by both platforms; syncable tables carry public IDs, lifecycle timestamps and tombstones.
 
 ---
 
@@ -82,6 +107,7 @@ To add a table: edit `schema.ts`, run `bun run db:migrate`, rebuild `public/db.j
 src/
   App.tsx           QueryClientProvider → HashRouter → Routes
   pages/
+    layout.tsx      Page chrome provider + header + main content
     Home/           Dashboard — account overview
     AccountTransactions/  Transaction register, import, reconciliation
     Budget/         Envelope budgeting
@@ -91,10 +117,11 @@ src/
     ScheduledTransactions/  Scheduled payments + calendar
     Reconcile/      Bank reconciliation workflow
     Forecast/       Balance projection
-    Settings/       Preferences + backup/restore
+    Settings/       Preferences, backup/restore (Electron), portable import/export
   components/
-    layout.tsx      Sidebar + header + main content
-    side-menu.tsx   Left nav, account list
+    header.tsx      App header, navigation sheet, phone page chrome
+    page-chrome.tsx Phone header title/back/action slots
+    chart-theme.ts  TanStack Charts theme and helpers
     ui/             shadcn components (Base UI variants)
   hooks/            TanStack Query wrappers + business logic
   types/
@@ -116,7 +143,7 @@ src/
 | `/reports`       | Financial reports        |
 | `/settings`      | Settings                 |
 
-`HashRouter` — required for `file://` in production builds.
+`HashRouter` — required for `file://` in production builds. Layout adapts by width (phone < 768px); see `docs/WEB_ROUTE_MAP.md`.
 
 ---
 
@@ -134,7 +161,7 @@ Tailwind v4 — all config in `src/index.css`, no `tailwind.config.ts`.
 
 - Design tokens: `oklch()` color space in `:root` / `.dark`
 - Dark mode: `.dark` class on `<html>`, synced to system preference
-- Font: Noto Sans Variable
+- Font: Nunito Sans Variable
 - Chart palette: `--chart-1` through `--chart-5`
 - UI primitives: shadcn component registry (Base UI variants, not Radix)
 
@@ -142,27 +169,46 @@ Tailwind v4 — all config in `src/index.css`, no `tailwind.config.ts`.
 
 ## Build
 
-| Command              | What it does                                            |
-| -------------------- | ------------------------------------------------------- |
-| `bun run start`      | Vite dev server on :3000 + Electron (wait-on)           |
-| `bun run build`      | Vite renderer build → Vite DB build → electron-builder  |
-| `bun run db:migrate` | `drizzle-kit generate` — SQL migration from schema diff |
+| Command                   | What it does                                                       |
+| ------------------------- | ------------------------------------------------------------------ |
+| `bun run dev`             | Web app dev server on :3000                                        |
+| `bun run start`           | Vite dev server + Electron                                         |
+| `bun run build:web`       | Web artifact in `build/` (+ `_headers`, `sw.js`)                   |
+| `bun run verify:web`      | Build and verify the artifact (headers, manifest, icons, precache) |
+| `bun run build`           | Renderer + DB + services bundles, then electron-builder            |
+| `bun run db:migrate`      | `drizzle-kit generate` — SQL migration from schema diff            |
+| `bun run export:portable` | Export an Electron DB as a Portable Data Package (device testing)  |
 
-Two Vite builds:
+Vite builds:
 
-- `vite.config.ts` — renderer: `src/` → `build/`, `base: "./"` for `file://`
+- `vite.config.ts` — renderer/web: `src/` → `build/`, `base: "./"` (works on `file://` and the web)
 - `vite.main.config.ts` — DB module: `src/main/db/index.ts` → `public/db.js` (CJS)
+- `vite.services.config.ts` — services: `src/services/index.ts` → `public/services.js` (CJS)
+
+`public/db.js` and `public/services.js` are committed build outputs; rebuild
+them after changing `src/main/db` or `src/services` (CI also rebuilds services
+for Electron releases).
+
+Releases are tag-driven (`docs/RELEASE_RUNBOOK.md`): one `v*` tag builds Electron
+(GitHub release, auto-update) and deploys the web artifact to Cloudflare Pages.
 
 ---
 
 ## Testing
 
-Vitest. 255+ tests across integration and unit suites.
+- **Vitest** (`bun run test`): ~590 tests — integration (legacy IPC handlers,
+  Electron shared-services handlers, migrations, portable data) and unit
+  (services, browser API/runtime, components, pure functions).
+- **Playwright** (`bun run test:e2e`, Chromium): ~118 specs against the built
+  web app at phone/tablet/desktop widths (`e2e/`). WebKit is not run in CI;
+  Safari/iOS are verified by hand (`docs/PHASE4_MANUAL_CHECKLIST.md`).
+- CI (`web-platform.yml`): lint, types, unit, e2e on PRs and `main`; the same
+  suite gates the production deploy on tags.
 
 ```
 src/tests/
-  integration/     IPC handlers against in-memory SQLite
-  unit/            Pure function tests (budget computations, forecasting)
+  integration/     IPC handlers + migrations against in-memory SQLite
+  unit/            Services, browser runtime, pure functions
 ```
 
 Key patterns:

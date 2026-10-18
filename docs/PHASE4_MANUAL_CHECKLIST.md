@@ -3,103 +3,71 @@
 Complete these checks on the deployed preview or production origin using a
 fresh disposable browser profile. Do not use a real financial database.
 
-## Baseline Sign-Off: 2026-10-16
+## Status: 1.0 released (2026-10-18)
 
-Mark approved the deployed functional baseline and proceeding to Phase 5 design.
-On an iPhone, the published Cloudflare app renders, including Settings; account
-creation works, data survives a second visit, and offline operation is confirmed.
-Device model, OS/browser versions, and the exact test URL were not recorded.
-Mobile layout remains the expected Phase 5 work, not a baseline failure.
+Budgie 1.0.1 is live at https://budget.fairhursts.net and on GitHub Releases.
+Mark reported (2026-10-18) that the production web app was tested and all good.
+Device model, OS/browser versions and per-check detail were not recorded, so
+treat the table below as sign-off, not a measurement log.
 
-This is approval to begin design, not public-release approval or blanket
-approval of redesigned routes and modals. Unverified restart, quota/storage
-pressure, performance, Access policy, and rollback checks remain release work.
 Persistence across visits does not establish browser eviction protection.
+Budgie never claims it.
 
 ## Verified
 
-- Chrome and Safari local PWA persistence passed.
-- Local PWA installation and offline persistence passed.
-- Private browsing passed.
-- Settings now renders; the previous browser-only failure is resolved.
-- Published iPhone account creation, revisit persistence, and offline operation
-  passed (reported by Mark on 2026-10-16).
-- Safari restart persistence and installed-PWA persistence passed (reported by
-  Mark, 2026-10-17). Offline operation held for a short (~3 minute) test; an
-  exhaustive offline route pass remains open.
+| Check                                                                                                                             | Result                         |
+| --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Local Chrome and Safari PWA persistence, installation, offline, private browsing                                                  | Passed (Mark, 2026-10-16/17)   |
+| iPhone: published app renders, account creation, revisit persistence, offline                                                     | Passed (2026-10-16)            |
+| Safari restart and installed-PWA persistence; short offline run                                                                   | Passed (2026-10-17)            |
+| Device UX across iPhone/iPad/Electron (Phase 5)                                                                                   | Passed                         |
+| Deploy, upgrade (A→B) and dashboard rollback on a throwaway Pages project: headers, offline, update prompt, same URL, data intact | Passed (2026-10-18)            |
+| Production headers, caching, manifest, icons, http→https                                                                          | Verified by probe (2026-10-18) |
+| Production web app on real devices                                                                                                | Passed (Mark, 2026-10-18)      |
+| Electron 1.0 build against a copy of a real database                                                                              | Verified (Mark, 2026-10-18)    |
 
-## Acceptance Checks
+## Known gaps (not blocking 1.0)
 
-- Safari restart persistence
-  - What: OPFS database survives Safari quit/reopen.
-  - How: Load, create a disposable record, quit Safari completely, reopen the
-    same origin, and reload.
-  - Success: The record remains and migrations are not rerun.
+- Exhaustive offline route pass (every route, every lazy chunk) on a phone.
+- Storage pressure and quota behaviour (simulate denial or exhaustion in a
+  disposable profile; Budgie must report it and keep existing data readable).
+- Performance baseline: startup/migrations, bulk import and reporting with a
+  large dataset on target iPhone/iPad, recorded with device, OS and dataset size.
+- Android Chrome, physical, and Firefox coverage.
+- Phase 5 accessibility bar not formally run: 200% text zoom, WCAG contrast and
+  screen-reader pass, breakpoint matrix at -1/at/+1px.
+- Desktop auto-update does not reach installed apps while the repository is
+  private (see `docs/BACKLOG.md`).
 
-- Installed PWA persistence
-  - What: The installed PWA can reopen its local database.
-  - How: Install from Safari/Chrome where supported, create a disposable
-    record, close and relaunch the installed app.
-  - Success: The record remains and the app starts offline.
+Move items out of this list, with dates and device details, as they are done.
 
-- Home screen icon and name
-  - What: The installed app shows the Budgie piggy-bank icon and name.
-  - How: iOS caches the icon at install time, so delete any earlier home-screen
-    copy and re-add it from Safari (Share > Add to Home Screen). On Android
-    Chrome, uninstall and reinstall. Check the icon is not cropped (maskable on
-    Android) and the browser tab shows the favicon.
-  - Success: Blue piggy-bank icon, name "Budgie", launches standalone.
+## How to run the manual checks
 
-- Storage pressure and quota
-  - What: Storage denial or exhaustion is reported without data corruption.
-  - How: Use browser storage tools or OS pressure simulation in a disposable
-    profile; retry startup and a write.
-  - Success: Budgie reports a storage/quota failure, does not claim eviction
-    protection, and existing readable data remains intact.
+Use a fresh disposable browser profile; never a real financial database.
 
-- Private browsing
-  - What: Unsupported private-mode storage is handled clearly.
-  - How: Open the deployed origin in a private/incognito window.
-  - Success: Budgie shows the private-browsing or storage-unavailable state;
-    it never presents a partially initialized application.
-
-- Safari and mobile offline startup
-  - What: The complete application opens without a network connection.
-  - How: Load once online, close the tab, disable networking, reopen the
-    origin or installed PWA, and visit each route.
-  - Success: Every route loads, lazy chunks render, and local data is usable.
-  - Current result: iPhone offline operation and Settings rendering confirmed
-    by Mark on 2026-10-16. Exhaustive offline route coverage and the wider device
-    matrix remain release checks alongside the Phase 5 redesign.
-
-- Real-device interaction
-  - What: Touch and mobile browser behavior meet the Phase 5 acceptance bar.
-  - How: Check current iPhone/iPad Safari and Android Chrome in portrait and
-    landscape, including keyboard-open forms and safe-area edges.
-  - Success: No clipped or overlapping content, touch targets are usable,
-    focus remains visible, and no workflow depends on hover or gestures.
-  - Current result: Deferred until Phase 5 mobile-first redesign.
-
-- Cloudflare preview and production
-  - Production origin: https://budget.fairhursts.net (permanent). Procedures:
-    `docs/RELEASE_RUNBOOK.md`.
-  - What: Deployment, origin isolation, and rollback configuration work.
-  - Current result: Automated `web-platform` preview deployment passed; the
-    published app is usable on iPhone. Access policy, production deployment,
-    origin isolation, and rollback acceptance are not yet recorded.
-  - How: Deploy a PR preview, verify its URL and Cloudflare Access policy,
-    then deploy a tagged artifact and restore the previous artifact.
-  - Success: Preview and production use separate origins/databases, only
-    authorized preview users can access previews, and rollback serves the
-    previous artifact without changing its origin.
-
-- Persistence/performance baseline
-  - What: Startup and representative workloads are acceptable on target
-    Safari and mobile hardware.
-  - How: Measure startup/migrations, bulk import, reporting queries, and a
-    large transaction dataset on representative devices.
-  - Success: Results are recorded with browser, OS, device, dataset size, and
-    no corruption, timeout, or unacceptable interaction delay.
+- **Home screen icon and name.** iOS caches the icon at install, so delete any
+  earlier copy and re-add from Safari (Share → Add to Home Screen). On Android
+  Chrome uninstall and reinstall. Success: Budgie piggy-bank icon (not cropped,
+  maskable on Android), name "Budgie", launches standalone, favicon in the tab.
+- **Safari restart / installed PWA persistence.** Create a disposable record,
+  quit completely, reopen the same origin; the record remains and migrations are
+  not rerun.
+- **Storage pressure and quota.** Use browser storage tools or OS pressure
+  simulation; retry startup and a write. Success: a storage/quota failure is
+  reported and existing data stays intact.
+- **Private browsing.** Success: a clear private-browsing/storage-unavailable
+  state, never a partially initialised app.
+- **Offline.** Load once online, close the tab, disable networking, reopen the
+  origin or installed PWA and visit each route. Success: every route loads, lazy
+  chunks render, local data is usable.
+- **Real-device interaction.** iPhone/iPad Safari and Android Chrome, portrait
+  and landscape, keyboard-open forms and safe-area edges. Success: nothing
+  clipped or overlapping, usable touch targets, visible focus, nothing depends
+  on hover or gestures.
+- **Deploy, upgrade and rollback.** See `docs/RELEASE_RUNBOOK.md` (rehearsal).
+- **Performance baseline.** Measure startup/migrations, bulk import, reporting
+  queries and a large transaction dataset; record browser, OS, device, dataset
+  size and any interaction delay.
 
 ## Large-dataset testing with real data
 

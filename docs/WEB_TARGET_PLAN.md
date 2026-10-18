@@ -38,120 +38,32 @@ the web platform. Hosting, sync-engine selection, and sync protocol design
 belong to `docs/SYNC_ENGINE_PLAN.md`; this plan only prepares the data
 structure and contracts for a future engine.
 
-## 3.1 Current Status and Resume Point
+## 3.1 Current Status
 
-Status as of 2026-10-18: phases 0-5 are complete. The web target runs in
-production-shaped form: shared services, browser SQLite/OPFS runtime, offline
-PWA, Portable Data Package, and the Phase 5 mobile-first UX (device-tested on
-iPhone, iPad and Electron). The remaining work is the 1.0.0 release: merge
-`web-platform` into `main`, production Cloudflare deployment on
-`budget.fairhursts.net`, and a tagged Electron + Pages release. See
-`docs/RELEASE_RUNBOOK.md`. The historical log below records how the earlier
-phases landed.
+Status as of 2026-10-18: **complete; 1.0.1 is released.** Every phase below
+shipped in 1.0.0 (tag `v1.0.0`; the Windows build failed, so the first complete
+desktop release is `v1.0.1`).
 
-Completed in this work:
+| Phase                      | Outcome                                                                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 Technical proof          | SQLite WASM + `opfs-sahpool` in a worker; Chromium and Safari verified                                                                                                 |
+| 1 Shared data foundation   | `ApplicationAPI`, `DatabaseCapability`, async domain services (`src/services`), Electron IPC over the same bundle, browser runtime with Web Lock single-instance guard |
+| 2 Portable Data Package    | Versioned, validated, atomic overwrite import/export on Electron and web                                                                                               |
+| 3 Browser runtime          | Web build, worker database, startup and inactive-tab states                                                                                                            |
+| 4 Offline PWA and security | Precache, explicit update prompt, strict CSP/COOP/COEP headers, generated-artifact checks                                                                              |
+| 5 Mobile-first UX          | Phone/tablet/desktop layouts for every route and overlay (design contract in `docs/PHASE5_UX_PLAN.md`)                                                                 |
+| Sync-ready data            | Stable public IDs, lifecycle timestamps, tombstones (migration 0013); provider-neutral                                                                                 |
 
-- Added and then removed the disposable official SQLite WASM probe dependency,
-  worker, harness, and command.
-- Verified official SQLite WASM 3.53.4 with `opfs-sahpool` in a Vite worker.
-- Verified JSON functions, foreign keys, aggregate queries, `RETURNING`,
-  rollback, and persistence across probe reload.
-- Bundled and executed all 13 existing migrations in a browser worker; a fresh
-  database applied all 13 and reload skipped all 13.
-- Verified the browser executor recognizes all 13 rows written by the real
-  Electron Drizzle migrator in an in-memory SQLite contract test.
-- Verified the same migration metadata compatibility against a physical,
-  WAL-enabled Electron database file.
-- Verified the migration worker in current Chromium: first load applied all 13
-  migrations and reload skipped all 13 through OPFS persistence.
-- Measured a Chromium persisted-database reopen at approximately 132 ms in the
-  local profile; `navigator.storage.persisted()` was false, so eviction safety
-  remains unproven.
-- An explicit Chromium `navigator.storage.persist()` request also returned
-  false on localhost; the eventual runtime must handle denied persistence
-  distinctly and avoid claiming eviction protection.
-- Verified Safari 27 first-load migration execution: all 13 migrations applied
-  in approximately 193 ms; `persist()` returned false and `persisted()` stayed
-  false in the localhost profile.
-- Verified Safari reload persistence: a second load skipped all 13 migrations
-  in approximately 199 ms; persistent-storage protection remained denied.
-- Began phase 1 with a platform-neutral `ApplicationAPI` type name and an
-  injectable `usePlatform()` capability service; existing Electron consumers
-  remain unchanged.
-- Added the shared asynchronous `DatabaseCapability` contract, a WAL-enabled
-  Electron adapter, and a persistent SQLite WASM worker/client with serialized
-  RPC transactions; the browser smoke test passed query, transaction, and
-  close behavior.
-- Extracted the first typed shared domain service for accounts, including
-  balance projections, transfer-category side effects, and reference-aware
-  soft deletion, with migrated SQLite tests.
-- Extracted the atomic reconciliation service with rollback coverage.
-- Extracted transaction reads, atomic transfer creation, and guarded deletion
-  with migrated SQLite tests; transfer-aware amount/payee propagation is now
-  covered, category conversion is covered in both directions.
-- Wired the extracted accounts, transactions, and reconciliation services into
-  Electron IPC through a built CommonJS service bundle and the existing SQLite
-  connection. Settings, payees, categories, envelopes, mappings, and budgets
-  now use the same path.
-- Moved account reconciliation CRUD onto the shared service path; backups and
-  QIF import remain native Electron boundaries.
-- Moved scheduled CRUD and startup auto-posting behind the shared async service;
-  overdue posting and exhausted-schedule removal have migrated SQLite tests.
-- Added fail-closed browser command sequencing and a Web Lock/BroadcastChannel
-  coordinator; web startup and inactive-instance UI integration remain.
-- Connected the browser lock, SQLite worker, persistence request, and shared
-  auto-post operation in a web runtime initializer with resume/shutdown hooks.
-- Connected the web runtime to React startup, installed the browser
-  `ApplicationAPI` over shared services, and added explicit inactive/startup
-  failure states; native-only operations now report unsupported behavior.
-- Added cross-origin isolation headers to `vite.config.ts` for the future
-  worker/OPFS path.
-- Added migration `0013_chilly_dorian_gray` for provider-neutral sync-ready
-  metadata: stable public IDs, lifecycle timestamps, deterministic legacy-row
-  backfill, unique indexes, update triggers, and tombstone-only delete guards.
-- Converted shared services and legacy IPC adapters to retain syncable rows as
-  tombstones while filtering them from active reads; settings remains
-  device-local.
-- Passed `bun run lint` and `bun run check-types` after cleanup.
-- Completed the local-only version-1 Portable Data Package, including
-  cross-platform export/import adapters, public-ID relationship mapping,
-  atomic tombstone-preserving overwrite, validation, golden fixtures, and
-  regression coverage.
-
-Next work, in order:
-
-1. Land `web-platform` on `main` and tag 1.0.0 (see `docs/RELEASE_RUNBOOK.md`).
-2. Production deployment: Cloudflare Pages custom domain, Access policy on
-   previews only, a rehearsed deploy and rollback. The production origin is
-   permanent: a later domain change would strand each user's OPFS database.
-3. Record the remaining manual checks in `docs/PHASE4_MANUAL_CHECKLIST.md`.
-
-Phase 1 local foundation status: complete. The shared platform/API boundary,
-database adapters, domain services, Electron IPC bundle, browser startup
-lifecycle, inactive-tab handling, persistence state, and local contract tests
-are implemented. External phase 0 browser/deployment/performance validation
-remains a separate gate before production web release.
-
-Phase 4 local implementation status: complete. The web build boundary,
-security headers, deterministic offline precache, user-confirmed service-worker
-updates, generated-artifact checks, Chromium release tests, route map, and
-Cloudflare deployment workflows are implemented. Production approval remains
-blocked only on the manual acceptance checklist and environment credentials /
-policies described there.
+Production: https://budget.fairhursts.net (Cloudflare Pages), released by `v*`
+tags together with the Electron builds. See `docs/RELEASE_RUNBOOK.md`.
+Verification and known gaps: `docs/PHASE4_MANUAL_CHECKLIST.md`. Open product
+decisions and deferred work: `docs/BACKLOG.md`.
 
 Do not select a sync engine or hosting model from this plan; those decisions
 are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
-Provider-neutral Sync-Ready Data Structure status: complete for the current
-scope. Existing integer relationships remain intact, while syncable entities
-now have stable public IDs, lifecycle metadata, deterministic legacy
-backfill, unique indexes, tombstones, and centralized delete/update behavior.
-Canonical public-key strategy and provider-specific schema remain deferred to
-`docs/SYNC_ENGINE_PLAN.md`.
-
-Current validation scope: Chromium and Safari are the approval baseline.
-Physical mobile-device and Firefox coverage is deferred until before public
-mobile launch or if browser storage behavior changes materially.
+Validation scope: Chromium and Safari are the approval baseline. Physical
+Android and Firefox coverage is deferred.
 
 ## 3. Target Architecture
 
@@ -207,9 +119,8 @@ no-sync baseline only; it does not approve the browser adapter, schema, sync
 engine, or mobile support matrix.
 
 The probe and its package dependency are intentionally disposable and are not
-part of the application runtime. Keep the result and follow-up work in
-`docs/WEB_IMPLEMENTATION_TASKS.md` rather than maintaining the synthetic
-database harness on a long-running branch.
+part of the application runtime. The result is recorded here and in
+`docs/PHASE4_MANUAL_CHECKLIST.md`; the synthetic harness was removed.
 
 Remaining local phase 0 gates:
 

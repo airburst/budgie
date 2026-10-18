@@ -1,6 +1,6 @@
 # Budgie
 
-Desktop personal finance app. Electron 40 + React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM).
+Personal finance app for desktop (Electron) and the web (offline-first PWA at https://budget.fairhursts.net). React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device.
 
 ## Features
 
@@ -12,8 +12,10 @@ Desktop personal finance app. Electron 40 + React 19 + TypeScript + Tailwind v4 
 - **Envelope budgeting** — assign categories to envelopes, monthly allocations, rollover, transfers between envelopes, underfunded detection
 - **Reports** — spending by category (donut), income vs expenses (bar), net worth trend (area), summary stats; filterable by date range and account
 - **Forecasting** — projected account balance based on scheduled transactions
-- **QIF import** — import transactions from QIF files
-- **Backups** — automatic on quit, manual create/restore, 30-day retention
+- **QIF import** (desktop) — import transactions from QIF files
+- **Backups** (desktop) — automatic on quit, manual create/restore, 30-day retention
+- **Portable data** — export/import between desktop and web
+- **Mobile-first web app** — installable PWA, works offline
 - **Dark mode** — system-preference aware, instant paint
 
 ## Quick Start
@@ -30,7 +32,10 @@ bun run dev          # dev: web app only, Vite on :3000 with hot reload
 | --------------------- | -------------------------------------- |
 | `bun run dev`         | Web app dev server (hot reload)        |
 | `bun run start`       | Dev server + Electron                  |
-| `bun run build`       | Production build                       |
+| `bun run build`       | Production build (Electron)            |
+| `bun run build:web`   | Web artifact (`build/`)                |
+| `bun run verify:web`  | Build + verify the web artifact        |
+| `bun run test:e2e`    | Playwright e2e (Chromium)              |
 | `bun run test`        | Run all tests (Vitest)                 |
 | `bun run lint`        | ESLint --fix                           |
 | `bun run check-types` | TypeScript type check                  |
@@ -81,3 +86,7 @@ xattr -d com.apple.quarantine /Applications/Budgie.app
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Features](docs/FEATURES.md)
+- [Release runbook](docs/RELEASE_RUNBOOK.md)
+- [Manual checklist](docs/PHASE4_MANUAL_CHECKLIST.md)
+- [Backlog and open decisions](docs/BACKLOG.md)
+- [Web target plan](docs/WEB_TARGET_PLAN.md), [route map](docs/WEB_ROUTE_MAP.md), [Phase 5 UX plan](docs/PHASE5_UX_PLAN.md), [hosted sync plan (future)](docs/SYNC_ENGINE_PLAN.md)
