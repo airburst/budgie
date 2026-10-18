@@ -125,13 +125,14 @@ const Header = () => {
               side="left"
               className="app-navigation min-h-0 gap-0 data-[side=left]:w-[min(20rem,calc(100%-2rem))]"
             >
-              <SheetHeader className="shrink-0 pr-16">
+              {/* Visually hidden: the dialog keeps its accessible name. */}
+              <SheetHeader className="sr-only">
                 <SheetTitle>Budgie</SheetTitle>
                 <SheetDescription>Navigation</SheetDescription>
               </SheetHeader>
               <nav
                 aria-label="Main navigation"
-                className="min-h-0 flex-1 overflow-y-auto px-3 pb-4"
+                className="min-h-0 flex-1 overflow-y-auto px-3 pt-14 pb-4"
               >
                 {[navLinks, secondaryLinks].map((links, index) => (
                   <div
