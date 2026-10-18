@@ -1,5 +1,11 @@
 # budgie
 
+## 1.0.1
+
+### Patch Changes
+
+- 256aedb: Fix the Windows desktop build, which failed resolving the build output path.
+
 ## 1.0.0
 
 ### Major Changes
