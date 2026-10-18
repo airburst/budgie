@@ -2,6 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import pkg from "./package.json" with { type: "json" };
 
@@ -34,8 +35,7 @@ const listFiles = async (directory: string): Promise<string[]> => {
 const webArtifactPlugin = (): Plugin => ({
   name: "budgie-web-artifact",
   async closeBundle() {
-    const outputDirectory = new URL("./build/", import.meta.url).pathname;
-    if (!outputDirectory) return;
+    const outputDirectory = fileURLToPath(new URL("./build/", import.meta.url));
     await writeFile(
       join(outputDirectory, "_headers"),
       `/*\n${Object.entries(securityHeaders)
