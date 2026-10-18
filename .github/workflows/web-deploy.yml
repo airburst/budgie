@@ -3,10 +3,21 @@ name: Web Deploy
 on:
   pull_request:
   push:
-    branches:
-      - web-platform
     tags:
       - "v*"
+  # Manual preview: pick the branch with "Use workflow from". Production is
+  # tag-only, so main is refused as an alias on the production project.
+  workflow_dispatch:
+    inputs:
+      alias:
+        description: Preview alias (Pages branch name). Defaults to the selected branch.
+        required: false
+        type: string
+      project:
+        description: Cloudflare Pages project
+        required: false
+        default: budgie-web
+        type: string
 
 permissions:
   contents: read
@@ -34,14 +45,22 @@ jobs:
           retention-days: 30
 
   deploy-preview:
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/web-platform') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     needs: build-web-artifact
     runs-on: ubuntu-latest
     environment: preview
+    env:
+      PAGES_PROJECT: ${{ inputs.project || 'budgie-web' }}
+      PAGES_BRANCH: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || inputs.alias || github.ref_name }}
     concurrency:
-      group: web-preview-${{ github.event_name == 'push' && 'web-platform' || github.event.number }}
+      group: web-preview-${{ github.event_name == 'pull_request' && github.event.number || inputs.alias || github.ref_name }}
       cancel-in-progress: false
     steps:
+      - name: Refuse production alias on the production project
+        if: env.PAGES_PROJECT == 'budgie-web' && env.PAGES_BRANCH == 'main'
+        run: |
+          echo "main is the production alias on budgie-web; production deploys only from a v* tag. Set an alias." >&2
+          exit 1
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
@@ -58,11 +77,27 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy build --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=${{ github.event_name == 'push' && 'web-platform' || format('pr-{0}', github.event.number) }}
+          command: pages deploy build --project-name=${{ env.PAGES_PROJECT }} --branch=${{ env.PAGES_BRANCH }}
+
+  # Tag runs skip PR/main CI, so run the full suite here and refuse tags that
+  # are not on main.
+  verify-tag:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Tagged commit must be on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  checks:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/web-platform.yml
 
   deploy-production:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    needs: build-web-artifact
+    needs: [build-web-artifact, verify-tag, checks]
     runs-on: ubuntu-latest
     environment: production
     concurrency:

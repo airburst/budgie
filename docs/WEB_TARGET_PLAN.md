@@ -40,10 +40,14 @@ structure and contracts for a future engine.
 
 ## 3.1 Current Status and Resume Point
 
-Status as of 2026-09-17: phase 0 has a passing desktop-browser feasibility
-probe, but the web target has no production runtime yet. The probe was removed
-after its findings were recorded. The durable follow-up checklist is
-`docs/WEB_IMPLEMENTATION_TASKS.md`.
+Status as of 2026-10-18: phases 0-5 are complete. The web target runs in
+production-shaped form: shared services, browser SQLite/OPFS runtime, offline
+PWA, Portable Data Package, and the Phase 5 mobile-first UX (device-tested on
+iPhone, iPad and Electron). The remaining work is the 1.0.0 release: merge
+`web-platform` into `main`, production Cloudflare deployment on
+`budgie.fairhursts.net`, and a tagged Electron + Pages release. See
+`docs/RELEASE_RUNBOOK.md`. The historical log below records how the earlier
+phases landed.
 
 Completed in this work:
 
@@ -116,14 +120,11 @@ Completed in this work:
 
 Next work, in order:
 
-1. Design the Phase 5 application shell and navigation; Mark approved the
-   deployed functional baseline on 2026-10-16 after confirming iPhone rendering,
-   Settings, account creation, revisit persistence, and offline operation.
-2. Obtain product approval of the proposed route/modal changes before
-   implementing each redesign slice; `docs/WEB_ROUTE_MAP.md` is the current
-   inventory, not blanket redesign approval.
-3. Complete and record remaining manual release checks in
-   `docs/PHASE4_MANUAL_CHECKLIST.md` before public release.
+1. Land `web-platform` on `main` and tag 1.0.0 (see `docs/RELEASE_RUNBOOK.md`).
+2. Production deployment: Cloudflare Pages custom domain, Access policy on
+   previews only, a rehearsed deploy and rollback. The production origin is
+   permanent: a later domain change would strand each user's OPFS database.
+3. Record the remaining manual checks in `docs/PHASE4_MANUAL_CHECKLIST.md`.
 
 Phase 1 local foundation status: complete. The shared platform/API boundary,
 database adapters, domain services, Electron IPC bundle, browser startup
@@ -138,9 +139,8 @@ Cloudflare deployment workflows are implemented. Production approval remains
 blocked only on the manual acceptance checklist and environment credentials /
 policies described there.
 
-The next session should begin Phase 5 UX design following the recorded baseline
-sign-off. Do not select a sync engine or hosting model from this
-plan; those decisions are owned by `docs/SYNC_ENGINE_PLAN.md`.
+Do not select a sync engine or hosting model from this plan; those decisions
+are owned by `docs/SYNC_ENGINE_PLAN.md`.
 
 Provider-neutral Sync-Ready Data Structure status: complete for the current
 scope. Existing integer relationships remain intact, while syncable entities

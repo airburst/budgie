@@ -40,17 +40,20 @@ bun run dev          # dev: web app only, Vite on :3000 with hot reload
 
 GitHub Actions deploys verified build artifacts to the Cloudflare Pages Direct
 Upload project `budgie-web`, whose production branch must be `main`.
+Production is https://budgie.fairhursts.net. See `docs/RELEASE_RUNBOOK.md` for
+the full release, rollback and rehearsal procedures.
 
 - Repository secrets: `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission)
   and `CLOUDFLARE_ACCOUNT_ID`.
-- Pushes to the long-running `web-platform` branch deploy the `web-platform`
-  preview alias without requiring a pull request or a merge into `main`.
 - Same-repository pull requests deploy previews using the stable branch alias
   `pr-<number>`. Fork pull requests build artifacts but do not receive deployment
   credentials.
-- Pushing a `v*` tag deploys production using the `main` Pages branch. Ordinary
-  pushes to `main` do not deploy production.
-- GitHub environments `preview` and `production` can provide approval gates.
+- To preview any branch, run the **Web Deploy** workflow manually and pick the
+  branch (optional `alias` and `project` inputs). There is no automatic
+  deployment on push or merge.
+- Pushing a `v*` tag (which must be on `main`) runs lint, types, unit and e2e
+  checks and then deploys production using the `main` Pages branch, while the
+  Release workflow builds Electron from the same tag.
 - Each deployment downloads the verified artifact from its workflow run;
   artifacts are retained for 30 days.
 

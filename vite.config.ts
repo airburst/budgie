@@ -42,7 +42,7 @@ const webArtifactPlugin = (): Plugin => ({
         .map(([name, value]) => `  ${name}: ${value}`)
         .join(
           "\n",
-        )}\n\n/sw.js\n  Cache-Control: no-cache\n\n/index.html\n  Cache-Control: no-cache\n`,
+        )}\n\n/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n\n/sw.js\n  Cache-Control: no-cache\n\n/index.html\n  Cache-Control: no-cache\n`,
     );
     const files = await listFiles(outputDirectory);
     const precacheUrls = [
