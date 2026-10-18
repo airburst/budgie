@@ -29,7 +29,10 @@ async function seedReports(page: Page) {
       });
       return row!.id;
     };
-    const groceries = await category("Groceries", "expense");
+    const groceries = await category(
+      "Groceries and household essentials with a deliberately long category name",
+      "expense",
+    );
     const rent = await category("Rent", "expense");
     const salary = await category("Salary", "income");
     for (let m = 0; m < 3; m++) {
@@ -70,6 +73,77 @@ const filters = (page: Page) =>
   page.getByRole("group", { name: "Report filters" });
 const chartCard = (page: Page, title: string) =>
   page.locator('[data-slot="card"]').filter({ hasText: title }).first();
+
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1024, height: 768 },
+]) {
+  test(`charts contain plots and long legends at ${viewport.width}px and after rotation`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await seedReports(page);
+    for (const size of [
+      viewport,
+      { width: viewport.height, height: viewport.width },
+    ]) {
+      await page.setViewportSize(size);
+      const card = chartCard(page, "Spending by Category");
+      const plot = card.locator('svg[aria-label="Spending by category"]');
+      const legend = card.getByRole("list", { name: "Chart legend" });
+      await expect
+        .poll(async () => {
+          const plotBox = (await plot.boundingBox())!;
+          const legendBox = (await legend.boundingBox())!;
+          return legendBox.y - plotBox.y - plotBox.height;
+        })
+        .toBeGreaterThanOrEqual(0);
+      for (const item of await legend.getByRole("listitem").all()) {
+        const box = (await item.boundingBox())!;
+        const cardBox = (await card.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(cardBox.x);
+        expect(box.x + box.width).toBeLessThanOrEqual(
+          cardBox.x + cardBox.width,
+        );
+      }
+      const plotBox = (await plot.boundingBox())!;
+      expect(Math.abs(plotBox.width - plotBox.height)).toBeLessThanOrEqual(1);
+      expect(plotBox.height).toBeLessThanOrEqual(300);
+      expect(await overflow(page)).toBeLessThanOrEqual(1);
+
+      await card
+        .getByRole("button", { name: "View Spending by Category full screen" })
+        .click();
+      const close = page.getByRole("button", {
+        name: "Close Spending by Category full screen",
+      });
+      const fullscreen = close.locator('xpath=ancestor::*[@data-slot="card"]');
+      const fullscreenLegend = fullscreen.getByRole("list", {
+        name: "Chart legend",
+      });
+      const fullPlot = fullscreen.locator(
+        'svg[aria-label="Spending by category"]',
+      );
+      await expect(fullPlot).toBeVisible();
+      await expect
+        .poll(async () => {
+          const box = (await fullPlot.boundingBox())!;
+          return box.y + box.height;
+        })
+        .toBeLessThanOrEqual(size.height);
+      if (size.width < 1024) {
+        await expect
+          .poll(async () => {
+            const plotBounds = (await fullPlot.boundingBox())!;
+            const legendBounds = (await fullscreenLegend.boundingBox())!;
+            return legendBounds.y - plotBounds.y - plotBounds.height;
+          })
+          .toBeGreaterThanOrEqual(0);
+      }
+      await close.click();
+    }
+  });
+}
 
 test.describe("reports on a phone (390x844)", () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });

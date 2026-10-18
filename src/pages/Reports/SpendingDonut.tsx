@@ -1,5 +1,6 @@
 import { useChartFillHeight } from "@/components/chart-card";
-import { ChartLegend } from "@/components/chart-legend";
+import { ChartLegend, useMeasuredHeight } from "@/components/chart-legend";
+import { ChartPlot } from "@/components/chart-plot";
 import { ChartValues } from "@/components/chart-values";
 import { animatedRenderer, budgieChartTheme } from "@/components/chart-theme";
 import { defineChart, type ChartPoint } from "@tanstack/charts";
@@ -10,7 +11,6 @@ import {
   radialArc,
   radialText,
 } from "@tanstack/charts/polar";
-import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { scaleLinear } from "d3-scale";
 
@@ -119,6 +119,7 @@ function buildDefinition(
 
 export function SpendingDonut({ slices, total, formatAmount }: Props) {
   const fillHeight = useChartFillHeight();
+  const [chartAreaRef, chartAreaHeight] = useMeasuredHeight<HTMLDivElement>();
   const totalAmount = slices.reduce((sum, slice) => sum + slice.amount, 0);
   const legendItems = slices.map((slice) => ({
     label: slice.name,
@@ -128,21 +129,35 @@ export function SpendingDonut({ slices, total, formatAmount }: Props) {
     <div
       className={
         fillHeight
-          ? "flex h-full w-full items-center gap-8"
-          : "flex flex-col items-center gap-4"
+          ? "flex h-full min-h-0 w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:gap-8"
+          : "flex min-w-0 flex-col items-center gap-4"
       }
     >
-      {fillHeight ? <ChartLegend items={legendItems} large /> : null}
-      <RendererChart
-        definition={buildDefinition(slices, total, formatAmount)}
-        renderer={animatedRenderer}
-        aspectRatio={fillHeight ? undefined : 1}
-        height={fillHeight}
-        initialWidth={300}
-        className={fillHeight ? "h-full flex-1" : "mx-auto max-h-75 w-full"}
-        ariaLabel="Spending by category"
-      />
-      {fillHeight ? null : <ChartLegend items={legendItems} />}
+      <div
+        ref={chartAreaRef}
+        className={
+          fillHeight ? "min-h-0 min-w-0 flex-1 w-full" : "w-full min-w-0"
+        }
+      >
+        <ChartPlot
+          definition={buildDefinition(slices, total, formatAmount)}
+          renderer={animatedRenderer}
+          height={fillHeight ? chartAreaHeight || undefined : undefined}
+          square
+          initialWidth={300}
+          className="w-full"
+          ariaLabel="Spending by category"
+        />
+      </div>
+      <div
+        className={
+          fillHeight
+            ? "max-h-[35%] shrink-0 overflow-y-auto lg:max-h-full lg:max-w-[35%]"
+            : "w-full min-w-0"
+        }
+      >
+        <ChartLegend items={legendItems} />
+      </div>
       {fillHeight ? null : (
         <div className="w-full">
           <ChartValues
