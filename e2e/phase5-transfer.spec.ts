@@ -147,7 +147,6 @@ test.describe("web phone: portable transfer", () => {
     await expect(nav.getByRole("button", { name: "Restore..." })).toHaveCount(
       0,
     );
-    await nav.getByRole("button", { name: "About Budgie" }).tap();
     await page.keyboard.press("Escape");
 
     const accountId = await page.evaluate(async () => {

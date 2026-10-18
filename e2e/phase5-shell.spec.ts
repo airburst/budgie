@@ -120,16 +120,13 @@ test("navigation follows the 768px breakpoint without overflowing the header", a
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Open navigation" }).click();
-  await page
-    .getByRole("dialog")
-    .getByRole("button", { name: "About Budgie" })
-    .click();
+  // The phone menu shows the version as text; About lives in the desktop menu.
+  await expect(
+    page.getByRole("dialog").getByRole("button", { name: "About Budgie" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("dialog").getByText(/^Version \d/)).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(page.locator('[data-slot="sheet-content"]')).toBeHidden();
-  // About is a content-sized information drawer on phones (5I).
-  await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
-  const about = page.locator('[data-slot="drawer-popup"]:not([data-nested])');
-  await expect(about).toBeVisible();
-  await about.getByRole("button", { name: "Close", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Open navigation" }),
   ).toBeFocused();

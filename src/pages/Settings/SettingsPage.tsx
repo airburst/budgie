@@ -135,23 +135,33 @@ export default function SettingsPage() {
   return (
     <Layout>
       <div className="mx-auto flex min-w-0 max-w-2xl flex-col p-4">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 max-md:mb-0">
+          {/* Phones: Settings is a root page (hamburger in the header). */}
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-md:hidden"
             onClick={() => navigate(-1)}
             aria-label="Go back"
           >
             <ArrowLeftIcon />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
+            Settings
+          </h1>
         </div>
 
         <Tabs defaultValue="general">
           <TabsList className="group-data-horizontal/tabs:h-auto md:group-data-horizontal/tabs:h-8">
-            <TabsTrigger value="general" className="min-h-11 md:min-h-0">General</TabsTrigger>
-            <TabsTrigger value="advanced" className="min-h-11 md:min-h-0">Advanced</TabsTrigger>
-            <TabsTrigger value="shortcuts" className="min-h-11 md:min-h-0">Shortcuts</TabsTrigger>
+            <TabsTrigger value="general" className="min-h-11 md:min-h-0">
+              General
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="min-h-11 md:min-h-0">
+              Advanced
+            </TabsTrigger>
+            <TabsTrigger value="shortcuts" className="min-h-11 md:min-h-0">
+              Shortcuts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -212,7 +222,10 @@ export default function SettingsPage() {
                       savePreference({ startupPage: v as string })
                     }
                   >
-                    <SelectTrigger id="startup-page" className="w-48 max-w-full">
+                    <SelectTrigger
+                      id="startup-page"
+                      className="w-48 max-w-full"
+                    >
                       <SelectValue>{startupPageLabel}</SelectValue>
                     </SelectTrigger>
                     <SelectContent align="end">

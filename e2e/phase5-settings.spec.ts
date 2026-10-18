@@ -30,7 +30,9 @@ test.describe("settings on a phone", () => {
     // General: theme buttons and the autofill row are 44px targets.
     await page.getByRole("tab", { name: "General" }).tap();
     for (const label of ["Light theme", "System theme", "Dark theme"]) {
-      const box = (await page.getByRole("button", { name: label }).boundingBox())!;
+      const box = (await page
+        .getByRole("button", { name: label })
+        .boundingBox())!;
       expect(box.width).toBeGreaterThanOrEqual(43.5);
       expect(box.height).toBeGreaterThanOrEqual(43.5);
     }
@@ -41,8 +43,12 @@ test.describe("settings on a phone", () => {
 
     // Advanced: portable transfer only; native backup/restore/folders absent.
     await page.getByRole("tab", { name: "Advanced" }).tap();
-    await expect(page.getByRole("button", { name: "Export data" })).toBeEnabled();
-    await expect(page.getByRole("button", { name: "Import data" })).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Export data" }),
+    ).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Import data" }),
+    ).toBeEnabled();
     await expect(page.getByText("Backup folder")).toHaveCount(0);
     await expect(page.getByText("Data folder")).toHaveCount(0);
     await expect(page.getByText(/QIF/i)).toHaveCount(0);
@@ -65,22 +71,25 @@ test.describe("settings on a phone", () => {
     expect(nested).toBe(0);
   });
 
-  test("About is a content-sized information drawer with safe focus", async ({
+  test("the menu ends with a small centred version line instead of About", async ({
     page,
   }) => {
     await page.goto("/#/settings");
     await page.getByRole("button", { name: "Open navigation" }).tap();
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: "About Budgie" })
-      .tap();
-    await expect(drawer(page)).toBeVisible();
-    await expect(drawer(page)).toContainText("Version");
-    await expect(drawer(page).getByRole("button", { name: "Close" })).toBeFocused();
-    expect((await drawer(page).boundingBox())!.height).toBeLessThan(568 * 0.6);
+    const nav = page.getByRole("dialog");
+    await expect(nav.getByRole("button", { name: "About Budgie" })).toHaveCount(
+      0,
+    );
+    const version = nav.getByText(/^Version \d/);
+    await expect(version).toBeVisible();
+    const box = (await version.boundingBox())!;
+    const sheet = (await nav.boundingBox())!;
+    // Centred along the bottom of the menu.
+    expect(
+      Math.abs(box.x + box.width / 2 - (sheet.x + sheet.width / 2)),
+    ).toBeLessThanOrEqual(2);
+    expect(box.y).toBeGreaterThan(sheet.y + sheet.height * 0.7);
     expect(await overflow(page)).toBeLessThanOrEqual(1);
-    await drawer(page).getByRole("button", { name: "Close" }).tap();
-    await expect(drawer(page)).toHaveCount(0);
   });
 });
 

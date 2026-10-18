@@ -5,6 +5,7 @@ import { useAccounts } from "@/hooks/useAccounts";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { useTransactions } from "@/hooks/useTransactions";
 import { findSubsetSum } from "@/lib/subset-sum";
+import { PageHeader } from "@/components/page-chrome";
 import { cn, formatDate } from "@/lib/utils";
 import { TransactionForm } from "@/pages/AccountTransactions/TransactionForm";
 import type { Transaction } from "@/types/electron";
@@ -215,22 +216,28 @@ export default function ReconcilePage() {
 
   return (
     <Layout>
+      <PageHeader
+        title={`Reconcile — ${account?.name ?? "—"}`}
+        onBack={() => navigate(`/accounts/${accountId}`)}
+      />
       {/* The task bar is fixed, so the page reserves its height plus the safe
           area; the last card scrolls clear of it. */}
       <div className="flex flex-col pb-[calc(9.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pt-4 pb-2">
           <div className="flex min-w-0 items-center gap-3">
+            {/* Phones: back and the title live in the header bar. */}
             <Button
               variant="ghost"
               size="icon-sm"
+              className="max-md:hidden"
               onClick={() => navigate(`/accounts/${accountId}`)}
               aria-label="Go back"
             >
               <ArrowLeftIcon />
             </Button>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight break-words sm:text-2xl">
+              <h1 className="text-xl font-bold tracking-tight break-words max-md:sr-only sm:text-2xl">
                 Reconcile — {account?.name ?? "—"}
               </h1>
               <p className="text-sm text-muted-foreground">

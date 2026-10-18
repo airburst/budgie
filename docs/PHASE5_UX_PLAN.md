@@ -1017,3 +1017,29 @@ Deferred until captures/device are available (not verifiable here, no WebKit):
 - Reports charts overflowing their labels in WebKit (worst on iPad).
 - iPad landscape: the on-screen keyboard covers ~33% of the screen and hides most of
   the reconcile dialog (low priority).
+
+### Phone headings and navigation (2026-10-18)
+
+Pages mixed visible h1s, in-content back arrows and Add buttons under a header bar
+that already showed the title. On phones (`< md`) the header bar now owns all three:
+
+- **Root pages** (Accounts, Subscriptions, Budget, Reports, Categories, Payees,
+  Settings): hamburger, title, and the page's primary action on the right (Add
+  account, Add subscription, New Category, New Payee). The h1 stays for screen
+  readers (`sr-only`). Reports keeps its filters at the top of the content;
+  Budget and Reports have no action.
+- **Drill-down pages** (Forecast, Reconcile): a back arrow replaces the hamburger,
+  and the title is `Forecast — <account>` / `Reconcile — <account>`. Reconcile's
+  statement line and its Auto Balance / Add Transaction buttons stay in content.
+- **Settings** is a root page on phones (no back arrow).
+- **Transactions** keeps its in-content h1, Filter and More actions (unchanged).
+- **From `md`** nothing changes: pages draw their own heading and buttons.
+- **Menu:** "About Budgie" is gone from the phone menu; a small centred
+  `Version x.y.z` closes it. About stays in the desktop settings menu.
+
+Mechanism: `components/page-chrome.tsx`. `Layout` wraps the header and page in a
+`PageChromeProvider`; pages render `<PageHeader title onBack />` and wrap their
+action in `<HeaderAction>`, which portals into the header's right-hand slot on
+phones and renders in place otherwise (one DOM copy, never a hidden duplicate).
+`<PageHeader>` must be rendered inside `<Layout>` since the page component itself
+sits outside the provider. e2e: `phase5-header.spec.ts`.

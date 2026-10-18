@@ -1,3 +1,4 @@
+import { HeaderAction } from "@/components/page-chrome";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   ResponsiveOverlay,
@@ -92,8 +93,7 @@ export default function Categories() {
 
   const childrenOf = (id: number) => childrenMap.get(id) ?? [];
   // Delete eligibility looks at every child, not just those matching the search.
-  const hasChildren = (id: number) =>
-    categories.some((c) => c.parentId === id);
+  const hasChildren = (id: number) => categories.some((c) => c.parentId === id);
   const detailsCategory =
     detailsId != null ? categories.find((c) => c.id === detailsId) : null;
 
@@ -105,15 +105,17 @@ export default function Categories() {
   return (
     <Layout>
       <div className="p-4 md:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3 md:mb-6">
+        <div className="flex items-center justify-between gap-3 md:mb-6">
           {/* The phone header already shows the route title. */}
           <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
             Categories
           </h1>
-          <Button className="ml-auto" onClick={() => openAdd()} size="sm">
-            <PlusIcon />
-            New Category
-          </Button>
+          <HeaderAction>
+            <Button className="ml-auto" onClick={() => openAdd()} size="sm">
+              <PlusIcon />
+              New Category
+            </Button>
+          </HeaderAction>
         </div>
 
         <SearchBox
@@ -383,7 +385,9 @@ function CategoryDetails({
               <dt className="text-muted-foreground">Type</dt>
               <dd className="capitalize">{category.expenseType}</dd>
               <dt className="text-muted-foreground">Parent</dt>
-              <dd className="break-words">{parentName ?? "None (top level)"}</dd>
+              <dd className="break-words">
+                {parentName ?? "None (top level)"}
+              </dd>
               <dt className="text-muted-foreground">Sub-categories</dt>
               <dd className="break-words">
                 {childNames.length > 0 ? childNames.join(", ") : "None"}

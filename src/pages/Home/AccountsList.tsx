@@ -1,3 +1,4 @@
+import { HeaderAction } from "@/components/page-chrome";
 import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +51,11 @@ export function AccountsList({
   let content: React.ReactNode;
   if (isLoading) {
     content = (
-      <div aria-busy="true" aria-label="Loading accounts" className="grid gap-2">
+      <div
+        aria-busy="true"
+        aria-label="Loading accounts"
+        className="grid gap-2"
+      >
         {[0, 1, 2].map((i) => (
           <Skeleton key={i} className="h-20 w-full rounded-lg" />
         ))}
@@ -64,7 +69,11 @@ export function AccountsList({
       >
         <p className="text-muted-foreground">Couldn't load your accounts.</p>
         {onRetry && (
-          <Button variant="outline" className="min-h-11 md:min-h-8" onClick={onRetry}>
+          <Button
+            variant="outline"
+            className="min-h-11 md:min-h-8"
+            onClick={onRetry}
+          >
             Try again
           </Button>
         )}
@@ -76,7 +85,10 @@ export function AccountsList({
         <p className="text-muted-foreground">
           No accounts yet. Add your first account to get started.
         </p>
-        <Button className="min-h-11 md:min-h-8" onClick={() => setFormOpen(true)}>
+        <Button
+          className="min-h-11 md:min-h-8"
+          onClick={() => setFormOpen(true)}
+        >
           <PlusIcon />
           Add Account
         </Button>
@@ -141,19 +153,21 @@ export function AccountsList({
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex items-center justify-between gap-3 max-md:mb-0">
         {/* The phone header already shows the route title. */}
         <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
           Accounts
         </h1>
         {!isLoading && !isError && accounts.length > 0 && (
-          <Button
-            className="ml-auto min-h-11 md:min-h-8"
-            onClick={() => setFormOpen(true)}
-          >
-            <PlusIcon />
-            Add account
-          </Button>
+          <HeaderAction>
+            <Button
+              className="ml-auto min-h-11 md:min-h-8"
+              onClick={() => setFormOpen(true)}
+            >
+              <PlusIcon />
+              Add account
+            </Button>
+          </HeaderAction>
         )}
       </div>
 

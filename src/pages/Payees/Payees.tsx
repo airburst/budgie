@@ -1,3 +1,4 @@
+import { HeaderAction } from "@/components/page-chrome";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
   ResponsiveOverlay,
@@ -81,15 +82,17 @@ export default function Payees() {
   return (
     <Layout>
       <div className="p-4 md:p-6">
-        <div className="mb-4 flex items-center justify-between gap-3 md:mb-6">
+        <div className="flex items-center justify-between gap-3 md:mb-6">
           {/* The phone header already shows the route title. */}
           <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
             Payees
           </h1>
-          <Button className="ml-auto" onClick={openAdd} size="sm">
-            <PlusIcon />
-            New Payee
-          </Button>
+          <HeaderAction>
+            <Button className="ml-auto" onClick={openAdd} size="sm">
+              <PlusIcon />
+              New Payee
+            </Button>
+          </HeaderAction>
         </div>
 
         <SearchBox
@@ -292,7 +295,9 @@ function PayeeDetails({
           >
             {payee?.name ?? "Payee"}
           </ResponsiveOverlayTitle>
-          <ResponsiveOverlayDescription>Payee details</ResponsiveOverlayDescription>
+          <ResponsiveOverlayDescription>
+            Payee details
+          </ResponsiveOverlayDescription>
         </ResponsiveOverlayHeader>
         <ResponsiveOverlayBody>
           {payee && (
