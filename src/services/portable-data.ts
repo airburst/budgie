@@ -677,7 +677,11 @@ export const importPortableData = async (
           ON CONFLICT(public_id) DO UPDATE SET
             created_at = excluded.created_at, updated_at = excluded.updated_at,
             deleted_at = excluded.deleted_at, envelope_id = excluded.envelope_id,
-            category_id = excluded.category_id`,
+            category_id = excluded.category_id
+          ON CONFLICT(category_id) DO UPDATE SET
+            public_id = excluded.public_id, created_at = excluded.created_at,
+            updated_at = excluded.updated_at, deleted_at = excluded.deleted_at,
+            envelope_id = excluded.envelope_id`,
         [
           row.publicId,
           row.createdAt,

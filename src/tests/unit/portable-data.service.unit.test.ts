@@ -103,6 +103,49 @@ describe("portable data export", () => {
     );
   });
 
+  it("replaces envelope category links with different public IDs", async () => {
+    const source = createDatabase();
+    await source.execute({
+      sql: "INSERT INTO envelopes (public_id, name) VALUES ('imported-envelope', 'Imported')",
+    });
+    await source.execute({
+      sql: `INSERT INTO envelope_categories (public_id, envelope_id, category_id)
+        SELECT 'imported-link', envelopes.id, categories.id
+        FROM envelopes, categories
+        WHERE envelopes.public_id = 'imported-envelope'
+        ORDER BY categories.id LIMIT 1`,
+    });
+    const exported = await createPortableData(source, {
+      applicationVersion: "0.16.3",
+      minimumReaderVersion: "0.16.3",
+    });
+    expect(exported.envelopeCategories).toHaveLength(1);
+
+    const target = createDatabase();
+    await target.execute({
+      sql: "INSERT INTO envelopes (public_id, name) VALUES ('local-envelope', 'Local')",
+    });
+    await target.execute({
+      sql: `INSERT INTO envelope_categories (public_id, envelope_id, category_id)
+        SELECT 'local-link', envelopes.id, categories.id
+        FROM envelopes, categories
+        WHERE envelopes.public_id = 'local-envelope'
+        ORDER BY categories.id LIMIT 1`,
+    });
+
+    await importPortableData(target, exported);
+    await importPortableData(target, exported);
+    const links = await target.query({
+      sql: `SELECT envelope_categories.public_id, envelopes.public_id AS envelope_public_id
+        FROM envelope_categories
+        JOIN envelopes ON envelopes.id = envelope_categories.envelope_id
+        WHERE envelope_categories.deleted_at IS NULL`,
+    });
+    expect(links).toEqual([
+      { public_id: "imported-link", envelope_public_id: "imported-envelope" },
+    ]);
+  });
+
   it("exports a moderate large dataset with stable ordering", async () => {
     const database = createDatabase();
     for (let index = 0; index < 250; index += 1) {
