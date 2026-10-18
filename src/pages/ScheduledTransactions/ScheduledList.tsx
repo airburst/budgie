@@ -313,17 +313,17 @@ function ScheduledCard({
       </div>
 
       <div className="relative z-10 col-span-full flex items-center justify-between gap-2 lg:col-span-1 lg:col-start-4 lg:row-span-2 lg:row-start-1 lg:justify-end xl:col-start-6 xl:row-span-1 xl:row-start-1">
+        <Button
+          variant="ghost"
+          className="min-h-11 border-border lg:size-8 lg:min-h-0 lg:border-transparent lg:p-0"
+          aria-label={`Record payment for ${item.payee}`}
+          title="Record payment"
+          onClick={() => onRecord(item.id)}
+        >
+          <ReceiptText />
+          <span className="lg:sr-only">Record payment</span>
+        </Button>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            className="min-h-11 border-border lg:size-8 lg:min-h-0 lg:border-transparent lg:p-0"
-            aria-label={`Record payment for ${item.payee}`}
-            title="Record payment"
-            onClick={() => onRecord(item.id)}
-          >
-            <ReceiptText />
-            <span className="lg:sr-only">Record payment</span>
-          </Button>
           {item.nextDueDate && (
             <Button
               variant="ghost"
@@ -336,8 +336,6 @@ function ScheduledCard({
               <SkipForwardIcon />
             </Button>
           )}
-        </div>
-        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
