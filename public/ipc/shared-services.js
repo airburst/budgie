@@ -143,10 +143,7 @@ module.exports = function registerSharedServices(ipcMain, database) {
   ipcMain.handle(
     "transactions:getByDateRange",
     (_, startDate, endDate, accountIds) =>
-      database.query({
-        sql: `SELECT * FROM transactions WHERE date >= ? AND date <= ?${accountIds?.length ? ` AND account_id IN (${accountIds.map(() => "?").join(", ")})` : ""} ORDER BY date ASC`,
-        params: [startDate, endDate, ...(accountIds?.length ? accountIds : [])],
-      }),
+      transactions.getByDateRange(startDate, endDate, accountIds),
   );
   ipcMain.handle("payees:getAll", () => payees.getAll());
   ipcMain.handle("payees:getById", (_, id) => payees.getById(id));
