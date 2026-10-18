@@ -1,4 +1,5 @@
 import { useChartFillHeight } from "@/components/chart-card";
+import { ChartPlot } from "@/components/chart-plot";
 import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
@@ -11,7 +12,6 @@ import {
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { barY, defineChart, type ChartPoint } from "@tanstack/charts";
-import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { scaleBand, scaleLinear } from "d3-scale";
 
@@ -101,17 +101,14 @@ export function NetWorthChart(props: Props) {
   const fillHeight = useChartFillHeight();
   const isMobile = useIsMobile();
   const chart = (
-    <RendererChart
+    <ChartPlot
       definition={buildDefinition(props, Boolean(fillHeight))}
       renderer={animatedRenderer}
       aspectRatio={fillHeight ? undefined : isMobile ? PHONE_ASPECT : 2}
       height={fillHeight}
+      maxHeight={isMobile ? 320 : 250}
       initialWidth={720}
-      className={cn(
-        "w-full",
-        CHART_TOUCH,
-        fillHeight ? "h-full" : isMobile ? "max-h-80" : "max-h-62.5",
-      )}
+      className={cn("w-full", CHART_TOUCH)}
       ariaLabel="Net worth over time"
     />
   );

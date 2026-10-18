@@ -167,13 +167,69 @@ test("desktop: card tap opens a details dialog; edit uses the pencil", async ({
     .click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
-  await page
-    .getByRole("button", { name: "Edit Supermarket" })
-    .click();
+  await page.getByRole("button", { name: "Edit Supermarket" }).click();
   const dialog = page.locator('[data-slot="dialog-content"]');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText("Edit Transaction")).toBeVisible();
   await expect(drawer(page)).toHaveCount(0);
+});
+
+test("tablet: dialog stays inside the visual viewport while the keyboard opens and pans", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.addInitScript(() => {
+    const viewport = Object.assign(new EventTarget(), {
+      width: 1024,
+      height: 768,
+      offsetTop: 0,
+      offsetLeft: 0,
+      pageTop: 0,
+      pageLeft: 0,
+      scale: 1,
+    });
+    Object.defineProperty(window, "visualViewport", {
+      value: viewport,
+      configurable: true,
+    });
+  });
+  const accountId = await seedTransaction(page);
+  await page.goto(`/#/accounts/${accountId}`);
+  await page.getByRole("button", { name: "Edit Supermarket" }).click();
+  const dialog = page.locator('[data-slot="dialog-content"]');
+  const notes = dialog.getByLabel("Notes");
+  await notes.fill("Draft survives keyboard changes");
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 320, offsetTop: 40 });
+    window.visualViewport!.dispatchEvent(new Event("resize"));
+    window.visualViewport!.dispatchEvent(new Event("scroll"));
+  });
+  await expect
+    .poll(async () => {
+      const box = (await dialog.boundingBox())!;
+      return box.y;
+    })
+    .toBeGreaterThanOrEqual(40);
+  await expect
+    .poll(async () => {
+      const box = (await dialog.boundingBox())!;
+      return box.y + box.height;
+    })
+    .toBeLessThanOrEqual(360);
+  const save = dialog.getByRole("button", { name: "Save Changes" });
+  const saveBox = (await save.boundingBox())!;
+  expect(saveBox.y + saveBox.height).toBeLessThanOrEqual(360);
+  await expect(notes).toBeFocused();
+  await expect(
+    dialog.getByText("Edit Transaction", { exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 768, offsetTop: 0 });
+    window.visualViewport!.dispatchEvent(new Event("resize"));
+  });
+  await expect(notes).toHaveValue("Draft survives keyboard changes");
+  await save.click();
+  await expect(dialog).toBeHidden();
 });
 
 test.describe("phone touch", () => {

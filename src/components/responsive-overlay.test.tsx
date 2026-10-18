@@ -1,13 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import {
   ResponsiveOverlay,
   ResponsiveOverlayContent,
@@ -15,6 +9,12 @@ import {
   ResponsiveOverlayHeader,
   ResponsiveOverlayTitle,
 } from "./responsive-overlay";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 
 function setViewport(phone: boolean) {
   vi.stubGlobal(
@@ -29,13 +29,7 @@ function setViewport(phone: boolean) {
   );
 }
 
-function Overlay({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function Overlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <ResponsiveOverlay open={open} onOpenChange={(next) => !next && onClose()}>
       <ResponsiveOverlayContent>
@@ -60,7 +54,9 @@ function MenuOpenedForm() {
         <DropdownMenu>
           <DropdownMenuTrigger>More actions</DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setOpen(true)}>Edit</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setOpen(true)}>
+              Edit
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
@@ -83,6 +79,55 @@ function MenuOpenedForm() {
 }
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("ResponsiveOverlay visual viewport", () => {
+  it("tracks keyboard resizing and viewport panning and removes listeners", async () => {
+    setViewport(false);
+    const viewport = Object.assign(new EventTarget(), {
+      height: 700,
+      offsetTop: 0,
+    });
+    const remove = vi.spyOn(viewport, "removeEventListener");
+    vi.stubGlobal("visualViewport", viewport);
+    const { unmount } = render(<Overlay open onClose={() => {}} />);
+    const dialog = await screen.findByRole("dialog");
+    const frame = dialog.parentElement!;
+    expect(frame.style.getPropertyValue("--dialog-viewport-height")).toBe(
+      "700px",
+    );
+    act(() => {
+      viewport.height = 320;
+      viewport.dispatchEvent(new Event("resize"));
+    });
+    expect(frame.style.getPropertyValue("--dialog-viewport-height")).toBe(
+      "320px",
+    );
+    act(() => {
+      viewport.offsetTop = 80;
+      viewport.dispatchEvent(new Event("scroll"));
+    });
+    expect(frame.style.getPropertyValue("--dialog-viewport-top")).toBe("80px");
+    act(() => {
+      viewport.height = 700;
+      viewport.offsetTop = 0;
+      viewport.dispatchEvent(new Event("resize"));
+    });
+    expect(frame.style.getPropertyValue("--dialog-viewport-height")).toBe(
+      "700px",
+    );
+    expect(frame.style.getPropertyValue("--dialog-viewport-top")).toBe("0px");
+    unmount();
+    expect(remove).toHaveBeenCalledWith("resize", expect.any(Function));
+    expect(remove).toHaveBeenCalledWith("scroll", expect.any(Function));
+  });
+
+  it("still renders without the Visual Viewport API", async () => {
+    setViewport(false);
+    vi.stubGlobal("visualViewport", undefined);
+    render(<Overlay open onClose={() => {}} />);
+    expect(await screen.findByRole("dialog")).toBeTruthy();
+  });
+});
 
 describe.each([
   ["phone drawer", true],

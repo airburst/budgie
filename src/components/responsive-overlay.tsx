@@ -133,7 +133,11 @@ function ResponsiveOverlayContent({
     return (
       <DialogContent
         initialFocus={initialFocus}
-        className={cn(className, dialogClassName)}
+        className={cn(
+          "flex flex-col overflow-hidden",
+          className,
+          dialogClassName,
+        )}
       >
         {children}
       </DialogContent>
@@ -172,7 +176,7 @@ function ResponsiveOverlayHeader({
       {...props}
     />
   ) : (
-    <DialogHeader className={className} {...props} />
+    <DialogHeader className={cn("shrink-0", className)} {...props} />
   );
 }
 
@@ -212,6 +216,7 @@ function ResponsiveOverlayBody({ className, ...props }: ComponentProps<"div">) {
     <div
       data-slot="overlay-body"
       className={cn(
+        "min-h-0 flex-1 overflow-y-auto overscroll-contain",
         compact &&
           "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-2",
         className,
@@ -249,7 +254,7 @@ function ResponsiveOverlayFooter({
     />
   ) : (
     <DialogFooter
-      className={className}
+      className={cn("shrink-0", className)}
       onMouseDown={onMouseDown}
       {...props}
     />
