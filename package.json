@@ -115,6 +115,7 @@
       "public/preload.js",
       "public/db.js",
       "public/services.js",
+      "public/services-adapter.js",
       "public/ipc/**/*",
       "src/main/db/migrations/**/*",
       "package.json"
