@@ -90,7 +90,7 @@
     "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "happy-dom": "^20.14.6",
+    "happy-dom": "^21.0.3",
     "husky": "^9.1.7",
     "postcss": "^8.5.30",
     "prettier": "^3.9.10",
