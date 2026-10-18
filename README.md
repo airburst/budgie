@@ -45,12 +45,10 @@ the full release, rollback and rehearsal procedures.
 
 - Repository secrets: `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission)
   and `CLOUDFLARE_ACCOUNT_ID`.
-- Same-repository pull requests deploy previews using the stable branch alias
-  `pr-<number>`. Fork pull requests build artifacts but do not receive deployment
-  credentials.
+- Pull requests build and verify the artifact but do not deploy a preview.
 - To preview any branch, run the **Web Deploy** workflow manually and pick the
   branch (optional `alias` and `project` inputs). There is no automatic
-  deployment on push or merge.
+  deployment on push, pull request or merge.
 - Pushing a `v*` tag (which must be on `main`) runs lint, types, unit and e2e
   checks and then deploys production using the `main` Pages branch, while the
   Release workflow builds Electron from the same tag.
