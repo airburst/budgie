@@ -10,7 +10,7 @@ or install from it.
 
 | Trigger                                      | Workflow     | Result                                                                        |
 | -------------------------------------------- | ------------ | ----------------------------------------------------------------------------- |
-| Pull request (same repo)                     | Web Deploy   | Build + verify, deploy preview alias `pr-<n>`                                 |
+| Pull request                                 | Web Deploy   | Build + verify only (no deploy)                                               |
 | Manual (Actions → Web Deploy → Run workflow) | Web Deploy   | Build the selected branch, deploy preview alias (defaults to the branch name) |
 | `v*` tag                                     | Web Deploy   | Tag-on-main check, lint/types/unit/e2e, build + verify, **production** deploy |
 | `v*` tag                                     | Release      | Tag-on-main check, Electron mac/win builds + GitHub release (auto-update)     |

@@ -5,8 +5,9 @@ on:
   push:
     tags:
       - "v*"
-  # Manual preview: pick the branch with "Use workflow from". Production is
-  # tag-only, so main is refused as an alias on the production project.
+  # Previews are manual only (no auto-deploy on push or PR): pick the branch
+  # with "Use workflow from". Production is tag-only, so main is refused as an
+  # alias on the production project. PRs still build and verify the artifact.
   workflow_dispatch:
     inputs:
       alias:
@@ -45,15 +46,15 @@ jobs:
           retention-days: 30
 
   deploy-preview:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch'
     needs: build-web-artifact
     runs-on: ubuntu-latest
     environment: preview
     env:
       PAGES_PROJECT: ${{ inputs.project || 'budgie-web' }}
-      PAGES_BRANCH: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || inputs.alias || github.ref_name }}
+      PAGES_BRANCH: ${{ inputs.alias || github.ref_name }}
     concurrency:
-      group: web-preview-${{ github.event_name == 'pull_request' && github.event.number || inputs.alias || github.ref_name }}
+      group: web-preview-${{ inputs.alias || github.ref_name }}
       cancel-in-progress: false
     steps:
       - name: Refuse production alias on the production project
