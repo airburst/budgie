@@ -9,6 +9,7 @@ import {
 import { MemoryRouter, useLocation, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Header from "./header";
+import { HeaderAction, PageChromeProvider, PageHeader } from "./page-chrome";
 
 const state = vi.hoisted(() => ({ electron: false, desktop: false }));
 
@@ -107,7 +108,7 @@ describe("Header navigation", () => {
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
-  it("hides native-only actions on web and opens About after closing navigation", async () => {
+  it("hides native-only actions on web and ends with a small version line, not About", async () => {
     renderHeader();
     fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     const sidebar = await screen.findByRole("dialog");
@@ -120,11 +121,13 @@ describe("Header navigation", () => {
     expect(
       within(sidebar).queryByRole("button", { name: "Check for updates" }),
     ).toBeNull();
-    fireEvent.click(
-      within(sidebar).getByRole("button", { name: "About Budgie" }),
-    );
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByText("About content")).toBeTruthy();
+    expect(
+      within(sidebar).queryByRole("button", { name: "About Budgie" }),
+    ).toBeNull();
+    const version = within(sidebar).getByText(/^Version /);
+    expect(version.textContent).toMatch(/^Version \d+\.\d+\.\d+/);
+    expect(version.className).toContain("text-center");
+    expect(version.className).toContain("text-xs");
   });
 
   it("closes when the route changes outside the sidebar", async () => {
@@ -168,5 +171,67 @@ describe("Header navigation", () => {
         ?.classList.contains("app-header-native-mac"),
     ).toBe(true);
     vi.restoreAllMocks();
+  });
+});
+
+function renderChrome(action = true) {
+  return render(
+    <MemoryRouter initialEntries={["/forecast/1"]}>
+      <PageChromeProvider>
+        <Header />
+        <PageHeader title="Forecast — Current" onBack={onBack} />
+        {action && (
+          <HeaderAction>
+            <button>Add thing</button>
+          </HeaderAction>
+        )}
+      </PageChromeProvider>
+    </MemoryRouter>,
+  );
+}
+const onBack = vi.fn();
+
+describe("Page chrome on phones", () => {
+  beforeEach(() => onBack.mockReset());
+
+  it("shows the page title and a back arrow instead of the hamburger", () => {
+    renderChrome();
+    expect(screen.getByText("Forecast — Current")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Open navigation" }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Go back" }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the page action once, inside the header", () => {
+    renderChrome();
+    const buttons = screen.getAllByRole("button", { name: "Add thing" });
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]!.closest("header")).toBeTruthy();
+  });
+
+  it("keeps the hamburger and route title when a page sets no chrome", () => {
+    render(
+      <MemoryRouter initialEntries={["/payees"]}>
+        <PageChromeProvider>
+          <Header />
+        </PageChromeProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Payees")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Open navigation" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Go back" })).toBeNull();
+  });
+});
+
+describe("Page chrome from md", () => {
+  it("renders the action in place, not in the header", () => {
+    state.desktop = true;
+    renderChrome();
+    const button = screen.getByRole("button", { name: "Add thing" });
+    expect(button.closest("header")).toBeNull();
   });
 });

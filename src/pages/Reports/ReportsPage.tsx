@@ -50,7 +50,10 @@ export default function ReportsPage() {
     <Layout>
       <div className="flex flex-col gap-6 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-          <h1 className="text-2xl font-semibold">Reports</h1>
+          {/* The phone header already shows the route title. */}
+          <h1 className="sr-only text-2xl font-semibold md:not-sr-only">
+            Reports
+          </h1>
           <div
             role="group"
             aria-label="Report filters"

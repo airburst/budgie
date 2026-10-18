@@ -14,13 +14,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { usePageChrome } from "@/components/page-chrome";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePlatform } from "@/hooks/usePlatform";
 import { cn } from "@/lib/utils";
 import { AboutDialog } from "@/pages/Settings/AboutDialog";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
-import { CheckIcon, MenuIcon, Settings } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, MenuIcon, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router";
 
@@ -42,6 +43,7 @@ const Header = () => {
   const location = useLocation();
   const { target, capabilities } = usePlatform();
   const isMobile = useIsMobile();
+  const pageChrome = usePageChrome();
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -62,7 +64,7 @@ const Header = () => {
     if (!isMobile) setNavigationOpen(false);
   }, [isMobile]);
 
-  const title =
+  const routeTitle =
     [...navLinks, ...secondaryLinks].find(({ to, end }) =>
       end ? location.pathname === to : location.pathname.startsWith(to),
     )?.label ??
@@ -71,6 +73,8 @@ const Header = () => {
       : location.pathname.startsWith("/forecast/")
         ? "Forecast"
         : "Accounts");
+  const title = pageChrome?.chrome.title ?? routeTitle;
+  const onBack = pageChrome?.chrome.onBack;
 
   function openAction(action: () => void) {
     setNavigationOpen(false);
@@ -95,17 +99,28 @@ const Header = () => {
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <Sheet open={navigationOpen} onOpenChange={setNavigationOpen}>
-            <SheetTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Open navigation"
-                />
-              }
-            >
-              <MenuIcon className="size-5" />
-            </SheetTrigger>
+            {onBack ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Go back"
+                onClick={onBack}
+              >
+                <ArrowLeftIcon className="size-5" />
+              </Button>
+            ) : (
+              <SheetTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Open navigation"
+                  />
+                }
+              >
+                <MenuIcon className="size-5" />
+              </SheetTrigger>
+            )}
             <SheetContent
               side="left"
               className="app-navigation min-h-0 gap-0 data-[side=left]:w-[min(20rem,calc(100%-2rem))]"
@@ -186,19 +201,21 @@ const Header = () => {
                       Check for updates
                     </Button>
                   )}
-                  <Button
-                    variant="ghost"
-                    className="justify-start"
-                    onClick={() => openAction(() => setAboutOpen(true))}
-                  >
-                    About Budgie
-                  </Button>
                 </div>
               </nav>
+              <p className="shrink-0 px-4 pt-2 pb-4 text-center text-xs text-muted-foreground">
+                Version {__APP_VERSION__}
+              </p>
             </SheetContent>
           </Sheet>
           <span className="truncate text-lg font-semibold">{title}</span>
         </div>
+        {/* Phone-only slot for the page's primary action (see HeaderAction). */}
+        <div
+          ref={pageChrome?.setSlot}
+          className="flex shrink-0 items-center gap-2 md:hidden"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        />
         <div aria-hidden="true" className="hidden md:block" />
         <nav
           aria-label="Main navigation"

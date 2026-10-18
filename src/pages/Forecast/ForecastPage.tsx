@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/page-chrome";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useAccounts } from "@/hooks/useAccounts";
@@ -128,23 +129,29 @@ export default function ForecastPage() {
 
   return (
     <Layout>
+      <PageHeader
+        title={account ? `Forecast — ${account.name}` : "Forecast"}
+        onBack={() => navigate(-1)}
+      />
       {/* One page scroller (the main region). The controls bar is sticky at the
           end of the content, so it reserves real layout space, wraps instead of
           forcing width and never stacks with another fixed footer. */}
       <div className="flex min-h-full flex-col">
         <div className="flex-1">
           {/* Page header */}
-          <div className="flex items-center gap-3 px-4 pt-4 pb-2">
+          <div className="flex items-center gap-3 px-4 pt-4 pb-2 max-md:pt-2 max-md:pb-0">
+            {/* Phones: back and the title live in the header bar. */}
             <Button
               variant="ghost"
               size="icon-sm"
+              className="max-md:hidden"
               onClick={() => navigate(-1)}
               aria-label="Go back"
             >
               <ArrowLeftIcon />
             </Button>
             <div className="min-w-0">
-              <h1 className="text-xl font-bold tracking-tight break-words sm:text-2xl">
+              <h1 className="text-xl font-bold tracking-tight break-words max-md:sr-only sm:text-2xl">
                 {account?.name ?? "—"}
               </h1>
               {account?.number && (

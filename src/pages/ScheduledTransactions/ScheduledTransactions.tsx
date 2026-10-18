@@ -1,4 +1,5 @@
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { HeaderAction } from "@/components/page-chrome";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -169,22 +170,27 @@ export default function ScheduledTransactions() {
 
   const title = (
     <div className="min-w-0">
-      <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
-      <p className="mt-0.5 text-sm text-muted-foreground">
+      {/* The phone header already shows the route title. */}
+      <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
+        Subscriptions
+      </h1>
+      <p className="mt-0.5 hidden text-sm text-muted-foreground md:block">
         Manage your recurring bills and upcoming transfers.
       </p>
     </div>
   );
 
   const addButton = (
-    <Button
-      onClick={openAdd}
-      className="min-h-11 shrink-0 md:min-h-8"
-      aria-label="Add subscription"
-    >
-      <PlusIcon />
-      Add<span className="hidden sm:inline"> Subscription</span>
-    </Button>
+    <HeaderAction>
+      <Button
+        onClick={openAdd}
+        className="min-h-11 shrink-0 md:min-h-8"
+        aria-label="Add subscription"
+      >
+        <PlusIcon />
+        Add<span className="hidden sm:inline"> Subscription</span>
+      </Button>
+    </HeaderAction>
   );
 
   const filter = (
@@ -242,7 +248,9 @@ export default function ScheduledTransactions() {
         </div>
       ) : (
         <div className="flex min-w-0 flex-col gap-4 p-4 md:p-6">
-          <div className="flex items-start justify-between gap-3">
+          {/* Phones: title and Add live in the header, so this row is empty
+              (negative margin cancels its flex gap). */}
+          <div className="flex items-start justify-between gap-3 max-md:-mb-4">
             {title}
             {addButton}
           </div>

@@ -101,15 +101,25 @@ test.describe("reports on a phone (390x844)", () => {
     }
   });
 
-  test("controls sit under the heading and meet 44px targets", async ({
+  test("controls sit under the header bar and meet 44px targets", async ({
     page,
   }) => {
     await seedReports(page);
-    const heading = (await page
-      .getByRole("heading", { name: "Reports", exact: true })
-      .boundingBox())!;
+    // The header bar carries the title; the h1 stays for screen readers only.
+    await expect(
+      page
+        .locator("header")
+        .getByText("Reports", { exact: true })
+        .locator("visible=true"),
+    ).toBeVisible();
+    expect(
+      (await page
+        .getByRole("heading", { name: "Reports", exact: true })
+        .boundingBox())!.width,
+    ).toBeLessThanOrEqual(1);
+    const header = (await page.locator("header").boundingBox())!;
     const group = (await filters(page).boundingBox())!;
-    expect(group.y).toBeGreaterThanOrEqual(heading.y + heading.height - 1);
+    expect(group.y).toBeGreaterThanOrEqual(header.y + header.height - 1);
     expect(group.x + group.width).toBeLessThanOrEqual(390);
     for (const control of [
       filters(page).getByRole("combobox", { name: "Date range" }),
