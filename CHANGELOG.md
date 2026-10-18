@@ -1,5 +1,50 @@
 # budgie
 
+## 1.0.0
+
+### Major Changes
+
+- f380f57: Budgie 1.0: runs as an offline-first web app (PWA) at budget.fairhursts.net alongside the desktop app, with a mobile-first interface and portable data export/import.
+
+### Minor Changes
+
+- 01989a2: Budget envelopes now display as cards on phones with category info, an explicit Save/Cancel assigned-amount editor, and Move up / Move down actions alongside drag reordering. Envelope and Move money forms open as bottom drawers, delete asks for confirmation, and "Fill from last month" moved into a More menu with a confirmation.
+- 21e5c2a: Forecast now lists projected transactions as cards you tap to include or exclude, with a Details button for the full category and memo, wrapping controls and a content-sized Help drawer. Reports controls wrap on phones and every chart has a "Show values" list instead of relying on hover. Settings fits 320px screens with 44px tabs, and About opens as a bottom drawer on phones. Closing a form whose opener was removed now returns focus to the page heading.
+- 5af9006: Subscriptions: Skip action on each card and in details (confirms first), wider payee column at the 1024px crossover, auto-post text hidden on desktop. Reconcile cards keep their height when selected. Forecast end-date calendar is full size on desktop and chart labels align with the cards. Reports charts are taller with a wider touch target on phones.
+- 603a838: Mobile headers: the header bar now carries the page title, back arrow and primary action (Add account/subscription/category/payee) on phones; duplicate in-page headings removed. The phone menu ends with the app version instead of About.
+- 5dc4089: Increase all text one size on phones (type scale shift below 768px); desktop unchanged.
+- 62bdf1f: Add a versioned portable data package with validated import/export across Electron and the browser.
+
+### Patch Changes
+
+- 2007847: Accounts now display as cards with aligned balances. On smaller screens, account pages show a "Selected account" card with a Change account picker instead of the sidebar, and the account and reconcile forms open as bottom drawers on phones.
+- a007aef: Vertically centre the contents of transaction and scheduled payment cards on wide screens.
+- a81df98: Vertically centre the contents of forecast and reconcile cards on wide screens.
+- d10d6a7: Deploy verified web artifacts to Cloudflare Pages with the security and isolation headers required for browser storage.
+- a1f2fa2: Update dependencies, including TanStack Charts 1.x, React 19.3, Vite 8.3 and Electron 44.9.
+- 5beef4a: Tapping Save or Cancel in a phone drawer now works on the first tap while the keyboard is open
+- b9ca896: Keep the drawer Save/Cancel buttons above the phone keyboard while editing
+- 8bf6ad7: Include the database service adapter in Electron packages so the desktop app can start.
+- 7f9279b: Fix startup failure when upgrading a database that already has envelope category mappings.
+- 30fc245: Serve the web manifest with the application/manifest+json content type.
+- e56f086: Cloudflare previews deploy only from a manual workflow run, not on pull requests.
+- f68cc57: Remove the visible "Budgie / Navigation" heading from the phone menu.
+- 06b682c: Add mobile hamburger/sidebar navigation, safe-area-aware application sizing and larger phone button targets while retaining desktop navigation and native macOS title-bar spacing.
+- afe4b31: Harden the web PWA build with deterministic offline precaching, security headers, and user-confirmed service-worker updates.
+- ce1e35b: Fix portable imports failing when existing envelope category assignments have different public IDs.
+- 42c0a7d: Fix the web app icon: PNG home-screen icons (apple-touch, 192/512, maskable), favicon and manifest now use the Budgie icon.
+- 3978fab: Improve browser startup recovery and add offline PWA assets for the web target.
+- adcbe4e: Reconcile, Categories and Payees now use mobile-friendly cards. Reconcile has a two-by-two summary, selectable cards and a fixed Cancel/Finish bar; categories keep their hierarchy and payees show their defaults. Tapping a category or payee opens details with an explicit Edit, deletes ask for confirmation, and the editors open as drawers on phones.
+- f380f57: Release pipeline: tags must be on main, production deploy waits for lint/types/tests, previews are manual, Electron builds rebuild the services bundle, hashed assets are cached immutably.
+- ac3ed6d: Delete and discard confirmations now open as a bottom drawer on phones, with Cancel focused first.
+- 595da5f: Keep report plots and legends contained on phones and tablets, including fullscreen charts, and fit dialogs above the on-screen keyboard.
+- 48331e1: Subscriptions now show as cards with separate Income and Outgoing totals for the next 7 days. The account filter applies to the list, totals and calendar, the calendar collapses behind a "Show calendar" button on phones, and a Sort menu replaces the column headers. Tapping a subscription opens its details; recording a payment is always an explicit action, and the editor and Record payment screens open as drawers on phones.
+- ccae1f6: Group the Skip button with Edit and Delete on phone subscription cards.
+- 2b4d1b3: On phones, tapping a transaction opens a read-only details drawer, with Edit as an explicit step into a full-height editor. Unsaved edits now ask before being discarded, and failed saves keep your changes with an error message.
+- 12464d0: Replace the account transactions table with a mobile-first card list, add a labeled Filter popover and More actions menu to the transactions header, and allow transaction details to open on every screen size (not just phones).
+- 6e78303: QIF import review, backup and restore now open as bottom drawers on phones (QIF review lists transactions as tappable cards), with inline errors and discard/double-submit protection. Portable data replacement keeps all warnings in a bottom confirmation, and the QIF Import action is no longer shown on the web app, where it cannot run.
+- 95d440d: Make Settings available in the browser and hide filesystem-only backup and restore controls there.
+
 ## 0.16.3
 
 ### Patch Changes
