@@ -33,7 +33,38 @@ test("starts the isolated browser runtime and registers the service worker", asy
   );
   const manifest = await page.request.get("/manifest.webmanifest");
   expect(manifest.ok()).toBe(true);
-  expect((await manifest.json()).display).toBe("standalone");
+  const manifestJson = await manifest.json();
+  expect(manifestJson.display).toBe("standalone");
+  // Android install needs 192 and 512 PNGs and a maskable one.
+  const icons = manifestJson.icons as Array<{
+    src: string;
+    sizes: string;
+    type: string;
+    purpose: string;
+  }>;
+  for (const [sizes, purpose] of [
+    ["192x192", "any"],
+    ["512x512", "any"],
+    ["512x512", "maskable"],
+  ]) {
+    expect(
+      icons.some((i) => i.sizes === sizes && i.purpose === purpose),
+      `${sizes} ${purpose}`,
+    ).toBe(true);
+  }
+  for (const icon of icons) {
+    const res = await page.request.get(new URL(icon.src, page.url()).href);
+    expect(res.ok(), icon.src).toBe(true);
+    expect(res.headers()["content-type"], icon.src).toContain("image/png");
+  }
+  // iOS ignores manifest icons: it needs the apple-touch-icon link.
+  const touch = await page
+    .locator('link[rel="apple-touch-icon"]')
+    .getAttribute("href");
+  expect(touch).toBeTruthy();
+  const touchRes = await page.request.get(new URL(touch!, page.url()).href);
+  expect(touchRes.ok()).toBe(true);
+  expect(await page.locator('link[rel="icon"]').count()).toBeGreaterThan(0);
   await waitForRuntime(page);
   await waitForServiceWorker(page);
 });

@@ -42,6 +42,14 @@ Persistence across visits does not establish browser eviction protection.
     record, close and relaunch the installed app.
   - Success: The record remains and the app starts offline.
 
+- Home screen icon and name
+  - What: The installed app shows the Budgie piggy-bank icon and name.
+  - How: iOS caches the icon at install time, so delete any earlier home-screen
+    copy and re-add it from Safari (Share > Add to Home Screen). On Android
+    Chrome, uninstall and reinstall. Check the icon is not cropped (maskable on
+    Android) and the browser tab shows the favicon.
+  - Success: Blue piggy-bank icon, name "Budgie", launches standalone.
+
 - Storage pressure and quota
   - What: Storage denial or exhaustion is reported without data corruption.
   - How: Use browser storage tools or OS pressure simulation in a disposable
