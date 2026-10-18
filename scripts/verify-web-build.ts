@@ -27,6 +27,13 @@ for (const header of [
     throw new Error(`Missing Cloudflare header: ${header}`);
 }
 
+if (
+  !headers.includes(
+    "/assets/*\n  Cache-Control: public, max-age=31536000, immutable",
+  )
+)
+  throw new Error("Missing immutable cache header for /assets/*");
+
 const manifest = JSON.parse(
   await readFile(join(buildDirectory, "manifest.webmanifest"), "utf8"),
 ) as {

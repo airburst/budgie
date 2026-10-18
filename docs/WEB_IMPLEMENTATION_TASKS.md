@@ -1,5 +1,10 @@
 # Web Implementation Tasks
 
+> **Historical.** Phases 0-5 are complete; the current status and the 1.0.0
+> release steps are in `docs/WEB_TARGET_PLAN.md` §3.1 and
+> `docs/RELEASE_RUNBOOK.md`. The sections below are the original phase 0 task
+> log and are kept for reference.
+
 This document turns the phase 0 proof into implementation work. The disposable
 probe is not production code.
 
