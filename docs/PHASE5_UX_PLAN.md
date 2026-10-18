@@ -1043,3 +1043,15 @@ action in `<HeaderAction>`, which portals into the header's right-hand slot on
 phones and renders in place otherwise (one DOM copy, never a hidden duplicate).
 `<PageHeader>` must be rendered inside `<Layout>` since the page component itself
 sits outside the provider. e2e: `phase5-header.spec.ts`.
+
+### Phone type scale (2026-10-18)
+
+No base font size was set (root and body compute to 16px) and Tailwind's type scale
+is rem theme variables. Below `md`, `src/index.css` now remaps `--text-xs…--text-3xl`
+(and line heights) to the next step up, so text is one level larger on phones while
+rem-based spacing, icons and 44px targets are unchanged. Desktop is untouched.
+Inputs, textarea and the search box moved from `text-base md:text-sm` to `text-sm`
+(16px on phones, 14px from `md`), keeping fields at 16px so iOS Safari doesn't zoom
+on focus. Chart text (SVG px) and the calendar's `text-[0.8rem]` are not Tailwind
+steps and are unchanged. e2e: `phase5-typography.spec.ts` (scale values, 16px
+fields, no overflow at 320px).
