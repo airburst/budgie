@@ -45,7 +45,7 @@ production-shaped form: shared services, browser SQLite/OPFS runtime, offline
 PWA, Portable Data Package, and the Phase 5 mobile-first UX (device-tested on
 iPhone, iPad and Electron). The remaining work is the 1.0.0 release: merge
 `web-platform` into `main`, production Cloudflare deployment on
-`budgie.fairhursts.net`, and a tagged Electron + Pages release. See
+`budget.fairhursts.net`, and a tagged Electron + Pages release. See
 `docs/RELEASE_RUNBOOK.md`. The historical log below records how the earlier
 phases landed.
 

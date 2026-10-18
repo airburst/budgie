@@ -81,7 +81,7 @@ Persistence across visits does not establish browser eviction protection.
   - Current result: Deferred until Phase 5 mobile-first redesign.
 
 - Cloudflare preview and production
-  - Production origin: https://budgie.fairhursts.net (permanent). Procedures:
+  - Production origin: https://budget.fairhursts.net (permanent). Procedures:
     `docs/RELEASE_RUNBOOK.md`.
   - What: Deployment, origin isolation, and rollback configuration work.
   - Current result: Automated `web-platform` preview deployment passed; the

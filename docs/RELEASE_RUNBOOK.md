@@ -1,6 +1,6 @@
 # Release Runbook
 
-Production web origin: **https://budgie.fairhursts.net** (Cloudflare Pages
+Production web origin: **https://budget.fairhursts.net** (Cloudflare Pages
 project `budgie-web`, production branch `main`). The hostname is permanent:
 browser data (OPFS) is bound to the origin, so changing it strands every
 user's local database. `budgie-web.pages.dev` is a different origin; never use
@@ -31,7 +31,7 @@ Rules enforced by the workflows:
    `package.json`, `CHANGELOG.md`, `.changeset` as "Bump version" and push.
 3. `bun run release` tags `v<version>` and pushes it.
 4. Watch **Web Deploy** (checks → production) and **Release** (mac/win → publish).
-5. Verify https://budgie.fairhursts.net: response headers (COOP/COEP/CSP),
+5. Verify https://budget.fairhursts.net: response headers (COOP/COEP/CSP),
    offline reload, service-worker update prompt on the next release, install
    to home screen (see PHASE4_MANUAL_CHECKLIST.md "Home screen icon and name").
 6. Edit the GitHub release notes (they are created empty).

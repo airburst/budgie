@@ -40,7 +40,7 @@ bun run dev          # dev: web app only, Vite on :3000 with hot reload
 
 GitHub Actions deploys verified build artifacts to the Cloudflare Pages Direct
 Upload project `budgie-web`, whose production branch must be `main`.
-Production is https://budgie.fairhursts.net. See `docs/RELEASE_RUNBOOK.md` for
+Production is https://budget.fairhursts.net. See `docs/RELEASE_RUNBOOK.md` for
 the full release, rollback and rehearsal procedures.
 
 - Repository secrets: `CLOUDFLARE_API_TOKEN` (Cloudflare Pages Edit permission)
