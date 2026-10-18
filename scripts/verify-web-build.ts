@@ -34,6 +34,13 @@ if (
 )
   throw new Error("Missing immutable cache header for /assets/*");
 
+if (
+  !headers.includes(
+    "/manifest.webmanifest\n  Content-Type: application/manifest+json",
+  )
+)
+  throw new Error("Missing manifest content type header");
+
 const manifest = JSON.parse(
   await readFile(join(buildDirectory, "manifest.webmanifest"), "utf8"),
 ) as {

@@ -59,19 +59,26 @@ Electron has no remote rollback: publish a new patch release.
 
 ## Rehearsal (no tags)
 
-1. Create a Direct Upload Pages project `budgie-web-rehearsal` (production
-   branch `main`).
+1. Create a Pages project `budgie-web-rehearsal` from the terminal; the
+   dashboard now creates a Worker instead, which the workflow cannot deploy to:
+   `bunx wrangler pages project create budgie-web-rehearsal --production-branch=main`.
 2. Run Web Deploy manually with `project=budgie-web-rehearsal`, `alias=main`,
    twice from two different commits (artifact A, then B).
 3. Check headers, offline, the update prompt, then roll back to A from the
    dashboard and confirm A is served on the same URL with data intact.
 4. Delete the rehearsal project.
 
+Last rehearsed 2026-10-18: headers, offline, update prompt, upgrade and
+rollback (same URL, data intact) all passed.
+
 ## Cloudflare settings that must stay as they are
 
-- Zone `fairhursts.net`: Rocket Loader off, Web Analytics auto-injection and
-  Zaraz off, Email Obfuscation off, Auto Minify off, Always Use HTTPS on.
-  The strict CSP and "no analytics" rule break if Cloudflare injects scripts.
+- DNS for `fairhursts.net` is at GoDaddy; `budget` is a CNAME to
+  `budgie-web.pages.dev`. There is no Cloudflare zone, so Rocket Loader, Web
+  Analytics/Zaraz injection and email obfuscation do not apply. If DNS ever
+  moves to Cloudflare, turn those off (they break the strict CSP and the "no
+  analytics" rule) and keep Always Use HTTPS on. Pages already redirects
+  http to https.
 - No cache rules overriding `sw.js` or `index.html` (they ship `no-cache`).
 - Cloudflare Access: previews (`*.budgie-web.pages.dev`) only; production is
   public.
