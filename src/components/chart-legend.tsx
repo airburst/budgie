@@ -18,20 +18,26 @@ type Props = {
 export function ChartLegend({ items, large }: Props) {
   return (
     <ul
+      aria-label="Chart legend"
       className={
         large
-          ? "flex shrink-0 flex-col gap-3 text-base"
-          : "flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm"
+          ? "flex min-w-0 shrink-0 flex-wrap justify-center gap-x-4 gap-y-2 text-base"
+          : "flex min-w-0 flex-wrap justify-center gap-x-4 gap-y-2 text-sm"
       }
     >
       {items.map((item) => (
-        <li key={item.label} className="flex items-center gap-2">
+        <li
+          key={item.label}
+          className="flex min-w-0 max-w-full items-start gap-2"
+        >
           <span
-            className="size-3 shrink-0 rounded-full"
+            className="mt-1 size-3 shrink-0 rounded-full"
             style={{ backgroundColor: item.color }}
             aria-hidden
           />
-          <span className="text-foreground/85">{item.label}</span>
+          <span className="min-w-0 [overflow-wrap:anywhere] text-foreground/85">
+            {item.label}
+          </span>
         </li>
       ))}
     </ul>

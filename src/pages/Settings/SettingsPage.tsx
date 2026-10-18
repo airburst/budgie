@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccounts } from "@/hooks/useAccounts";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import {
   ArrowLeftIcon,
@@ -26,6 +27,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import Layout from "../layout";
+import { DataTransferSection } from "./DataTransferSection";
 import { ShortcutsTab } from "./ShortcutsTab";
 
 const STATIC_ROUTES: { value: string; label: string }[] = [
@@ -39,6 +41,7 @@ const STATIC_ROUTES: { value: string; label: string }[] = [
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { capabilities } = usePlatform();
   const { preferences, update } = usePreferences();
   const { accounts } = useAccounts();
 
@@ -56,9 +59,19 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
-    window.api.getDefaultBackupFolder().then(setDefaultBackupFolder);
-    window.api.getDataFolder().then(setDataFolder);
-  }, []);
+    if (!capabilities.filesystemBackups) return;
+    void Promise.all([
+      window.api.getDefaultBackupFolder(),
+      window.api.getDataFolder(),
+    ])
+      .then(([backupFolder, folder]) => {
+        setDefaultBackupFolder(backupFolder);
+        setDataFolder(folder);
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to load filesystem settings", error);
+      });
+  }, [capabilities.filesystemBackups]);
 
   useEffect(() => {
     setBackupFolder(preferences.backupFolder ?? defaultBackupFolder);
@@ -121,24 +134,34 @@ export default function SettingsPage() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full overflow-y-auto p-4 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="mx-auto flex min-w-0 max-w-2xl flex-col p-4">
+        <div className="flex items-center gap-3 mb-6 max-md:mb-0">
+          {/* Phones: Settings is a root page (hamburger in the header). */}
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-md:hidden"
             onClick={() => navigate(-1)}
             aria-label="Go back"
           >
             <ArrowLeftIcon />
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <h1 className="sr-only text-2xl font-bold tracking-tight md:not-sr-only">
+            Settings
+          </h1>
         </div>
 
         <Tabs defaultValue="general">
-          <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="advanced">Advanced</TabsTrigger>
-            <TabsTrigger value="shortcuts">Shortcuts</TabsTrigger>
+          <TabsList className="group-data-horizontal/tabs:h-auto md:group-data-horizontal/tabs:h-8">
+            <TabsTrigger value="general" className="min-h-11 md:min-h-0">
+              General
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="min-h-11 md:min-h-0">
+              Advanced
+            </TabsTrigger>
+            <TabsTrigger value="shortcuts" className="min-h-11 md:min-h-0">
+              Shortcuts
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -148,7 +171,11 @@ export default function SettingsPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Appearance
                 </p>
-                <div className="flex items-center justify-between">
+                <div
+                  role="group"
+                  aria-label="Theme"
+                  className="flex flex-wrap items-center justify-between gap-2"
+                >
                   <Label>Theme</Label>
                   <ButtonGroup>
                     <Button
@@ -187,7 +214,7 @@ export default function SettingsPage() {
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Startup
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <Label htmlFor="startup-page">Open on launch</Label>
                   <Select
                     value={startupPage}
@@ -195,7 +222,10 @@ export default function SettingsPage() {
                       savePreference({ startupPage: v as string })
                     }
                   >
-                    <SelectTrigger id="startup-page" className="w-48">
+                    <SelectTrigger
+                      id="startup-page"
+                      className="w-48 max-w-full"
+                    >
                       <SelectValue>{startupPageLabel}</SelectValue>
                     </SelectTrigger>
                     <SelectContent align="end">
@@ -229,7 +259,7 @@ export default function SettingsPage() {
 
               {/* Transactions */}
               <div className="rounded-md border border-border p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <input
                     id="autofill"
                     type="checkbox"
@@ -237,16 +267,16 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       savePreference({ autofillPayees: e.target.checked })
                     }
-                    className="cursor-pointer"
+                    className="size-5 shrink-0 cursor-pointer accent-blue-500"
                   />
                   <Label
                     htmlFor="autofill"
-                    className="cursor-pointer font-normal"
+                    className="min-h-11 flex-1 cursor-pointer font-normal md:min-h-0"
                   >
                     Automatically fill transaction details
                   </Label>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 ml-5">
+                <p className="text-xs text-muted-foreground mt-1 ml-8">
                   When enabled, selecting a payee will auto-fill category and
                   amount. Payee autocomplete is always available.
                 </p>
@@ -256,74 +286,83 @@ export default function SettingsPage() {
 
           <TabsContent value="advanced">
             <div className="flex flex-col gap-4 mt-4">
-              {/* Backups */}
-              <div className="rounded-md border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Backups
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="backup-folder">Backup folder</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="backup-folder"
-                      value={backupFolder}
-                      onChange={(e) => setBackupFolder(e.target.value)}
-                      onBlur={handleBackupFolderBlur}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleBrowseBackup}
-                    >
-                      <FolderOpen className="size-4" />
-                    </Button>
+              {capabilities.filesystemBackups && (
+                <>
+                  {/* Backups */}
+                  <div className="rounded-md border border-border p-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Backups
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="backup-folder">Backup folder</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="backup-folder"
+                          value={backupFolder}
+                          onChange={(e) => setBackupFolder(e.target.value)}
+                          onBlur={handleBackupFolderBlur}
+                          className="min-w-0 flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleBrowseBackup}
+                          aria-label="Browse for backup folder"
+                        >
+                          <FolderOpen className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="retention">Keep backups for</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="retention"
+                          type="number"
+                          min="1"
+                          value={retentionStr}
+                          onChange={(e) => setRetentionStr(e.target.value)}
+                          onBlur={handleRetentionBlur}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          days
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="retention">Keep backups for</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="retention"
-                      type="number"
-                      min="1"
-                      value={retentionStr}
-                      onChange={(e) => setRetentionStr(e.target.value)}
-                      onBlur={handleRetentionBlur}
-                      className="w-20"
-                    />
-                    <span className="text-sm text-muted-foreground">days</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Data */}
-              <div className="rounded-md border border-border p-4 space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Data
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="data-folder">Data folder</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="data-folder"
-                      value={dataFolder}
-                      readOnly
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleBrowseData}
-                    >
-                      <FolderOpen className="size-4" />
-                    </Button>
+                  {/* Data folder */}
+                  <div className="rounded-md border border-border p-4 space-y-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Data
+                    </p>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="data-folder">Data folder</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="data-folder"
+                          value={dataFolder}
+                          readOnly
+                          className="min-w-0 flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={handleBrowseData}
+                          aria-label="Browse for data folder"
+                        >
+                          <FolderOpen className="size-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Moving data will restart the app.
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Moving data will restart the app.
-                  </p>
-                </div>
-              </div>
+                </>
+              )}
+              <DataTransferSection />
             </div>
           </TabsContent>
 

@@ -25,16 +25,133 @@ workflow.
 
 The work should proceed in this order:
 
-1. Sync compatibility and SQLite WASM feasibility gates.
-2. Shared data contract and provisionally sync-ready schema.
+1. SQLite WASM feasibility and browser persistence gates.
+2. Provider-neutral sync-ready data structure and shared data contract.
 3. Shared domain services.
 4. Cross-platform import/export.
 5. Web runtime and offline PWA tooling.
 6. Incremental mobile/tablet UX releases.
 7. Tag-driven production deployment.
 
-This proves data portability and behavior in Electron before introducing the
-web platform.
+This proves local data portability and behavior in Electron before introducing
+the web platform. Hosting, sync-engine selection, and sync protocol design
+belong to `docs/SYNC_ENGINE_PLAN.md`; this plan only prepares the data
+structure and contracts for a future engine.
+
+## 3.1 Current Status and Resume Point
+
+Status as of 2026-10-18: phases 0-5 are complete. The web target runs in
+production-shaped form: shared services, browser SQLite/OPFS runtime, offline
+PWA, Portable Data Package, and the Phase 5 mobile-first UX (device-tested on
+iPhone, iPad and Electron). The remaining work is the 1.0.0 release: merge
+`web-platform` into `main`, production Cloudflare deployment on
+`budget.fairhursts.net`, and a tagged Electron + Pages release. See
+`docs/RELEASE_RUNBOOK.md`. The historical log below records how the earlier
+phases landed.
+
+Completed in this work:
+
+- Added and then removed the disposable official SQLite WASM probe dependency,
+  worker, harness, and command.
+- Verified official SQLite WASM 3.53.4 with `opfs-sahpool` in a Vite worker.
+- Verified JSON functions, foreign keys, aggregate queries, `RETURNING`,
+  rollback, and persistence across probe reload.
+- Bundled and executed all 13 existing migrations in a browser worker; a fresh
+  database applied all 13 and reload skipped all 13.
+- Verified the browser executor recognizes all 13 rows written by the real
+  Electron Drizzle migrator in an in-memory SQLite contract test.
+- Verified the same migration metadata compatibility against a physical,
+  WAL-enabled Electron database file.
+- Verified the migration worker in current Chromium: first load applied all 13
+  migrations and reload skipped all 13 through OPFS persistence.
+- Measured a Chromium persisted-database reopen at approximately 132 ms in the
+  local profile; `navigator.storage.persisted()` was false, so eviction safety
+  remains unproven.
+- An explicit Chromium `navigator.storage.persist()` request also returned
+  false on localhost; the eventual runtime must handle denied persistence
+  distinctly and avoid claiming eviction protection.
+- Verified Safari 27 first-load migration execution: all 13 migrations applied
+  in approximately 193 ms; `persist()` returned false and `persisted()` stayed
+  false in the localhost profile.
+- Verified Safari reload persistence: a second load skipped all 13 migrations
+  in approximately 199 ms; persistent-storage protection remained denied.
+- Began phase 1 with a platform-neutral `ApplicationAPI` type name and an
+  injectable `usePlatform()` capability service; existing Electron consumers
+  remain unchanged.
+- Added the shared asynchronous `DatabaseCapability` contract, a WAL-enabled
+  Electron adapter, and a persistent SQLite WASM worker/client with serialized
+  RPC transactions; the browser smoke test passed query, transaction, and
+  close behavior.
+- Extracted the first typed shared domain service for accounts, including
+  balance projections, transfer-category side effects, and reference-aware
+  soft deletion, with migrated SQLite tests.
+- Extracted the atomic reconciliation service with rollback coverage.
+- Extracted transaction reads, atomic transfer creation, and guarded deletion
+  with migrated SQLite tests; transfer-aware amount/payee propagation is now
+  covered, category conversion is covered in both directions.
+- Wired the extracted accounts, transactions, and reconciliation services into
+  Electron IPC through a built CommonJS service bundle and the existing SQLite
+  connection. Settings, payees, categories, envelopes, mappings, and budgets
+  now use the same path.
+- Moved account reconciliation CRUD onto the shared service path; backups and
+  QIF import remain native Electron boundaries.
+- Moved scheduled CRUD and startup auto-posting behind the shared async service;
+  overdue posting and exhausted-schedule removal have migrated SQLite tests.
+- Added fail-closed browser command sequencing and a Web Lock/BroadcastChannel
+  coordinator; web startup and inactive-instance UI integration remain.
+- Connected the browser lock, SQLite worker, persistence request, and shared
+  auto-post operation in a web runtime initializer with resume/shutdown hooks.
+- Connected the web runtime to React startup, installed the browser
+  `ApplicationAPI` over shared services, and added explicit inactive/startup
+  failure states; native-only operations now report unsupported behavior.
+- Added cross-origin isolation headers to `vite.config.ts` for the future
+  worker/OPFS path.
+- Added migration `0013_chilly_dorian_gray` for provider-neutral sync-ready
+  metadata: stable public IDs, lifecycle timestamps, deterministic legacy-row
+  backfill, unique indexes, update triggers, and tombstone-only delete guards.
+- Converted shared services and legacy IPC adapters to retain syncable rows as
+  tombstones while filtering them from active reads; settings remains
+  device-local.
+- Passed `bun run lint` and `bun run check-types` after cleanup.
+- Completed the local-only version-1 Portable Data Package, including
+  cross-platform export/import adapters, public-ID relationship mapping,
+  atomic tombstone-preserving overwrite, validation, golden fixtures, and
+  regression coverage.
+
+Next work, in order:
+
+1. Land `web-platform` on `main` and tag 1.0.0 (see `docs/RELEASE_RUNBOOK.md`).
+2. Production deployment: Cloudflare Pages custom domain, Access policy on
+   previews only, a rehearsed deploy and rollback. The production origin is
+   permanent: a later domain change would strand each user's OPFS database.
+3. Record the remaining manual checks in `docs/PHASE4_MANUAL_CHECKLIST.md`.
+
+Phase 1 local foundation status: complete. The shared platform/API boundary,
+database adapters, domain services, Electron IPC bundle, browser startup
+lifecycle, inactive-tab handling, persistence state, and local contract tests
+are implemented. External phase 0 browser/deployment/performance validation
+remains a separate gate before production web release.
+
+Phase 4 local implementation status: complete. The web build boundary,
+security headers, deterministic offline precache, user-confirmed service-worker
+updates, generated-artifact checks, Chromium release tests, route map, and
+Cloudflare deployment workflows are implemented. Production approval remains
+blocked only on the manual acceptance checklist and environment credentials /
+policies described there.
+
+Do not select a sync engine or hosting model from this plan; those decisions
+are owned by `docs/SYNC_ENGINE_PLAN.md`.
+
+Provider-neutral Sync-Ready Data Structure status: complete for the current
+scope. Existing integer relationships remain intact, while syncable entities
+now have stable public IDs, lifecycle metadata, deterministic legacy
+backfill, unique indexes, tombstones, and centralized delete/update behavior.
+Canonical public-key strategy and provider-specific schema remain deferred to
+`docs/SYNC_ENGINE_PLAN.md`.
+
+Current validation scope: Chromium and Safari are the approval baseline.
+Physical mobile-device and Firefox coverage is deferred until before public
+mobile launch or if browser storage behavior changes materially.
 
 ## 3. Target Architecture
 
@@ -81,15 +198,21 @@ be reused unchanged.
 
 ## 4. Phase 0: Technical Proof
 
-Before committing to the browser driver or final sync-ready schema:
+The disposable SQLite WASM probe completed on 2026-09-17. In a Vite-served
+worker with cross-origin isolation, official SQLite WASM 3.53.4 opened an
+`opfs-sahpool` database and passed representative JSON, foreign-key,
+aggregate, `RETURNING`, and rollback checks. Reloading the probe also confirmed
+that the OPFS database persisted. This proves browser feasibility for the
+no-sync baseline only; it does not approve the browser adapter, schema, sync
+engine, or mobile support matrix.
 
-- Prototype official SQLite WASM in a dedicated worker as the no-sync baseline.
-- In parallel, spike the recommended sync engine and its browser database/VFS
-  against the same contract; see `docs/SYNC_ENGINE_PLAN.md`.
-- For the no-sync baseline, use `opfs-sahpool`, matching the single-active-tab
-  requirement.
-- Confirm current SQL, JSON functions, foreign keys, aggregate queries,
-  `RETURNING`, and transactions.
+The probe and its package dependency are intentionally disposable and are not
+part of the application runtime. Keep the result and follow-up work in
+`docs/WEB_IMPLEMENTATION_TASKS.md` rather than maintaining the synthetic
+database harness on a long-running branch.
+
+Remaining local phase 0 gates:
+
 - Benchmark startup, migration, bulk import, reporting queries, and a large
   transaction dataset on representative iPhone, iPad, and Android hardware.
 - Confirm Safari/iPadOS persistence across reload, restart, PWA installation,
@@ -102,8 +225,9 @@ Do not make WAL a permanent application-level assumption. The no-sync
 own its VFS, journal mode, and checkpoint behavior. Electron may retain its
 current WAL mode until an adopted database adapter requires otherwise.
 
-Approval gate: proceed only after transaction parity, persistence, migration,
-and performance tests pass.
+Approval gate for this plan: proceed only after transaction parity,
+persistence, migration, and performance tests pass. The separate sync-engine
+approval gate is defined in `docs/SYNC_ENGINE_PLAN.md`.
 
 ## 5. Phase 1: Shared Data Foundation
 
@@ -128,20 +252,28 @@ Move startup auto-posting into a shared operation. Run it after database
 initialization and whenever the PWA resumes. Background execution while the PWA
 is closed is explicitly unsupported.
 
-## 6. Sync-Ready Schema
+## 6. Sync-Ready Data Structure
+
+Prepare the data structure for future distributed databases without selecting
+the sync protocol or hosting provider. Identity, metadata, relationship
+tombstones, and portable IDs belong here; provider-specific requirements such
+as PowerSync's exact local schema, hosted ownership model, and write protocol
+belong to `docs/SYNC_ENGINE_PLAN.md`.
 
 Prepare distributed databases without designing the sync protocol:
 
 - Add a globally unique ID to every syncable entity.
-- Use the sync-engine spike to decide whether that ID becomes the canonical
-  text primary key or remains separate from the current integer key. Do not
-  freeze the dual-ID design before testing PowerSync's text `id` requirement.
+- Keep the ID format and relationship contract provider-neutral. Defer the
+  choice between canonical public IDs and a separate local key to the
+  sync-engine spike; do not encode a provider-specific key requirement here.
 - Add UTC `created_at`, `updated_at`, and nullable `deleted_at` metadata.
 - Apply tombstones to relationships and entities that future sync must
   replicate.
 - Backfill existing rows deterministically and add unique indexes.
 - Centralize writes so metadata cannot be bypassed.
-- Define which preferences are portable and which remain device-specific.
+- Treat the complete current `Preferences` shape as portable for the initial
+  package. Revisit individual fields during web UX design and remove any that
+  prove device-specific through a versioned format change.
 
 Treat this as sync preparation only. Conflict resolution, change feeds,
 devices, accounts, authentication, and remote revision tracking remain out of
@@ -160,9 +292,10 @@ Recommended package:
   minimum reader version, and checksum.
 - Explicit collections for every portable entity.
 - Stable public IDs and relationships rather than SQLite row IDs.
-- Financial data and portable preferences only.
-- Exclusion of desktop paths, backup retention, window state, shortcuts, and
-  other device-specific settings.
+- Financial data and the complete current `Preferences` shape.
+- Desktop paths, backup retention, shortcuts, and other preference fields are
+  included initially; web design may classify and remove device-specific fields
+  in a later package version.
 
 Import is always an atomic overwrite:
 
@@ -231,6 +364,13 @@ Security baseline:
 - Do not claim encryption at rest.
 
 ## 10. Phase 5: Incremental UX Redesign
+
+The [Phase 5 UX proposal and annotated mockups](./PHASE5_UX_PLAN.md) expand this
+scope into a mobile-first design, decision register, per-workflow overlay plan,
+and implementation/acceptance sequence. Mark accepted the design direction on
+2026-10-17, with hamburger/sidebar navigation instead of bottom tabs and separate
+scheduled income/outgoing totals. Implementation remains incremental, with
+per-slice validation and review; see the proposal's decision register.
 
 Approve each slice independently across phone portrait, phone landscape where
 useful, and tablet orientations:

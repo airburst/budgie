@@ -33,7 +33,8 @@ module.exports = function registerAccountReconciliationsHandlers(
   );
   ipcMain.handle("account_reconciliations:delete", (_, id) =>
     db
-      .delete(schema.accountReconciliations)
+      .update(schema.accountReconciliations)
+      .set({ deletedAt: new Date().toISOString() })
       .where(eq(schema.accountReconciliations.id, id)),
   );
 };

@@ -1,5 +1,6 @@
 import RouterContent from "@/components/RouterContent";
 import { Toaster } from "@/components/ui/sonner";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -39,35 +40,68 @@ function ThemeApplier() {
 }
 
 function UpdateListener() {
+  const platform = usePlatform();
+
   useEffect(() => {
-    window.api.onUpdateAvailable((version) => {
-      toast.info(`Version ${version} available`, {
+    if (platform.capabilities.nativeUpdates) {
+      window.api.onUpdateAvailable((version) => {
+        toast.info(`Version ${version} available`, {
+          duration: Infinity,
+          action: {
+            label: "Download",
+            onClick: () => {
+              void window.api.openExternal(
+                "https://github.com/airburst/budgie/releases/latest",
+              );
+            },
+          },
+        });
+      });
+
+      window.api.onUpdateDownloaded((version) => {
+        toast.info(`Version ${version} available`, {
+          duration: Infinity,
+          action: {
+            label: "Restart",
+            onClick: () => window.api.restartToUpdate(),
+          },
+        });
+      });
+
+      window.api.onUpdateNotAvailable(() => {
+        toast.success("Budgie is up to date");
+      });
+      return;
+    }
+
+    const onServiceWorkerUpdate = (event: Event) => {
+      const registration = (event as CustomEvent<ServiceWorkerRegistration>)
+        .detail;
+      toast.info("A new Budgie version is ready", {
         duration: Infinity,
         action: {
-          label: "Download",
+          label: "Update",
           onClick: () => {
-            void window.api.openExternal(
-              "https://github.com/airburst/budgie/releases/latest",
+            registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+            navigator.serviceWorker.addEventListener(
+              "controllerchange",
+              () => window.location.reload(),
+              { once: true },
             );
           },
         },
       });
-    });
-
-    window.api.onUpdateDownloaded((version) => {
-      toast.info(`Version ${version} available`, {
-        duration: Infinity,
-        action: {
-          label: "Restart",
-          onClick: () => window.api.restartToUpdate(),
-        },
-      });
-    });
-
-    window.api.onUpdateNotAvailable(() => {
-      toast.success("Budgie is up to date");
-    });
-  }, []);
+    };
+    window.addEventListener(
+      "budgie:service-worker-update",
+      onServiceWorkerUpdate,
+    );
+    return () =>
+      window.removeEventListener(
+        "budgie:service-worker-update",
+        onServiceWorkerUpdate,
+      );
+  }, [platform.capabilities.nativeUpdates]);
   return null;
 }
 

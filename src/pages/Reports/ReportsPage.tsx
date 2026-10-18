@@ -48,10 +48,17 @@ export default function ReportsPage() {
 
   return (
     <Layout>
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Reports</h1>
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-6 p-4 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          {/* The phone header already shows the route title. */}
+          <h1 className="sr-only text-2xl font-semibold md:not-sr-only">
+            Reports
+          </h1>
+          <div
+            role="group"
+            aria-label="Report filters"
+            className="flex min-w-0 flex-wrap items-center gap-2"
+          >
             <DateRangeSelect value={range.preset} onChange={setRange} />
             <AccountSelect
               accounts={accounts}
@@ -65,7 +72,7 @@ export default function ReportsPage() {
           <p className="text-muted-foreground text-sm">Loading...</p>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid min-w-0 gap-4 md:grid-cols-2">
               <ChartCard title="Spending by Category">
                 {data.spendingByCategory.length > 0 ? (
                   <SpendingDonut

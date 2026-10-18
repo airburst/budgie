@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1330" height="1080" viewBox="0 0 1330 1080" role="img" aria-labelledby="title desc">
+  <title id="title">Budgie phase 5: accounts and account switching</title>
+  <desc id="desc">Three annotated 390-pixel phone wireframes: all accounts overview, selected account transactions and account chooser drawer. Provisional design, not application UI.</desc>
+  <defs>
+    <style>
+      text{font-family:Arial,sans-serif;fill:#f4f4f5;font-size:14px} .h{font-size:24px;font-weight:700}.sub{fill:#a1a1aa;font-size:13px}.label{fill:#b4b4bd;font-size:11px;letter-spacing:1px}.money{font-variant-numeric:tabular-nums;font-weight:700}.large{font-size:28px;font-weight:700}.blue{fill:#92b9ff}.green{fill:#70d6ac}.red{fill:#ff999f}.panel{fill:#242428;stroke:#414148}.card{fill:#1d1d21;stroke:#414148}.line{stroke:#414148}.note{fill:#364152;font-size:14px}.caption{fill:#172033;font-size:18px;font-weight:700}.nav{fill:#a1a1aa;font-size:11px}.btn{fill:#315fe3}.white{fill:#fff}
+    </style>
+    <g id="phone">
+      <rect width="390" height="800" rx="24" fill="#121215" stroke="#51515b"/>
+      <text x="20" y="27" class="sub">9:41</text><text x="310" y="27" class="sub">5G  100%</text>
+    </g>
+    <g id="nav">
+      <rect x="137" y="75" width="116" height="4" rx="2" fill="#71717a"/>
+    </g>
+  </defs>
+  <rect width="1330" height="1080" fill="#edf0f5"/>
+  <text x="40" y="42" class="caption">01 / Account context replaces the phone sidebar</text>
+  <text x="40" y="68" class="note">PROPOSAL · 390px phone frames · fictional GBP data · existing light/dark theme retained</text>
+  <g transform="translate(40 110)">
+    <use href="#phone"/>
+    <text x="16" y="71" font-size="24">☰</text><text x="58" y="71" class="h">Accounts</text>
+    <rect x="248" y="42" width="126" height="44" rx="9" class="btn"/><text x="311" y="69" text-anchor="middle">+ Add account</text>
+    <rect x="16" y="106" width="358" height="109" rx="12" class="panel"/>
+    <text x="32" y="133" class="label">ALL ACCOUNTS · TOTAL BALANCE</text>
+    <text x="32" y="173" class="large">£8,035.60</text>
+    <text x="32" y="196" class="sub">Account balances, not available cash</text>
+    <text x="16" y="250" font-weight="700">Your accounts</text>
+    <rect x="16" y="266" width="358" height="125" rx="12" class="card"/>
+    <text x="32" y="293" font-weight="700">Current Account</text><text x="357" y="293" text-anchor="end" class="money">£4,285.60</text>
+    <text x="32" y="317" class="sub">Bank · •• 4821</text>
+    <text x="32" y="346" class="sub">Cleared £4,210.60</text>
+    <text x="32" y="371" class="sub">Reconciled 30 Sep</text><text x="345" y="367" font-size="22">•••</text>
+    <rect x="16" y="403" width="358" height="112" rx="12" class="card"/>
+    <text x="32" y="431" font-weight="700">Savings</text><text x="357" y="431" text-anchor="end" class="money">£5,000.00</text>
+    <text x="32" y="455" class="sub">Bank · •• 9090</text>
+    <text x="32" y="484" class="sub">Cleared £5,000.00</text><text x="345" y="489" font-size="22">•••</text>
+    <rect x="16" y="527" width="358" height="134" rx="12" class="card"/>
+    <text x="32" y="555" font-weight="700">Credit Card</text><text x="357" y="555" text-anchor="end" class="money red">−£1,250.00</text>
+    <text x="32" y="579" class="sub">Credit card · •• 1234</text>
+    <text x="32" y="608" class="sub">Cleared −£1,250.00</text>
+    <text x="32" y="637" class="sub">Remaining credit £3,750.00</text><text x="345" y="637" font-size="22">•••</text>
+    <use href="#nav" y="711"/>
+  </g>
+  <g transform="translate(470 110)">
+    <use href="#phone"/>
+    <text x="16" y="71" font-size="24">☰</text><text x="58" y="71" class="h">Accounts</text><text x="352" y="70" font-size="24">•••</text>
+    <rect x="16" y="99" width="358" height="170" rx="12" class="panel"/>
+    <text x="32" y="126" class="label">SELECTED ACCOUNT</text>
+    <text x="32" y="153" font-size="18" font-weight="700">Current Account</text>
+    <text x="32" y="175" class="sub">Bank · •• 4821</text>
+    <text x="32" y="202" class="sub">Balance</text><text x="32" y="237" class="large">£4,285.60</text>
+    <rect x="231" y="190" width="127" height="44" rx="8" fill="#303038"/><text x="294" y="217" text-anchor="middle" class="blue">Change account</text>
+    <text x="32" y="256" class="sub">Cleared £4,210.60</text>
+    <text x="16" y="310" font-size="21" font-weight="700">Transactions</text>
+    <rect x="290" y="280" width="84" height="44" rx="9" class="btn"/><text x="332" y="307" text-anchor="middle">+ Add</text>
+    <rect x="16" y="339" width="126" height="44" rx="9" class="card"/><text x="79" y="366" text-anchor="middle">Filters · 1 active</text>
+    <rect x="282" y="339" width="92" height="44" rx="9" class="card"/><text x="328" y="366" text-anchor="middle">More •••</text>
+    <rect x="16" y="399" width="358" height="94" rx="12" class="card"/>
+    <text x="32" y="427" font-weight="700">Supermarket</text><text x="358" y="427" text-anchor="end" class="money red">−£42.80</text>
+    <text x="32" y="451" class="sub">17 Oct · Groceries</text><text x="358" y="477" text-anchor="end" class="sub">Cleared</text>
+    <rect x="16" y="505" width="358" height="94" rx="12" class="card"/>
+    <text x="32" y="533" font-weight="700">Salary</text><text x="358" y="533" text-anchor="end" class="money green">+£2,850.00</text>
+    <text x="32" y="557" class="sub">17 Oct · Income</text><text x="358" y="583" text-anchor="end" class="sub">Cleared</text>
+    <rect x="16" y="611" width="358" height="88" rx="12" class="card"/>
+    <text x="32" y="639" font-weight="700">Coffee shop</text><text x="358" y="639" text-anchor="end" class="money red">−£4.50</text>
+    <text x="32" y="663" class="sub">17 Oct · Eating out</text><text x="358" y="686" text-anchor="end" class="sub">Cleared</text>
+    <use href="#nav" y="711"/>
+  </g>
+  <g transform="translate(900 110)">
+    <use href="#phone"/>
+    <text x="16" y="71" class="h" opacity=".35">Accounts</text>
+    <rect x="16" y="99" width="358" height="170" rx="12" class="panel" opacity=".3"/>
+    <text x="32" y="153" opacity=".3">Current Account</text>
+    <rect y="42" width="390" height="758" rx="24" fill="#000" opacity=".25"/>
+    <path d="M0 278Q0 254 24 254H366Q390 254 390 278V776Q390 800 366 800H24Q0 800 0 776Z" fill="#242428" stroke="#51515b"/>
+    <rect x="172" y="266" width="46" height="5" rx="3" fill="#71717a"/>
+    <text x="16" y="312" font-size="21" font-weight="700">Change account</text><text x="344" y="312">✕</text>
+    <rect x="16" y="335" width="358" height="48" rx="9" fill="#17171b" stroke="#51515b"/><text x="32" y="364" class="sub">Search accounts</text>
+    <text x="32" y="418">All accounts</text><text x="356" y="418" text-anchor="end" class="sub">Overview ›</text>
+    <line x1="16" y1="440" x2="374" y2="440" class="line"/>
+    <rect x="16" y="451" width="358" height="74" rx="10" fill="#283756" stroke="#81abff"/>
+    <text x="32" y="478" font-weight="700">Current Account</text><text x="354" y="478" text-anchor="end" class="money">£4,285.60</text>
+    <text x="32" y="505" class="blue">✓ Selected · •• 4821</text>
+    <text x="32" y="563">Savings</text><text x="354" y="563" text-anchor="end" class="money">£5,000.00</text>
+    <text x="32" y="588" class="sub">Bank · •• 9090</text>
+    <line x1="16" y1="609" x2="374" y2="609" class="line"/>
+    <text x="32" y="642">Credit Card</text><text x="354" y="642" text-anchor="end" class="money">−£1,250.00</text>
+    <text x="32" y="667" class="sub">Credit card · •• 1234</text>
+    <rect x="16" y="710" width="358" height="48" rx="9" class="btn"/><text x="195" y="740" text-anchor="middle">+ Add account</text>
+    <rect x="137" y="782" width="116" height="4" rx="2" fill="#71717a"/>
+  </g>
+  <text x="40" y="946" class="caption">A. All accounts ≠ selected account</text>
+  <text x="40" y="974" class="note">Root stays an overview. Card tap navigates;</text><text x="40" y="997" class="note">the separate menu offers Edit / Reconcile.</text>
+  <text x="470" y="946" class="caption">B. Account context, then records</text>
+  <text x="470" y="974" class="note">Signed amounts align across multi-row cards.</text><text x="470" y="997" class="note">Tap opens details; no keyboard or clearing.</text>
+  <text x="900" y="946" class="caption">C. A focused account chooser</text>
+  <text x="900" y="974" class="note">Search is not auto-focused. Select to navigate.</text><text x="900" y="997" class="note">Close leaves the current account unchanged.</text>
+  <text x="40" y="1048" class="note">Reviewed 17 Oct · Hamburger opens the navigation sidebar (see phase5-navigation.svg). No persistent bottom tabs.</text>
+</svg>

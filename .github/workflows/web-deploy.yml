@@ -1,0 +1,124 @@
+name: Web Deploy
+
+on:
+  pull_request:
+  push:
+    tags:
+      - "v*"
+  # Previews are manual only (no auto-deploy on push or PR): pick the branch
+  # with "Use workflow from". Production is tag-only, so main is refused as an
+  # alias on the production project. PRs still build and verify the artifact.
+  workflow_dispatch:
+    inputs:
+      alias:
+        description: Preview alias (Pages branch name). Defaults to the selected branch.
+        required: false
+        type: string
+      project:
+        description: Cloudflare Pages project
+        required: false
+        default: budgie-web
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  CLOUDFLARE_PAGES_PROJECT: budgie-web
+
+jobs:
+  build-web-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun run verify:web
+      - uses: actions/upload-artifact@v7
+        with:
+          name: budgie-web-${{ github.sha }}
+          path: build
+          retention-days: 30
+
+  deploy-preview:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build-web-artifact
+    runs-on: ubuntu-latest
+    environment: preview
+    env:
+      PAGES_PROJECT: ${{ inputs.project || 'budgie-web' }}
+      PAGES_BRANCH: ${{ inputs.alias || github.ref_name }}
+    concurrency:
+      group: web-preview-${{ inputs.alias || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - name: Refuse production alias on the production project
+        if: env.PAGES_PROJECT == 'budgie-web' && env.PAGES_BRANCH == 'main'
+        run: |
+          echo "main is the production alias on budgie-web; production deploys only from a v* tag. Set an alias." >&2
+          exit 1
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/download-artifact@v8
+        with:
+          name: budgie-web-${{ github.sha }}
+          path: build
+      - name: Deploy Cloudflare Pages preview
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build --project-name=${{ env.PAGES_PROJECT }} --branch=${{ env.PAGES_BRANCH }}
+
+  # Tag runs skip PR/main CI, so run the full suite here and refuse tags that
+  # are not on main.
+  verify-tag:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Tagged commit must be on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+
+  checks:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/web-platform.yml
+
+  deploy-production:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build-web-artifact, verify-tag, checks]
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: web-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - uses: actions/download-artifact@v8
+        with:
+          name: budgie-web-${{ github.sha }}
+          path: build
+      - name: Deploy Cloudflare Pages production
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=main

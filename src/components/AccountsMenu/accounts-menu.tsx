@@ -18,7 +18,10 @@ export default function AccountsMenu() {
   const [formOpen, setFormOpen] = useState(false);
 
   return (
-    <nav className="bg-sidebar flex w-64 shrink-0 flex-col p-4">
+    <nav
+      aria-label="Accounts"
+      className="bg-sidebar hidden w-64 shrink-0 flex-col p-4 lg:flex"
+    >
       <p className="text-sidebar-foreground/50 px-2 pb-1 text-xs font-medium tracking-wider uppercase">
         Accounts
       </p>

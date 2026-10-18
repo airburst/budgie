@@ -6,12 +6,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { usePageChrome } from "@/components/page-chrome";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePlatform } from "@/hooks/usePlatform";
+import { cn } from "@/lib/utils";
 import { AboutDialog } from "@/pages/Settings/AboutDialog";
 import { BackupDialog } from "@/pages/Settings/BackupDialog";
 import { RestoreDialog } from "@/pages/Settings/RestoreDialog";
-import { Settings } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, MenuIcon, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 
 const navLinks = [
   { to: "/", label: "Accounts", end: true },
@@ -20,28 +32,195 @@ const navLinks = [
   { to: "/reports", label: "Reports", end: false },
 ];
 
+const secondaryLinks = [
+  { to: "/categories", label: "Categories", end: false },
+  { to: "/payees", label: "Payees", end: false },
+  { to: "/settings", label: "Settings", end: false },
+];
+
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { target, capabilities } = usePlatform();
+  const isMobile = useIsMobile();
+  const pageChrome = usePageChrome();
+  const [navigationOpen, setNavigationOpen] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
-    setIsMac(/Mac|iPhone|iPad|iPod/.test(navigator.userAgent));
-  }, []);
+    setIsMac(
+      target === "electron" && /Macintosh|Mac OS X/.test(navigator.userAgent),
+    );
+  }, [target]);
+
+  useEffect(() => {
+    setNavigationOpen(false);
+  }, [location.key]);
+
+  useEffect(() => {
+    if (!isMobile) setNavigationOpen(false);
+  }, [isMobile]);
+
+  const routeTitle =
+    [...navLinks, ...secondaryLinks].find(({ to, end }) =>
+      end ? location.pathname === to : location.pathname.startsWith(to),
+    )?.label ??
+    (location.pathname.startsWith("/reconcile/")
+      ? "Reconcile"
+      : location.pathname.startsWith("/forecast/")
+        ? "Forecast"
+        : "Accounts");
+  const title = pageChrome?.chrome.title ?? routeTitle;
+  const onBack = pageChrome?.chrome.onBack;
+
+  function openAction(action: () => void) {
+    setNavigationOpen(false);
+    action();
+  }
 
   return (
     <>
       <header
-        className={`bg-sidebar dark:bg-card sticky top-0 z-50 grid grid-cols-3 h-12 items-center gap-6 py-2 overflow-hidden ${
-          isMac ? "pl-20 pr-4 sm:pr-6" : "px-4 sm:px-6"
-        }`}
-        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+        className={cn(
+          "app-header bg-sidebar dark:bg-card z-50 flex shrink-0 items-center gap-2 md:grid md:grid-cols-[1fr_auto_1fr] md:gap-4",
+          isMac && "app-header-native-mac",
+        )}
+        style={
+          {
+            WebkitAppRegion: target === "electron" ? "drag" : "no-drag",
+          } as React.CSSProperties
+        }
       >
-        <div />
+        <div
+          className="flex min-w-0 flex-1 items-center gap-2 md:hidden"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        >
+          <Sheet open={navigationOpen} onOpenChange={setNavigationOpen}>
+            {onBack ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Go back"
+                onClick={onBack}
+              >
+                <ArrowLeftIcon className="size-5" />
+              </Button>
+            ) : (
+              <SheetTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Open navigation"
+                  />
+                }
+              >
+                <MenuIcon className="size-5" />
+              </SheetTrigger>
+            )}
+            <SheetContent
+              side="left"
+              className="app-navigation min-h-0 gap-0 data-[side=left]:w-[min(20rem,calc(100%-2rem))]"
+            >
+              {/* Visually hidden: the dialog keeps its accessible name. */}
+              <SheetHeader className="sr-only">
+                <SheetTitle>Budgie</SheetTitle>
+                <SheetDescription>Navigation</SheetDescription>
+              </SheetHeader>
+              <nav
+                aria-label="Main navigation"
+                className="min-h-0 flex-1 overflow-y-auto px-3 pt-14 pb-4"
+              >
+                {[navLinks, secondaryLinks].map((links, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "space-y-1",
+                      index > 0 && "mt-3 border-t pt-3",
+                    )}
+                  >
+                    {links.map(({ to, label, end }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        end={end}
+                        onClick={() => setNavigationOpen(false)}
+                        className={({ isActive }) =>
+                          cn(
+                            "flex min-h-12 items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring",
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                          )
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {label}
+                            {isActive && (
+                              <CheckIcon
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    ))}
+                  </div>
+                ))}
+                <div className="mt-3 flex flex-col gap-1 border-t pt-3">
+                  {capabilities.filesystemBackups && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => openAction(() => setBackupOpen(true))}
+                      >
+                        Backup...
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => openAction(() => setRestoreOpen(true))}
+                      >
+                        Restore...
+                      </Button>
+                    </>
+                  )}
+                  {capabilities.nativeUpdates && (
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() =>
+                        openAction(() => void window.api.checkForUpdates())
+                      }
+                    >
+                      Check for updates
+                    </Button>
+                  )}
+                </div>
+              </nav>
+              <p className="shrink-0 px-4 pt-2 pb-4 text-center text-xs text-muted-foreground">
+                Version {__APP_VERSION__}
+              </p>
+            </SheetContent>
+          </Sheet>
+          <span className="truncate text-lg font-semibold">{title}</span>
+        </div>
+        {/* Phone-only slot for the page's primary action (see HeaderAction). */}
+        <div
+          ref={pageChrome?.setSlot}
+          className="flex shrink-0 items-center gap-2 md:hidden"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        />
+        <div aria-hidden="true" className="hidden md:block" />
         <nav
-          className="flex items-center gap-2"
+          aria-label="Main navigation"
+          className="hidden items-center gap-2 md:flex"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           {navLinks.map(({ to, label, end }) => (
@@ -63,7 +242,7 @@ const Header = () => {
         </nav>
 
         <div
-          className="justify-self-end"
+          className="hidden justify-self-end md:block"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
           <DropdownMenu>
@@ -85,19 +264,27 @@ const Header = () => {
               <DropdownMenuItem onClick={() => navigate("/payees")}>
                 Payees
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setBackupOpen(true)}>
-                Backup...
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setRestoreOpen(true)}>
-                Restore...
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => void window.api.checkForUpdates()}
-              >
-                Check for updates
-              </DropdownMenuItem>
+              {capabilities.filesystemBackups && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setBackupOpen(true)}>
+                    Backup...
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRestoreOpen(true)}>
+                    Restore...
+                  </DropdownMenuItem>
+                </>
+              )}
+              {capabilities.nativeUpdates && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => void window.api.checkForUpdates()}
+                  >
+                    Check for updates
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem onClick={() => setAboutOpen(true)}>
                 About Budgie
               </DropdownMenuItem>
@@ -106,8 +293,12 @@ const Header = () => {
         </div>
       </header>
 
-      <BackupDialog open={backupOpen} onOpenChange={setBackupOpen} />
-      <RestoreDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
+      {capabilities.filesystemBackups && (
+        <>
+          <BackupDialog open={backupOpen} onOpenChange={setBackupOpen} />
+          <RestoreDialog open={restoreOpen} onOpenChange={setRestoreOpen} />
+        </>
+      )}
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
     </>
   );

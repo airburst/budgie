@@ -1,12 +1,14 @@
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveOverlay,
+  ResponsiveOverlayBody,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayDescription,
+  ResponsiveOverlayFooter,
+  ResponsiveOverlayHeader,
+  ResponsiveOverlayTitle,
+} from "@/components/responsive-overlay";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAccounts } from "@/hooks/useAccounts";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import type { Account } from "@/types/electron";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AccountFormProps = {
   open: boolean;
@@ -26,6 +29,8 @@ type AccountFormProps = {
   editingId?: number | null;
   account?: Account | null;
 };
+
+type FormState = typeof empty;
 
 const empty = {
   name: "",
@@ -47,6 +52,24 @@ const ACCOUNT_TYPES: { value: string; label: string }[] = [
   { value: "cash", label: "Cash" },
 ];
 
+function formFromAccount(account: Account): FormState {
+  return {
+    name: account.name,
+    number: account.number || "",
+    type: account.type,
+    balance: account.balance.toFixed(2),
+    currency: account.currency,
+    notes: account.notes || "",
+    interestRate: account.interestRate?.toString() || "",
+    creditLimit: account.creditLimit?.toString() || "",
+    shouldClose: false,
+  };
+}
+
+function sameForm(a: FormState, b: FormState) {
+  return (Object.keys(a) as (keyof FormState)[]).every((k) => a[k] === b[k]);
+}
+
 export function AccountForm({
   open,
   onOpenChange,
@@ -54,90 +77,134 @@ export function AccountForm({
   account,
 }: AccountFormProps) {
   const { create, update, remove } = useAccounts();
+  const compact = useIsMobile();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const [form, setForm] = useState(empty);
+  const [baseline, setBaseline] = useState(empty);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
   const isEditing = editingId != null;
+  // Read through a ref so a background refetch (new object identity) cannot
+  // reset a draft that is being edited.
+  const accountRef = useRef(account);
+  accountRef.current = account;
+  const accountLoaded = account != null;
 
   useEffect(() => {
-    if (isEditing && account) {
-      setForm({
-        name: account.name,
-        number: account.number || "",
-        type: account.type,
-        balance: account.balance.toFixed(2),
-        currency: account.currency,
-        notes: account.notes || "",
-        interestRate: account.interestRate?.toString() || "",
-        creditLimit: account.creditLimit?.toString() || "",
-        shouldClose: false,
-      });
-    } else {
-      setForm(empty);
-    }
-  }, [editingId, open, account, isEditing]);
+    if (!open) return;
+    const current = accountRef.current;
+    const next = isEditing && current ? formFromAccount(current) : empty;
+    setForm(next);
+    setBaseline(next);
+    setSaveError(null);
+    setConfirmClose(false);
+    setConfirmDiscard(false);
+  }, [editingId, open, isEditing, accountLoaded]);
+
+  const dirty = !sameForm(form, baseline);
 
   function set(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
   function handleClose() {
-    setForm(empty);
     setConfirmClose(false);
+    setConfirmDiscard(false);
     onOpenChange(false);
   }
 
-  async function save() {
-    if (isEditing && account) {
-      // Editing mode
-      if (form.shouldClose) {
-        // Close account - trigger confirmation first
-        setConfirmClose(true);
-        return;
-      }
-
-      // Update account with partial data
-      await update.mutateAsync({
-        id: account.id,
-        data: {
-          name: form.name,
-          number: form.number || null,
-          notes: form.notes || null,
-          interestRate: form.interestRate
-            ? parseFloat(form.interestRate)
-            : null,
-          creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
-        },
-      });
-    } else {
-      // Creating mode
-      const isAssumedNegative =
-        form.type === "credit_card" || form.type === "loan";
-      await create.mutateAsync({
-        name: form.name,
-        number: form.number || null,
-        type: form.type as
-          | "bank"
-          | "credit_card"
-          | "loan"
-          | "investment"
-          | "cash",
-        balance: isAssumedNegative
-          ? -(parseFloat(form.balance) || 0)
-          : parseFloat(form.balance) || 0,
-        currency: form.currency || "GBP",
-        notes: form.notes || null,
-        interestRate: form.interestRate ? parseFloat(form.interestRate) : null,
-        creditLimit: form.creditLimit ? parseFloat(form.creditLimit) : null,
-      } as any); // Type assertion to work around TypeScript cache issue
+  function requestClose() {
+    if (dirty) {
+      setConfirmDiscard(true);
+      return;
     }
     handleClose();
   }
 
+  async function run(action: () => Promise<unknown>, failure: string) {
+    // Guards Enter + click (or a double tap) before isPending re-renders.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSaveError(null);
+    try {
+      await action();
+    } catch (err) {
+      // Keep the surface open with the draft intact so the user can retry.
+      setSaveError(
+        `${failure} ${err instanceof Error ? err.message : "Please try again."}`,
+      );
+      return;
+    } finally {
+      submittingRef.current = false;
+    }
+    handleClose();
+  }
+
+  async function save() {
+    if (isEditing && account) {
+      if (form.shouldClose) {
+        setConfirmClose(true);
+        return;
+      }
+
+      await run(
+        () =>
+          update.mutateAsync({
+            id: account.id,
+            data: {
+              name: form.name,
+              number: form.number || null,
+              notes: form.notes || null,
+              interestRate: form.interestRate
+                ? parseFloat(form.interestRate)
+                : null,
+              creditLimit: form.creditLimit
+                ? parseFloat(form.creditLimit)
+                : null,
+            },
+          }),
+        "Couldn't save the account.",
+      );
+    } else {
+      const isAssumedNegative =
+        form.type === "credit_card" || form.type === "loan";
+      await run(
+        () =>
+          create.mutateAsync({
+            name: form.name,
+            number: form.number || null,
+            type: form.type as
+              | "bank"
+              | "credit_card"
+              | "loan"
+              | "investment"
+              | "cash",
+            balance: isAssumedNegative
+              ? -(parseFloat(form.balance) || 0)
+              : parseFloat(form.balance) || 0,
+            currency: form.currency || "GBP",
+            notes: form.notes || null,
+            interestRate: form.interestRate
+              ? parseFloat(form.interestRate)
+              : null,
+            creditLimit: form.creditLimit
+              ? parseFloat(form.creditLimit)
+              : null,
+          } as any), // Type assertion to work around TypeScript cache issue
+        "Couldn't create the account.",
+      );
+    }
+  }
+
   async function handleConfirmClose() {
     if (isEditing && editingId != null) {
-      await remove.mutateAsync(editingId);
-      handleClose();
+      await run(
+        () => remove.mutateAsync(editingId),
+        "Couldn't close the account.",
+      );
     }
   }
 
@@ -147,28 +214,41 @@ export function AccountForm({
   }
 
   const isPending = create.isPending || update.isPending || remove.isPending;
-  const isDisabled = confirmClose || isPending;
+
+  // Implicit dismissal (swipe, Escape, backdrop, close icon) never silently
+  // discards a draft and is ignored while a save is in flight.
+  function handleOverlayOpenChange(next: boolean) {
+    if (next) {
+      onOpenChange(true);
+      return;
+    }
+    if (isPending || submittingRef.current) return;
+    requestClose();
+  }
+
+  const fieldClass = "flex flex-col gap-1.5";
 
   return (
-    <>
-      <Dialog
-        open={open && !confirmClose}
-        onOpenChange={(o) => !o && handleClose()}
+    <ResponsiveOverlay open={open} onOpenChange={handleOverlayOpenChange}>
+      <ResponsiveOverlayContent
+        size="expanded"
+        dialogClassName="sm:max-w-sm"
+        initialFocus={compact ? titleRef : undefined}
       >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Edit Account" : "New Account"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Update account details. Balance and account type cannot be changed."
-                : "Add a new account to track."}
-            </DialogDescription>
-          </DialogHeader>
+        <ResponsiveOverlayHeader>
+          <ResponsiveOverlayTitle ref={titleRef} tabIndex={-1}>
+            {isEditing ? "Edit Account" : "New Account"}
+          </ResponsiveOverlayTitle>
+          <ResponsiveOverlayDescription>
+            {isEditing
+              ? "Update account details. Balance and account type cannot be changed."
+              : "Add a new account to track."}
+          </ResponsiveOverlayDescription>
+        </ResponsiveOverlayHeader>
 
+        <ResponsiveOverlayBody>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
+            <div className={fieldClass}>
               <Label htmlFor="acc-name">Name</Label>
               <Input
                 id="acc-name"
@@ -179,39 +259,41 @@ export function AccountForm({
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="acc-type">Type</Label>
-              <Select
-                value={form.type}
-                onValueChange={(v) => set("type", v as string)}
-                disabled={isEditing}
-              >
-                <SelectTrigger id="acc-type" className="w-full">
-                  <SelectValue>
-                    {ACCOUNT_TYPES.find((t) => t.value === form.type)?.label}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {ACCOUNT_TYPES.map(({ value, label }) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className={fieldClass}>
+                <Label htmlFor="acc-type">Type</Label>
+                <Select
+                  value={form.type}
+                  onValueChange={(v) => set("type", v as string)}
+                  disabled={isEditing}
+                >
+                  <SelectTrigger id="acc-type" className="w-full">
+                    <SelectValue>
+                      {ACCOUNT_TYPES.find((t) => t.value === form.type)?.label}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ACCOUNT_TYPES.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className={fieldClass}>
+                <Label htmlFor="acc-number">Account Number</Label>
+                <Input
+                  id="acc-number"
+                  placeholder="Optional"
+                  value={form.number}
+                  onChange={(e) => set("number", e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="acc-number">Account Number</Label>
-              <Input
-                id="acc-number"
-                placeholder="Optional"
-                value={form.number}
-                onChange={(e) => set("number", e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
+            <div className={fieldClass}>
               <Label htmlFor="acc-balance">
                 {form.type === "credit_card" || form.type === "loan"
                   ? "Initial balance owed"
@@ -220,6 +302,7 @@ export function AccountForm({
               <Input
                 id="acc-balance"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 value={form.balance}
                 onChange={(e) => set("balance", e.target.value)}
@@ -228,12 +311,13 @@ export function AccountForm({
             </div>
 
             {form.type === "credit_card" && (
-              <>
-                <div className="flex flex-col gap-1.5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className={fieldClass}>
                   <Label htmlFor="acc-credit-limit">Credit Limit</Label>
                   <Input
                     id="acc-credit-limit"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     placeholder="e.g. 5000"
                     value={form.creditLimit}
@@ -241,26 +325,28 @@ export function AccountForm({
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className={fieldClass}>
                   <Label htmlFor="acc-interest-rate">Interest Rate (%)</Label>
                   <Input
                     id="acc-interest-rate"
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     placeholder="e.g. 19.9"
                     value={form.interestRate}
                     onChange={(e) => set("interestRate", e.target.value)}
                   />
                 </div>
-              </>
+              </div>
             )}
 
             {form.type === "loan" && (
-              <div className="flex flex-col gap-1.5">
+              <div className={fieldClass}>
                 <Label htmlFor="acc-interest-rate">Interest Rate (%)</Label>
                 <Input
                   id="acc-interest-rate"
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   placeholder="e.g. 5.5"
                   value={form.interestRate}
@@ -269,7 +355,7 @@ export function AccountForm({
               </div>
             )}
 
-            <div className="flex flex-col gap-1.5">
+            <div className={fieldClass}>
               <Label htmlFor="acc-currency">Currency</Label>
               <Input
                 id="acc-currency"
@@ -280,71 +366,58 @@ export function AccountForm({
             </div>
 
             {isEditing && (
-              <div className="flex items-center gap-2 pt-2 border-t">
+              <div className="flex min-h-11 items-center gap-2 border-t pt-2 md:min-h-0">
                 <input
                   id="acc-close"
                   type="checkbox"
                   checked={form.shouldClose}
                   onChange={(e) => set("shouldClose", e.target.checked)}
-                  className="rounded border-input"
+                  className="size-5 rounded border-input md:size-4"
                 />
                 <Label
                   htmlFor="acc-close"
-                  className="cursor-pointer font-normal"
+                  className="cursor-pointer py-2 font-normal"
                 >
                   Close Account
                 </Label>
               </div>
             )}
+            {/* Hidden submit button so pressing Enter in any input triggers onSubmit */}
+            <button type="submit" className="sr-only" aria-hidden tabIndex={-1} />
           </form>
+          {saveError && (
+            <p role="alert" className="mt-4 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
+        </ResponsiveOverlayBody>
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isDisabled}
-            >
-              Cancel
-            </Button>
-            <Button onClick={save} disabled={isDisabled}>
-              {isEditing ? "Save Changes" : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <ResponsiveOverlayFooter>
+          <Button variant="outline" onClick={requestClose} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button onClick={save} disabled={isPending}>
+            {isPending ? "Saving…" : isEditing ? "Save Changes" : "Create"}
+          </Button>
+        </ResponsiveOverlayFooter>
 
-      {/* Confirmation dialog for closing account */}
-      <Dialog
-        open={confirmClose}
-        onOpenChange={(open) => !open && setConfirmClose(false)}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Close Account?</DialogTitle>
-            <DialogDescription className="text-destructive font-semibold">
-              This is permanent and cannot be undone. The account will be
-              archived and excluded from all calculations.
-            </DialogDescription>
-          </DialogHeader>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmClose(false)}
-              disabled={isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmClose}
-              disabled={isPending}
-            >
-              Close Account
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        <ConfirmDialog
+          open={confirmClose}
+          onOpenChange={(o) => !o && setConfirmClose(false)}
+          title="Close Account?"
+          description="This is permanent and cannot be undone. The account will be archived and excluded from all calculations."
+          confirmLabel="Close Account"
+          onConfirm={handleConfirmClose}
+        />
+        <ConfirmDialog
+          open={confirmDiscard}
+          onOpenChange={(o) => !o && setConfirmDiscard(false)}
+          title="Discard changes?"
+          description="Your changes to this account haven't been saved."
+          confirmLabel="Discard"
+          onConfirm={handleClose}
+        />
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }

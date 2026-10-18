@@ -1,10 +1,17 @@
 import { useChartFillHeight } from "@/components/chart-card";
 import { ChartLegend, useMeasuredHeight } from "@/components/chart-legend";
+import { ChartPlot } from "@/components/chart-plot";
+import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
   budgieChartTheme,
+  CHART_FOCUS_DISTANCE,
+  CHART_TOUCH,
+  PHONE_ASPECT,
   type ChartConfig,
 } from "@/components/chart-theme";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import {
   barY,
   defineChart,
@@ -12,7 +19,6 @@ import {
   group,
   type ChartPoint,
 } from "@tanstack/charts";
-import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { scaleBand, scaleLinear } from "d3-scale";
 
@@ -84,6 +90,7 @@ function buildDefinition({
       theme: budgieChartTheme,
     }),
     focus: "group-x",
+    maxFocusDistance: CHART_FOCUS_DISTANCE,
     tooltip: {
       use: tooltip,
       anchor: "group-center",
@@ -103,21 +110,35 @@ function buildDefinition({
 
 export function IncomeExpensesChart(props: Props) {
   const fillHeight = useChartFillHeight();
+  const isMobile = useIsMobile();
   const [chartAreaRef, chartAreaHeight] = useMeasuredHeight<HTMLDivElement>();
   const legendItems = Object.values(config);
 
   if (!fillHeight) {
     return (
       <div className="flex flex-col items-center gap-4">
-        <RendererChart
+        <ChartPlot
           definition={buildDefinition(props)}
           renderer={animatedRenderer}
-          aspectRatio={16 / 9}
+          aspectRatio={isMobile ? PHONE_ASPECT : 16 / 9}
+          maxHeight={isMobile ? 320 : 300}
           initialWidth={520}
-          className="w-full max-h-75"
+          className={cn("w-full", CHART_TOUCH)}
           ariaLabel="Income versus expenses by month"
         />
         <ChartLegend items={legendItems} />
+        <div className="w-full">
+          <ChartValues
+            title="Income versus expenses"
+            rows={props.data.map((point) => ({
+              label: props.formatMonth(point.month),
+              values: [
+                { name: "Income", value: props.formatAmount(point.income) },
+                { name: "Expenses", value: props.formatAmount(point.expenses) },
+              ],
+            }))}
+          />
+        </div>
       </div>
     );
   }
@@ -128,12 +149,12 @@ export function IncomeExpensesChart(props: Props) {
           in one pass instead of an approximate height corrected after mount. */}
       <div ref={chartAreaRef} className="w-full min-h-0 flex-1">
         {chartAreaHeight > 0 ? (
-          <RendererChart
+          <ChartPlot
             definition={buildDefinition(props)}
             renderer={animatedRenderer}
             height={chartAreaHeight}
             initialWidth={520}
-            className="h-full w-full"
+            className={cn("h-full w-full", CHART_TOUCH)}
             ariaLabel="Income versus expenses by month"
           />
         ) : null}

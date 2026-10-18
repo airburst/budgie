@@ -68,10 +68,10 @@ describe("categories IPC", () => {
     expect(found?.name).toBe("Contract Work");
   });
 
-  // ── Delete: hard-delete (no linked transactions) ──────────────────────────
+  // ── Delete: tombstone (no linked transactions) ────────────────────────────
 
-  it("hard-delete: category with no transactions is removed from DB", async () => {
-    // Create a throwaway category then delete it
+  it("tombstone: category with no transactions is retained as deleted", async () => {
+    // Create a throwaway category then tombstone it
     const rows = await invoke<{ id: number }[]>("categories:create", {
       name: "Throwaway",
       expenseType: "expense",
@@ -84,10 +84,10 @@ describe("categories IPC", () => {
       "categories:getById",
       throwawayId,
     );
-    expect(found).toBeNull();
+    expect(found).toMatchObject({ deleted: true });
   });
 
-  it("getAll excludes hard-deleted categories", async () => {
+  it("getAll excludes tombstoned categories", async () => {
     const all = await invoke<{ name: string }[]>("categories:getAll");
     expect(all.map((c) => c.name)).not.toContain("Throwaway");
   });

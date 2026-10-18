@@ -33,7 +33,8 @@ export function AccountSelect({ accounts, selectedIds, onChange }: Props) {
       <ComboboxInput
         placeholder={selectedIds.length === 0 ? "All Accounts" : `${selectedIds.length} account${selectedIds.length > 1 ? "s" : ""}`}
         showClear={selectedIds.length > 0}
-        className="w-40"
+        aria-label="Accounts"
+        className="min-h-11 w-40 md:min-h-0 [&_input]:h-full"
       />
       <ComboboxContent>
         <ComboboxList>

@@ -128,3 +128,29 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Phone type scale: every Tailwind text step is one step larger below `md`
+ * (xs becomes sm, sm becomes base, ...). Only type changes; rem-based spacing,
+ * icons and tap targets keep their sizes. Literal values rather than
+ * var(--text-sm) etc., which would be self-referential. 16px is also the
+ * smallest size iOS Safari won't zoom an input for, so text-sm fields are safe.
+ */
+@media (max-width: 767px) {
+  :root {
+    --text-xs: 0.875rem;
+    --text-xs--line-height: calc(1.25 / 0.875);
+    --text-sm: 1rem;
+    --text-sm--line-height: calc(1.5 / 1);
+    --text-base: 1.125rem;
+    --text-base--line-height: calc(1.75 / 1.125);
+    --text-lg: 1.25rem;
+    --text-lg--line-height: calc(1.75 / 1.25);
+    --text-xl: 1.5rem;
+    --text-xl--line-height: calc(2 / 1.5);
+    --text-2xl: 1.875rem;
+    --text-2xl--line-height: calc(2.25 / 1.875);
+    --text-3xl: 2.25rem;
+    --text-3xl--line-height: calc(2.5 / 2.25);
+  }
+}

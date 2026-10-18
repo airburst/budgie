@@ -64,6 +64,9 @@ const api = {
   getPreferences: () => ipcRenderer.invoke("settings:getPreferences"),
   setPreferences: (prefs) =>
     ipcRenderer.invoke("settings:setPreferences", prefs),
+  exportPortableData: () => ipcRenderer.invoke("portable:export"),
+  importPortableData: (document) =>
+    ipcRenderer.invoke("portable:import", document),
 
   getDefaultBackupFolder: () => ipcRenderer.invoke("backups:getDefaultFolder"),
   createBackup: (folder) => ipcRenderer.invoke("backups:create", folder),

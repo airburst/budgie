@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  ResponsiveOverlay,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayDescription,
+  ResponsiveOverlayFooter,
+  ResponsiveOverlayHeader,
+  ResponsiveOverlayTitle,
+} from "@/components/responsive-overlay";
+import { useRef } from "react";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -15,8 +16,15 @@ type ConfirmDialogProps = {
   description: string;
   onConfirm: () => void;
   confirmLabel?: string;
+  /** Destructive by default; use "default" for reversible-ish actions like Skip. */
+  confirmVariant?: "destructive" | "default";
 };
 
+/**
+ * Confirmation (destructive unless `confirmVariant` says otherwise): bottom drawer on phones, centered dialog from `md`.
+ * Cancel takes initial focus at every width so Enter never confirms by accident
+ * and no keyboard opens. Dismissal (swipe, Escape, backdrop) is a Cancel.
+ */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -24,28 +32,40 @@ export function ConfirmDialog({
   description,
   onConfirm,
   confirmLabel = "Delete",
+  confirmVariant = "destructive",
 }: ConfirmDialogProps) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
   function handleConfirm() {
     onConfirm();
     onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+    <ResponsiveOverlay open={open} onOpenChange={(next) => onOpenChange(next)}>
+      <ResponsiveOverlayContent
+        dialogClassName="sm:max-w-sm"
+        initialFocus={cancelRef}
+      >
+        <ResponsiveOverlayHeader>
+          <ResponsiveOverlayTitle>{title}</ResponsiveOverlayTitle>
+          <ResponsiveOverlayDescription>
+            {description}
+          </ResponsiveOverlayDescription>
+        </ResponsiveOverlayHeader>
+        <ResponsiveOverlayFooter>
+          <Button
+            ref={cancelRef}
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
+          <Button variant={confirmVariant} onClick={handleConfirm}>
             {confirmLabel}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </ResponsiveOverlayFooter>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }

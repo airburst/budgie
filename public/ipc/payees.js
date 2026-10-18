@@ -24,7 +24,10 @@ module.exports = function registerPayeesHandlers(ipcMain, db, schema) {
   );
 
   ipcMain.handle("payees:delete", (_, id) =>
-    db.delete(schema.payees).where(eq(schema.payees.id, id)),
+    db
+      .update(schema.payees)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.payees.id, id)),
   );
 
   // Upsert by name — called after every transaction create/update to keep

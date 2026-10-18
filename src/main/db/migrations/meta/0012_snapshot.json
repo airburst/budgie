@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "d3a3a5cb-a5d3-63e6-df89-2ab879cf9456",
-  "prevId": "b18183a9-83b1-41c4-bd67-0e9657ed7c5b",
+  "prevId": "c29294ba-94c2-52d5-ce78-1f2768fe8d6c",
   "tables": {
     "account_reconciliations": {
       "name": "account_reconciliations",

@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "formatVersion": 1,
+    "applicationVersion": "0.16.3",
+    "exportedAt": "2026-09-18T00:00:00.000Z",
+    "minimumReaderVersion": "0.16.3",
+    "checksum": "30f85f62fcda7c93c73e3e465dbce1988bfb06026828dc29363fde4e09c99ab8"
+  },
+  "preferences": {},
+  "accounts": [],
+  "categories": [],
+  "transactions": [],
+  "accountReconciliations": [],
+  "scheduledTransactions": [],
+  "payees": [],
+  "envelopes": [],
+  "envelopeCategories": [],
+  "budgetAllocations": [],
+  "budgetTransfers": []
+}

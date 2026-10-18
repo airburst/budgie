@@ -1,5 +1,12 @@
+import { AccountContextCard } from "@/components/AccountsMenu/account-context-card";
 import AccountsMenu from "@/components/AccountsMenu/accounts-menu";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -8,33 +15,41 @@ import {
 } from "@/components/ui/popover";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useHotkeys } from "@/hooks/useHotkeys";
+import { usePlatform } from "@/hooks/usePlatform";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useTransactions } from "@/hooks/useTransactions";
 import type { Preferences } from "@/types/electron";
 import {
   CheckSquareIcon,
+  EditIcon,
   FunnelIcon,
   ImportIcon,
   LineChartIcon,
+  MoreHorizontalIcon,
   PlusIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { AccountForm } from "../Home/AccountForm";
 import Layout from "../layout";
 import { ImportDialog } from "./ImportDialog";
 import { ReconciliationDialog } from "./ReconciliationDialog";
 import { TransactionForm } from "./TransactionForm";
-import { TransactionsTable } from "./TransactionsTable";
+import { TransactionsList } from "./TransactionsList";
 
 export default function AccountTransactions() {
   const { id } = useParams<{ id: string }>();
   const accountId = Number(id);
 
   const navigate = useNavigate();
+  // QIF import needs the native file picker; never offer it where it can't run.
+  const { capabilities } = usePlatform();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [focusAmountOnOpen, setFocusAmountOnOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"details" | "edit">("edit");
   const [reconcileOpen, setReconcileOpen] = useState(false);
+  const [accountFormOpen, setAccountFormOpen] = useState(false);
   const [importData, setImportData] = useState<{
     content: string;
     filename: string;
@@ -63,15 +78,33 @@ export default function AccountTransactions() {
     updatePreferences.mutate({ ...preferences, [key]: value });
   }
 
+  // Text summary so the active state is never color-only.
+  const activeFilters = [
+    preferences.hideReconciled && "reconciled",
+    preferences.hideCleared && "cleared",
+  ].filter((v): v is string => !!v);
+  const filterSummary = activeFilters.length
+    ? `Hiding ${activeFilters.join(" & ")}`
+    : "";
+
   function openAdd() {
     setEditingId(null);
     setFocusAmountOnOpen(false);
+    setFormMode("edit");
     setSheetOpen(true);
   }
 
   function openEdit(id: number, options?: { focusAmount?: boolean }) {
     setEditingId(id);
     setFocusAmountOnOpen(!!options?.focusAmount);
+    setFormMode("edit");
+    setSheetOpen(true);
+  }
+
+  function openDetails(id: number) {
+    setEditingId(id);
+    setFocusAmountOnOpen(false);
+    setFormMode("details");
     setSheetOpen(true);
   }
 
@@ -99,9 +132,14 @@ export default function AccountTransactions() {
 
   return (
     <Layout>
-      <div className="flex flex-row h-full">
+      <div className="flex h-full min-h-0 flex-row">
         <AccountsMenu />
-        <div className="flex flex-col flex-1 overflow-y-auto p-4">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-4 md:p-6">
+          <AccountContextCard
+            account={account}
+            accounts={accounts}
+            className="mb-6 lg:hidden"
+          />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
             {/* Action buttons */}
@@ -111,12 +149,25 @@ export default function AccountTransactions() {
                   render={
                     <Button
                       variant="outline"
-                      size="icon-sm"
-                      aria-label="Filter settings"
+                      size="sm"
+                      aria-label={`Filter transactions${
+                        filterSummary ? `, ${filterSummary}` : ""
+                      }`}
                     />
                   }
                 >
-                  <FunnelIcon className="size-4" />
+                  <FunnelIcon />
+                  Filter
+                  {filterSummary && (
+                    <>
+                      <span className="sm:hidden">
+                        · {activeFilters.length}
+                      </span>
+                      <span className="hidden sm:inline">
+                        · {filterSummary}
+                      </span>
+                    </>
+                  )}
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-56">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
@@ -162,32 +213,83 @@ export default function AccountTransactions() {
               </Popover>
               <Button onClick={openAdd} size="sm">
                 <PlusIcon />
-                Add Transaction
+                Add
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setReconcileOpen(true)}
-              >
-                <CheckSquareIcon />
-                Reconcile
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/forecast/${accountId}`)}
-              >
-                <LineChartIcon />
-                Forecast
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleImport}>
-                <ImportIcon />
-                Import
-              </Button>
+              {/* Desktop keeps direct actions; below lg they collapse into More. */}
+              <div className="hidden items-center gap-3 lg:flex">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReconcileOpen(true)}
+                >
+                  <CheckSquareIcon />
+                  Reconcile
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/forecast/${accountId}`)}
+                >
+                  <LineChartIcon />
+                  Forecast
+                </Button>
+                {capabilities.qifImport && (
+                  <Button variant="outline" size="sm" onClick={handleImport}>
+                    <ImportIcon />
+                    Import
+                  </Button>
+                )}
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="size-11 md:size-8 lg:hidden"
+                      aria-label="More actions"
+                    />
+                  }
+                >
+                  <MoreHorizontalIcon className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    className="min-h-11 md:min-h-8"
+                    onClick={() => setReconcileOpen(true)}
+                  >
+                    <CheckSquareIcon />
+                    Reconcile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="min-h-11 md:min-h-8"
+                    onClick={() => navigate(`/forecast/${accountId}`)}
+                  >
+                    <LineChartIcon />
+                    Forecast
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="min-h-11 md:min-h-8"
+                    onClick={() => setAccountFormOpen(true)}
+                  >
+                    <EditIcon />
+                    Edit account
+                  </DropdownMenuItem>
+                  {capabilities.qifImport && (
+                    <DropdownMenuItem
+                      className="min-h-11 md:min-h-8"
+                      onClick={handleImport}
+                    >
+                      <ImportIcon />
+                      Import
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
-          <TransactionsTable
+          <TransactionsList
             transactions={filtered}
             allTransactions={transactions.filter(
               (t) => !t.cleared && !t.reconciled,
@@ -195,6 +297,7 @@ export default function AccountTransactions() {
             categories={categories}
             openingBalance={account?.clearedBalance ?? account?.balance ?? 0}
             onEdit={openEdit}
+            onView={openDetails}
             onDelete={(id) => remove.mutate(id)}
             onToggleCleared={(id, cleared) =>
               update.mutate({ id, data: { cleared } })
@@ -209,6 +312,7 @@ export default function AccountTransactions() {
         accountId={accountId}
         account={account}
         focusAmountOnOpen={focusAmountOnOpen}
+        initialMode={formMode}
       />
       {account && (
         <ReconciliationDialog
@@ -217,6 +321,12 @@ export default function AccountTransactions() {
           onOpenChange={setReconcileOpen}
         />
       )}
+      <AccountForm
+        open={accountFormOpen}
+        onOpenChange={setAccountFormOpen}
+        editingId={accountId}
+        account={account}
+      />
       {importData && (
         <ImportDialog
           open={!!importData}

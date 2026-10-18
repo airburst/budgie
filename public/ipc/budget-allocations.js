@@ -81,7 +81,8 @@ module.exports = function registerBudgetAllocationsHandlers(
   );
   ipcMain.handle("budget_allocations:delete", (_, id) =>
     db
-      .delete(schema.budgetAllocations)
+      .update(schema.budgetAllocations)
+      .set({ deletedAt: new Date().toISOString() })
       .where(eq(schema.budgetAllocations.id, id)),
   );
 };

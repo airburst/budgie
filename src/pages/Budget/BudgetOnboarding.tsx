@@ -1,16 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useEnvelopeCategories } from "@/hooks/useEnvelopeCategories";
 import { useEnvelopes } from "@/hooks/useEnvelopes";
-import type { Category, EnvelopeCategory } from "@/types/electron";
+import type { Category } from "@/types/electron";
+import { useRef, useState } from "react";
 import { type BudgetTemplate, BUDGET_TEMPLATES } from "./budget-templates";
-import { EnvelopeFormDialog } from "./EnvelopeFormDialog";
 
 type Props = {
   categories: Category[];
-  allMappings: EnvelopeCategory[];
+  onCreateFromScratch: () => void;
 };
 
-export function BudgetOnboarding({ categories, allMappings }: Props) {
+export function BudgetOnboarding({ categories, onCreateFromScratch }: Props) {
+  const [applying, setApplying] = useState(false);
+  const applyingRef = useRef(false);
   const { create: createEnvelope } = useEnvelopes();
   const { create: createMapping } = useEnvelopeCategories();
 
@@ -42,6 +44,19 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
   };
 
   const applyTemplate = async (template: BudgetTemplate) => {
+    // A double tap would otherwise create every envelope twice.
+    if (applyingRef.current) return;
+    applyingRef.current = true;
+    setApplying(true);
+    try {
+      await createFromTemplate(template);
+    } finally {
+      applyingRef.current = false;
+      setApplying(false);
+    }
+  };
+
+  const createFromTemplate = async (template: BudgetTemplate) => {
     const usedCategoryIds = new Set<number>();
 
     for (let i = 0; i < template.envelopes.length; i++) {
@@ -69,7 +84,7 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 py-12">
+    <div className="flex flex-col items-center gap-8 py-6 md:py-12">
       <div className="text-center">
         <h2 className="text-xl font-semibold">Get started with budgeting</h2>
         <p className="text-muted-foreground text-sm mt-2 max-w-md">
@@ -83,7 +98,8 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
           <button
             key={template.name}
             onClick={() => applyTemplate(template)}
-            className="bg-card rounded-lg border p-4 text-left hover:border-primary transition-colors"
+            disabled={applying}
+            className="bg-card min-h-11 rounded-lg border p-4 text-left transition-colors hover:border-primary disabled:opacity-50"
           >
             <h3 className="font-medium">{template.name}</h3>
             <p className="text-muted-foreground text-xs mt-1">
@@ -96,11 +112,14 @@ export function BudgetOnboarding({ categories, allMappings }: Props) {
         ))}
       </div>
 
-      <EnvelopeFormDialog
-        categories={categories}
-        allMappings={allMappings}
-        trigger={<Button variant="outline">Create from scratch</Button>}
-      />
+      <Button
+        variant="outline"
+        className="min-h-11 md:min-h-8"
+        onClick={onCreateFromScratch}
+        disabled={applying}
+      >
+        Create from scratch
+      </Button>
     </div>
   );
 }

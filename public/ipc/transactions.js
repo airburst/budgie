@@ -1,28 +1,45 @@
-const { and, asc, eq, gte, inArray, lte } = require("drizzle-orm");
+const { and, asc, eq, gte, inArray, isNull, lte } = require("drizzle-orm");
 
 module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
   ipcMain.handle("transactions:getAll", () =>
-    db.select().from(schema.transactions),
+    db
+      .select()
+      .from(schema.transactions)
+      .where(isNull(schema.transactions.deletedAt)),
   );
   ipcMain.handle("transactions:getById", (_, id) =>
     db
       .select()
       .from(schema.transactions)
-      .where(eq(schema.transactions.id, id))
+      .where(
+        and(
+          eq(schema.transactions.id, id),
+          isNull(schema.transactions.deletedAt),
+        ),
+      )
       .then((r) => r[0] ?? null),
   );
   ipcMain.handle("transactions:getByAccount", (_, accountId) =>
     db
       .select()
       .from(schema.transactions)
-      .where(eq(schema.transactions.accountId, accountId))
-      .orderBy(asc(schema.transactions.date), asc(schema.transactions.createdAt)),
+      .where(
+        and(
+          eq(schema.transactions.accountId, accountId),
+          isNull(schema.transactions.deletedAt),
+        ),
+      )
+      .orderBy(
+        asc(schema.transactions.date),
+        asc(schema.transactions.createdAt),
+      ),
   );
 
   ipcMain.handle(
     "transactions:getByDateRange",
     (_, startDate, endDate, accountIds) => {
       const conditions = [
+        isNull(schema.transactions.deletedAt),
         gte(schema.transactions.date, startDate),
         lte(schema.transactions.date, endDate),
       ];
@@ -200,7 +217,8 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
               .set({ transferTransactionId: null })
               .where(eq(schema.transactions.id, id))
               .run();
-            db.delete(schema.transactions)
+            db.update(schema.transactions)
+              .set({ deletedAt: new Date().toISOString() })
               .where(eq(schema.transactions.id, existing.transferTransactionId))
               .run();
           }
@@ -254,7 +272,8 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
           .set({ transferTransactionId: null })
           .where(eq(schema.transactions.id, id))
           .run();
-        db.delete(schema.transactions)
+        db.update(schema.transactions)
+          .set({ deletedAt: new Date().toISOString() })
           .where(eq(schema.transactions.id, counterId))
           .run();
         return db
@@ -275,7 +294,8 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
 
     if (existing.transferTransactionId !== null) {
       const propagate = {};
-      if (updateData.amount !== undefined) propagate.amount = -updateData.amount;
+      if (updateData.amount !== undefined)
+        propagate.amount = -updateData.amount;
       if (updateData.date !== undefined) propagate.date = updateData.date;
       if (updateData.payee !== undefined) propagate.payee = updateData.payee;
       if (updateData.notes !== undefined) propagate.notes = updateData.notes;
@@ -324,17 +344,22 @@ module.exports = function registerTransactionsHandlers(ipcMain, db, schema) {
           .set({ transferTransactionId: null })
           .where(eq(schema.transactions.id, id))
           .run();
-        db.delete(schema.transactions)
+        db.update(schema.transactions)
+          .set({ deletedAt: new Date().toISOString() })
           .where(eq(schema.transactions.id, counterId))
           .run();
         return db
-          .delete(schema.transactions)
+          .update(schema.transactions)
+          .set({ deletedAt: new Date().toISOString() })
           .where(eq(schema.transactions.id, id))
           .run();
       });
     }
 
-    return db.delete(schema.transactions).where(eq(schema.transactions.id, id));
+    return db
+      .update(schema.transactions)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.transactions.id, id));
   });
 
   ipcMain.handle(

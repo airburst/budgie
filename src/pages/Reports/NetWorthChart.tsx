@@ -1,11 +1,17 @@
 import { useChartFillHeight } from "@/components/chart-card";
+import { ChartPlot } from "@/components/chart-plot";
+import { ChartValues } from "@/components/chart-values";
 import {
   animatedRenderer,
   budgieChartTheme,
+  CHART_FOCUS_DISTANCE,
+  CHART_TOUCH,
+  PHONE_ASPECT,
   type ChartConfig,
 } from "@/components/chart-theme";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 import { barY, defineChart, type ChartPoint } from "@tanstack/charts";
-import { RendererChart } from "@tanstack/charts/react/tooltip";
 import { tooltip } from "@tanstack/charts/tooltip";
 import { scaleBand, scaleLinear } from "d3-scale";
 
@@ -29,12 +35,12 @@ type Props = {
   formatAxisAmount: (value: number) => string;
 };
 
-function buildDefinition({
-  data,
-  formatMonth,
-  formatAmount,
-  formatAxisAmount,
-}: Props) {
+/** `large` is the maximised card, which draws bigger axis labels. */
+function buildDefinition(
+  { data, formatMonth, formatAmount, formatAxisAmount }: Props,
+  large: boolean,
+) {
+  const tickLabels = { fontSize: large ? 22 : 12 };
   return defineChart({
     chart: () => ({
       marks: [
@@ -53,7 +59,7 @@ function buildDefinition({
           axis: {
             line: false,
             ticks: { size: 0, padding: 8, format: formatMonth },
-            tickLabels: { fontSize: 22 },
+            tickLabels,
           },
         },
         y: {
@@ -62,14 +68,17 @@ function buildDefinition({
           axis: {
             line: false,
             ticks: { size: 0, padding: 4, format: formatAxisAmount },
-            tickLabels: { fontSize: 22 },
+            tickLabels,
           },
         },
       },
-      margin: { top: 8, right: 12, bottom: 48, left: 90 },
+      margin: large
+        ? { top: 8, right: 12, bottom: 48, left: 90 }
+        : { top: 8, right: 12, bottom: 28, left: 56 },
       theme: budgieChartTheme,
     }),
     focus: "group-x",
+    maxFocusDistance: CHART_FOCUS_DISTANCE,
     tooltip: {
       use: tooltip,
       anchor: "group-center",
@@ -90,15 +99,30 @@ function buildDefinition({
 
 export function NetWorthChart(props: Props) {
   const fillHeight = useChartFillHeight();
-  return (
-    <RendererChart
-      definition={buildDefinition(props)}
+  const isMobile = useIsMobile();
+  const chart = (
+    <ChartPlot
+      definition={buildDefinition(props, Boolean(fillHeight))}
       renderer={animatedRenderer}
-      aspectRatio={fillHeight ? undefined : 3}
+      aspectRatio={fillHeight ? undefined : isMobile ? PHONE_ASPECT : 2}
       height={fillHeight}
+      maxHeight={isMobile ? 320 : 250}
       initialWidth={720}
-      className={fillHeight ? "w-full h-full" : "w-full max-h-62.5"}
+      className={cn("w-full", CHART_TOUCH)}
       ariaLabel="Net worth over time"
     />
+  );
+  if (fillHeight) return chart;
+  return (
+    <div className="flex flex-col">
+      {chart}
+      <ChartValues
+        title="Net worth"
+        rows={props.data.map((point) => ({
+          label: props.formatMonth(point.month),
+          values: [{ value: props.formatAmount(point.netWorth) }],
+        }))}
+      />
+    </div>
   );
 }

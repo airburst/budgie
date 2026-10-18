@@ -76,6 +76,7 @@ export function ChartCard({ title, badge, children }: Props) {
           <Button
             variant="ghost"
             size="icon-sm"
+            aria-label={`Close ${title} full screen`}
             onClick={() => setMaximised(false)}
           >
             <X className="size-4" />
@@ -84,6 +85,7 @@ export function ChartCard({ title, badge, children }: Props) {
           <Button
             variant="ghost"
             size="icon-sm"
+            aria-label={`View ${title} full screen`}
             onClick={() => setMaximised(true)}
           >
             <Maximize2 className="size-4" />
@@ -98,7 +100,10 @@ export function ChartCard({ title, badge, children }: Props) {
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <Card className="flex-1 flex flex-col rounded-none border-0 ring-0 h-full">
           {header}
-          <CardContent ref={contentRef} className="flex-1 min-h-0 flex">
+          <CardContent
+            ref={contentRef}
+            className="flex-1 min-h-0 min-w-0 flex overflow-auto"
+          >
             {fillHeight === undefined ? null : (
               // Mounting the chart only once its final size is known means it
               // paints (and animates in) at full size instead of snapping to
@@ -115,9 +120,9 @@ export function ChartCard({ title, badge, children }: Props) {
   }
 
   return (
-    <Card>
+    <Card className="min-w-0">
       {header}
-      <CardContent>{children}</CardContent>
+      <CardContent className="min-w-0">{children}</CardContent>
     </Card>
   );
 }
