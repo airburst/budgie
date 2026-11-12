@@ -22,7 +22,6 @@ Not scheduled. Pick items up deliberately; each needs its own change.
   GitHub feed and need one manual install regardless.
 - Electron export version is hard-coded: `portable:export` in
   `public/ipc/shared-services.js` stamps `applicationVersion: "0.16.3"`.
-- Drop or promote the `spikes/powersync` sync spike with the sync decision.
 - Release workflow publishes only after mac and Windows both build; consider
   building both on a pre-tag dry run.
 
@@ -36,5 +35,6 @@ Not scheduled. Pick items up deliberately; each needs its own change.
 
 ## Future (unauthorised)
 
-- Hosted sync: `docs/SYNC_ENGINE_PLAN.md`. Starts with a threat model and a
-  PowerSync spike; nothing there is started.
+- Hosted sync: plan in `.ai-plans/sync-engine.md` (Cloudflare Worker + D1,
+  row-level HLC). `docs/SYNC_ENGINE_PLAN.md` (PowerSync) is superseded; the
+  spike is removed. Nothing is built yet.
