@@ -131,6 +131,9 @@ body size, route, JSON and schema (`bad_request`, `too_many_envelopes`), token
 `data_reset`, `not_found` for a device id). Clients MUST NOT depend on this
 order.
 
+A CORS preflight (`OPTIONS`) is answered before all of these and does not
+count towards any rate limit.
+
 `revoked`, `format_too_old` and `data_reset` are checked again as part of the
 write itself, so a sync that races a revoke, a newer app's first sync or
 "Delete my cloud data" gets the error and stores nothing.
