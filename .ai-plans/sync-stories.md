@@ -568,7 +568,7 @@ Acceptance:
   offline: after sync the account is flagged on both.
 - [int] Nothing is repaired automatically; a flag clears when the totals
   agree again.
-Status: todo
+Status: done
 
 ### SY-031 Start sync on the first app
 As a user, turning sync on uploads all my data.
