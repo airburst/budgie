@@ -34,6 +34,7 @@ import {
 } from "@/services/sync/engine";
 import { SyncHttpError } from "@/services/sync/errors";
 import type { SyncRequest, SyncResponse } from "@/services/sync/payload";
+import { readTombstones } from "@/services/tombstone-store";
 import { createCapabilityDatabase } from "@/tests/helpers/portable-fixture";
 import { vi } from "vitest";
 import {
@@ -106,7 +107,7 @@ export type SyncHarnessClient = {
   ) => void;
   /** Stored cursor in `sync_state`. */
   cursor: () => Promise<string | null>;
-  /** Every row of `table` (deleted ones included). */
+  /** Every row of `table` (deleted ones included, tombstone store too). */
   rows: (table: PortableTable) => Promise<SyncedRow[]>;
   /** One row by public id, or null. */
   row: (table: PortableTable, publicId: string) => Promise<SyncedRow | null>;
@@ -219,14 +220,28 @@ const createClient = async (
     ...overrides,
   });
 
+  // Rows in the tombstone store (SPEC.md 8.10) are rows of their table.
+  const storedRows = async (table: PortableTable): Promise<SyncedRow[]> =>
+    (await readTombstones(database, table)).map((stored) => ({
+      tbl: table,
+      publicId: stored.publicId,
+      hlc: stored.hlc,
+      dirty: stored.dirty,
+      unsealed: stored.unsealed,
+      payload: stored.payload,
+    }));
+
   const rows = async (table: PortableTable) =>
-    toSyncedRows(
-      database,
-      table,
-      await database.query({
-        sql: `SELECT * FROM ${table} ORDER BY public_id`,
-      }),
-    );
+    [
+      ...(await toSyncedRows(
+        database,
+        table,
+        await database.query({
+          sql: `SELECT * FROM ${table} ORDER BY public_id`,
+        }),
+      )),
+      ...(await storedRows(table)),
+    ].sort((a, b) => (a.publicId < b.publicId ? -1 : 1));
 
   return {
     name,
@@ -277,7 +292,9 @@ const createClient = async (
             params: [publicId],
           }),
         )
-      )[0] ?? null,
+      )[0] ??
+      (await storedRows(table)).find((row) => row.publicId === publicId) ??
+      null,
     snapshot: async () => {
       const all: SyncedRow[] = [];
       for (const table of PORTABLE_TABLES) all.push(...(await rows(table)));

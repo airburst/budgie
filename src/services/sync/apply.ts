@@ -19,7 +19,10 @@ import {
   type SyncPayload,
   type SyncRejection,
 } from "@/services/sync/payload";
+import { applyNaturalKeyEnvelopes } from "@/services/sync/natural-keys";
 import { sealRow } from "@/services/sync/push";
+import { acknowledgeTombstone } from "@/services/sync/tombstones";
+import { isNaturalKeyTable } from "@/services/tombstone-store";
 
 /** Every engine write bumps this marker so the triggers leave it alone. */
 const ENGINE_WRITE = ["sync_rev"] as const;
@@ -76,6 +79,19 @@ export const applyPull = async (
   const applied: AppliedRow[] = [];
 
   for (const table of PORTABLE_TABLES) {
+    // payees, envelope_categories and budget_allocations go through
+    // natural-key resolution and the tombstone store (SPEC.md 8.10).
+    if (isNaturalKeyTable(table)) {
+      applied.push(
+        ...(await applyNaturalKeyEnvelopes(
+          transaction,
+          table,
+          envelopes.filter((envelope) => envelope.tbl === table),
+          { ...context, resolver },
+        )),
+      );
+      continue;
+    }
     for (const envelope of envelopes) {
       if (envelope.tbl !== table) continue;
       const [local] = await transaction.query<LocalState>({
@@ -96,9 +112,6 @@ export const applyPull = async (
       if (local && compareHlc(localHlc, envelope.hlc) >= 0) continue;
 
       const payload = normaliseIncomingPayload(envelope);
-      // SY-029: payees, envelope_categories and budget_allocations go through
-      // natural-key resolution (SPEC.md 8.10) here instead; until then a
-      // collision fails the apply on the unique constraint.
       await applySyncRow(transaction, table, payload, {
         resolver,
         extraColumns: { hlc: envelope.hlc, sync_dirty: 0, sync_unsealed: 0 },
@@ -140,6 +153,7 @@ export const acknowledgePush = async (
         WHERE public_id = ? AND hlc = ? AND sync_dirty = 1 AND sync_unsealed = 0`,
       params: [envelope.publicId, envelope.hlc],
     });
+    await acknowledgeTombstone(transaction, envelope);
   }
 };
 

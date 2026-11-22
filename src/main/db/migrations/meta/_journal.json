@@ -106,6 +106,13 @@
       "when": 1795372926587,
       "tag": "0014_sync_state",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1795380354341,
+      "tag": "0015_sync_tombstones",
+      "breakpoints": true
     }
   ]
 }

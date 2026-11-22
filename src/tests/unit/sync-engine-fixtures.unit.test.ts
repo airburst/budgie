@@ -21,27 +21,9 @@ import type {
   SyncRejection,
   SyncRequest,
 } from "@/services/sync/payload";
+import { readTombstones } from "@/services/tombstone-store";
 import { createCapabilityDatabase } from "@/tests/helpers/portable-fixture";
 import { afterEach, describe, expect, it } from "vitest";
-
-/**
- * Fixtures that need natural-key collision resolution and the tombstone
- * store (SPEC.md 8.10). SY-029 empties this list.
- */
-const AWAITING_NATURAL_KEYS_SY_029 = [
-  "payee-collision-local-keeps-key",
-  "payee-collision-remote-keeps-key",
-  "payee-collision-loser-already-pushed",
-  "payee-key-held-by-deleted-row",
-  "envelope-category-collision-local-keeps-key",
-  "envelope-category-collision-remote-keeps-key",
-  "envelope-category-collision-loser-already-pushed",
-  "envelope-category-key-held-by-deleted-row",
-  "budget-allocation-collision-local-keeps-key",
-  "budget-allocation-collision-remote-keeps-key",
-  "budget-allocation-collision-loser-already-pushed",
-  "budget-allocation-key-held-by-deleted-row",
-];
 
 type Payload = Record<string, unknown> & { publicId: string };
 type LocalRow = {
@@ -223,6 +205,18 @@ const dumpStore = async (database: DatabaseCapability) => {
       });
     }
   }
+  // Deleted rows in the tombstone store are part of the store (README).
+  for (const table of PORTABLE_TABLES) {
+    for (const stored of await readTombstones(database, table)) {
+      result.push({
+        tbl: table,
+        hlc: stored.hlc,
+        dirty: stored.dirty,
+        unsealed: stored.unsealed,
+        payload: stored.payload,
+      });
+    }
+  }
   return result;
 };
 
@@ -311,16 +305,7 @@ describe("sync engine conformance fixtures", () => {
     expect(mergeFixtures.length).toBeGreaterThan(0);
   });
 
-  it("skips only existing fixtures, each at most once", () => {
-    const ids = new Set(mergeFixtures.map((fixture) => fixture.id));
-    for (const id of AWAITING_NATURAL_KEYS_SY_029) expect(ids).toContain(id);
-    expect(new Set(AWAITING_NATURAL_KEYS_SY_029).size).toBe(
-      AWAITING_NATURAL_KEYS_SY_029.length,
-    );
-  });
-
   for (const fixture of mergeFixtures) {
-    const skip = AWAITING_NATURAL_KEYS_SY_029.includes(fixture.id);
-    (skip ? it.skip : it)(fixture.id, () => runFixture(fixture));
+    it(fixture.id, () => runFixture(fixture));
   }
 });

@@ -17,6 +17,7 @@ const expectedTags = [
   "0012_accounts_pending_reconcile",
   "0013_chilly_dorian_gray",
   "0014_sync_state",
+  "0015_sync_tombstones",
 ];
 
 describe("browser migration manifest", () => {

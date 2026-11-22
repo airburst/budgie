@@ -38,6 +38,7 @@ import {
   MAX_REQUEST_BYTES,
   sealDirtyRows,
 } from "@/services/sync/push";
+import { dirtyTombstones } from "@/services/sync/tombstones";
 
 /** What a transport needs besides the request body. */
 export type SyncAuth = { token: string; serverUrl: string | null };
@@ -140,7 +141,7 @@ const countUnsettled = async (
     }>({
       sql: `SELECT public_id, hlc, sync_unsealed FROM ${table} WHERE sync_dirty = 1`,
     });
-    for (const row of rows) {
+    for (const row of [...rows, ...(await dirtyTombstones(database, table))]) {
       const sent = pushedHlc.get(`${table}/${row.public_id}`);
       if (row.sync_unsealed === 1 || sent !== row.hlc) count++;
     }

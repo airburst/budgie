@@ -384,7 +384,7 @@ describe("migration 0014 through the web migration executor", () => {
   it("runs on a fresh database", () => {
     const sqlite = new Database(":memory:");
     const result = migrateBrowserDatabase(adapter(sqlite), fileMigrations);
-    expect(result.applied.at(-1)).toBe("0014_sync_state");
+    expect(result.applied).toContain("0014_sync_state");
     expect(
       sqlite.prepare("SELECT count(*) AS n FROM sync_state").get(),
     ).toEqual({ n: 1 });
@@ -410,7 +410,7 @@ describe("migration 0014 through the web migration executor", () => {
     );
 
     const result = migrateBrowserDatabase(adapter(sqlite), fileMigrations);
-    expect(result.applied).toEqual(["0014_sync_state"]);
+    expect(result.applied[0]).toBe("0014_sync_state");
 
     for (const table of SYNC_TABLES) {
       const row = rowOf(sqlite, table, ids[table]);

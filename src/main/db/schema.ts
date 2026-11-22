@@ -3,6 +3,7 @@ import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
   check,
   integer,
+  primaryKey,
   real,
   sqliteTable,
   text,
@@ -191,4 +192,29 @@ export const syncState = sqliteTable(
     createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
   },
   (table) => [check("sync_state_single_row", sql`${table.id} = 1`)],
+);
+
+// Tombstone store (migration 0015, SPEC.md 8.10): deleted rows of the three
+// natural-key tables that would otherwise block a live row's key under the
+// tables' UNIQUE constraints. A row here is still a row of `tbl` for every
+// sync purpose; see the header of 0015_sync_tombstones.sql. Exempt from the
+// entity CRUD rule: only the sync engine and portable import/export use it.
+export const syncTombstones = sqliteTable(
+  "sync_tombstones",
+  {
+    tbl: text("tbl").notNull(),
+    publicId: text("public_id").notNull(),
+    hlc: text("hlc"),
+    dirty: integer("dirty", { mode: "boolean" }).notNull().default(false),
+    unsealed: integer("unsealed", { mode: "boolean" }).notNull().default(false),
+    payload: text("payload").notNull(),
+    createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tbl, table.publicId] }),
+    check(
+      "sync_tombstones_tbl",
+      sql`${table.tbl} IN ('payees', 'envelope_categories', 'budget_allocations')`,
+    ),
+  ],
 );
