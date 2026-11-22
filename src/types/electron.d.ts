@@ -13,11 +13,22 @@ import type {
 } from "@/main/db/schema";
 import type { InferSelectModel } from "drizzle-orm";
 
-export type SyncMetadataFields = "publicId" | "updatedAt" | "deletedAt";
+export type SyncMetadataFields =
+  | "publicId"
+  | "updatedAt"
+  | "deletedAt"
+  | "hlc"
+  | "syncDirty"
+  | "syncUnsealed"
+  | "syncRev";
 type OptionalSyncMetadata = {
   publicId?: string | null;
   updatedAt?: string | null;
   deletedAt?: string | null;
+  hlc?: string | null;
+  syncDirty?: boolean;
+  syncUnsealed?: boolean;
+  syncRev?: number;
 };
 type WithOptionalSyncMetadata<T> = Omit<T, SyncMetadataFields> &
   OptionalSyncMetadata;

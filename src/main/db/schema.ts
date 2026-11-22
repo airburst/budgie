@@ -1,11 +1,27 @@
 import { sql } from "drizzle-orm";
 import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  check,
+  integer,
+  real,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core";
 
+// Sync bookkeeping. Triggers (migrations 0013 and 0014) maintain these; see the
+// header of 0014_sync_state.sql for the rules the sync engine must follow.
 const syncMetadata = {
   publicId: text("public_id"),
   updatedAt: text("updated_at"),
   deletedAt: text("deleted_at"),
+  hlc: text("hlc"),
+  syncDirty: integer("sync_dirty", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  syncUnsealed: integer("sync_unsealed", { mode: "boolean" })
+    .notNull()
+    .default(false),
+  syncRev: integer("sync_rev").notNull().default(0),
 };
 
 export const accounts = sqliteTable("accounts", {
@@ -156,3 +172,23 @@ export const budgetTransfers = sqliteTable("budget_transfers", {
   notes: text("notes"),
   createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+// Single-row sync configuration and progress (id is always 1). Exempt from the
+// entity CRUD rule: only the sync engine reads and writes it.
+export const syncState = sqliteTable(
+  "sync_state",
+  {
+    id: integer("id").primaryKey(),
+    deviceId: text("device_id"),
+    serverUrl: text("server_url"),
+    token: text("token"),
+    cursor: text("cursor"),
+    lastSyncedAt: text("last_synced_at"),
+    lastError: text("last_error"),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+    consentAt: text("consent_at"),
+    consentAppVersion: text("consent_app_version"),
+    createdAt: text("created_at").default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (table) => [check("sync_state_single_row", sql`${table.id} = 1`)],
+);

@@ -121,7 +121,9 @@ describe("browser migration executor", () => {
     const inserted = sqlite
       .prepare("SELECT public_id, updated_at FROM accounts WHERE name = ?")
       .get("Metadata test") as { public_id: string; updated_at: string };
-    expect(inserted.public_id).toMatch(/^[0-9a-f]{32}$/);
+    expect(inserted.public_id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
     expect(inserted.updated_at).toBeTruthy();
     sqlite.close();
   });
