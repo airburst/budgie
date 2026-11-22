@@ -38,7 +38,7 @@ type AccountRow = DatabaseRow & {
 
 const accountSelect = `
   SELECT
-    a.id, a.name, a.number, a.type, a.balance, a.currency, a.notes,
+    a.id, a.public_id, a.name, a.number, a.type, a.balance, a.currency, a.notes,
     a.interest_rate, a.credit_limit, a.deleted, a.created_at,
     a.pending_reconcile_balance, a.pending_reconcile_date,
     COALESCE(a.balance + SUM(t.amount), a.balance) AS computed_balance,

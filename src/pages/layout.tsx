@@ -1,4 +1,5 @@
 import Header from "@/components/header";
+import { ReconciliationReviewNotice } from "@/components/ReconciliationReviewNotice";
 import { PageChromeProvider } from "@/components/page-chrome";
 import { useHotkeys } from "@/hooks/useHotkeys";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -26,6 +27,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <PageChromeProvider>
       <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
         <Header />
+        <ReconciliationReviewNotice />
         <main className="app-main min-h-0 min-w-0 flex-1 overflow-auto">
           {children}
         </main>

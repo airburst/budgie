@@ -3,6 +3,7 @@ import { getSyncApi } from "@/platform/sync-api";
 import type { SyncStatusView } from "@/services/sync/api-types";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { DownloadBackupButton } from "./DownloadBackupButton";
 import {
   describeSyncFailure,
   formatSyncTime,
@@ -90,6 +91,7 @@ export function SyncStatusPanel({ status }: { status: SyncStatusView }) {
           {failure}
         </p>
       )}
+      <DownloadBackupButton />
     </div>
   );
 }

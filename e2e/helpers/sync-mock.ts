@@ -34,7 +34,16 @@ export type SyncMock = {
   /** Delay every sync answer, to see progress. */
   delayMs: number;
   /** Answer sync with this error instead (`status`, `error`), or null. */
-  failSync: { status: number; error: string } | null;
+  failSync: {
+    status: number;
+    error: string;
+    /** Seconds, for 429 and 503 (sent in the body). */
+    retryAfter?: number;
+    /** Extra body fields, e.g. `formatVersion` of `format_too_old`. */
+    extra?: Record<string, unknown>;
+  } | null;
+  /** Reject every pushed envelope with this reason (e.g. "drift"), or null. */
+  rejectPush: "drift" | "stale" | null;
   /** Make every request fail as if offline. */
   offline: boolean;
   /** Number of pushed envelopes seen, over all syncs. */
@@ -101,6 +110,7 @@ export async function mockSyncServer(
     },
     delayMs: 0,
     failSync: null,
+    rejectPush: null,
     offline: false,
     pushed: 0,
   };
@@ -133,15 +143,25 @@ export async function mockSyncServer(
         await new Promise((resolve) => setTimeout(resolve, mock.delayMs));
       }
       if (mock.failSync) {
-        return json(route, mock.failSync.status, {
-          error: mock.failSync.error,
+        const { status, error, retryAfter, extra } = mock.failSync;
+        return json(route, status, {
+          error,
+          ...(retryAfter === undefined ? {} : { retryAfter }),
+          ...extra,
         });
       }
       const body = request.postDataJSON() as {
-        push?: unknown[];
+        push?: { tbl: string; publicId: string }[];
         cursor?: string;
       };
-      mock.pushed += body.push?.length ?? 0;
+      const rejected = mock.rejectPush
+        ? (body.push ?? []).map(({ tbl, publicId }) => ({
+            tbl,
+            publicId,
+            reason: mock.rejectPush,
+          }))
+        : [];
+      mock.pushed += (body.push?.length ?? 0) - rejected.length;
       if (body.push?.length) mock.hasData = true;
       // Like the server: cursor "0" returns the whole data set.
       const entries = body.cursor === "0" ? [...seeded, ...pull] : pull;
@@ -152,7 +172,7 @@ export async function mockSyncServer(
         cursor: `1:${seq}`,
         more: false,
         pull: entries,
-        rejected: [],
+        rejected,
       });
     }
 
