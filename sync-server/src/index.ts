@@ -1,6 +1,7 @@
 import { handleRequest } from "./app";
 import { createD1Executor, type D1DatabaseLike } from "./d1-executor";
 import { MemoryIpLimiter } from "./limits";
+import { FailedAttemptGuard } from "./rate-limit";
 import { runSnapshots } from "./snapshot";
 import { createR2Store, type R2BucketLike } from "./store";
 
@@ -24,6 +25,7 @@ export function allowedOrigins(env: Env): string[] {
 let devSchemaReady: Promise<void> | undefined;
 // One limiter per isolate; see README for what that means.
 const ipLimiter = new MemoryIpLimiter();
+const enrolGuard = new FailedAttemptGuard();
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -41,6 +43,7 @@ export default {
       devMode,
       allowedOrigins: allowedOrigins(env),
       ipLimiter,
+      enrolGuard,
       store: createR2Store(env.SNAPSHOTS),
     });
   },

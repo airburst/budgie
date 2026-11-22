@@ -1,5 +1,6 @@
 import { sha256Hex } from "./crypto";
 import type { SqlExecutor } from "./executor";
+import { pruneRateLimits } from "./rate-limit";
 import { snapshotKey, type SnapshotStore } from "./store";
 
 // Daily snapshots (SPEC 12, plan section 9). A snapshot is a portable data
@@ -200,6 +201,7 @@ export async function runSnapshots(
     }
   }
   result.removed = await pruneSnapshots(executor, store, now, log);
+  await pruneRateLimits(executor, now);
   log(JSON.stringify({ job: "snapshot", ...result }));
   return result;
 }

@@ -3,11 +3,14 @@ import type { SqlExecutor } from "./executor";
 import { readJsonBody } from "./http";
 import { generateToken, hashCode, hashToken } from "./crypto";
 import {
-  assertNotLimited,
+  assertEnrolAllowed,
   clientIp,
-  ENROL_FAIL_LIMIT,
-  recordAttempt,
+  FailedAttemptGuard,
+  recordEnrolFailure,
 } from "./rate-limit";
+
+// Used only when a caller supplies no guard (the Worker and the tests do).
+const fallbackGuard = new FailedAttemptGuard();
 
 /**
  * POST /v1/enrol (SPEC 9.2). Consumes an invite or device code and creates a
@@ -16,12 +19,17 @@ import {
  */
 export async function handleEnrol(
   request: Request,
-  deps: { executor: SqlExecutor; now: () => number },
+  deps: {
+    executor: SqlExecutor;
+    now: () => number;
+    enrolGuard?: FailedAttemptGuard;
+  },
 ): Promise<Response> {
   const { executor } = deps;
   const now = deps.now();
-  const ipBucket = `enrol:ip:${clientIp(request)}`;
-  await assertNotLimited(executor, ipBucket, ENROL_FAIL_LIMIT, now);
+  const ip = clientIp(request);
+  const guard = deps.enrolGuard ?? fallbackGuard;
+  await assertEnrolAllowed(executor, guard, ip, now);
 
   const body = await readJsonBody(request);
   if (typeof body !== "object" || body === null || Array.isArray(body)) {
@@ -62,7 +70,7 @@ export async function handleEnrol(
 
   const row = results[2]?.rows[0];
   if (!row) {
-    await recordAttempt(executor, ipBucket, ENROL_FAIL_LIMIT, now);
+    await recordEnrolFailure(executor, guard, ip, now);
     throw new ApiError("bad_code");
   }
   return jsonResponse(

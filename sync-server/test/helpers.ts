@@ -4,6 +4,7 @@ import { addUser } from "../src/admin";
 import { handleRequest, type AppDeps } from "../src/app";
 import type { SqlExecutor } from "../src/executor";
 import { applyMigration } from "../src/migrate";
+import { FailedAttemptGuard } from "../src/rate-limit";
 import { createSqliteExecutor } from "../src/sqlite-executor";
 
 const migration = readFileSync(
@@ -49,6 +50,7 @@ export async function createTestServer(
     executor,
     now: () => clock.now,
     devMode: false,
+    enrolGuard: new FailedAttemptGuard(),
     logSink: (line) => logs.push(line),
     ...extra,
   };

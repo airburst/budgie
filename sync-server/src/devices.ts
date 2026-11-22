@@ -3,11 +3,7 @@ import { DEVICE_CODE_LENGTH, generateCode, hashCode } from "./crypto";
 import { ApiError, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
 import type { LogContext } from "./log";
-import {
-  assertNotLimited,
-  DEVICE_CODE_LIMIT,
-  recordAttempt,
-} from "./rate-limit";
+import { consumeAttempt, DEVICE_CODE_LIMIT } from "./rate-limit";
 
 export const DEVICE_CODE_TTL_MS = 10 * 60_000;
 const MAX_ATTEMPTS = 5;
@@ -29,8 +25,7 @@ export async function handleDeviceCode(
   const auth = await authenticate(executor, request, deps.now(), deps.ctx);
   const now = deps.now();
   const bucket = `devcode:user:${auth.userId}`;
-  await assertNotLimited(executor, bucket, DEVICE_CODE_LIMIT, now);
-  await recordAttempt(executor, bucket, DEVICE_CODE_LIMIT, now);
+  await consumeAttempt(executor, bucket, DEVICE_CODE_LIMIT, now);
 
   const generate =
     deps.generateCode ?? (() => generateCode(DEVICE_CODE_LENGTH));

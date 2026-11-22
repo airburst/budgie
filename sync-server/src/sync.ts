@@ -26,6 +26,8 @@ const HLC =
   /^[0-9]{15}:[0-9]{5}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export const MAX_ENVELOPES = 500;
+/** Below D1's 2,000,000-byte limit on a bound string. */
+export const MAX_PUSH_PARAM_BYTES = 1_900_000;
 export const DRIFT_LIMIT_MS = 300_000;
 export const DEFAULT_PAGE_SIZE = 500;
 
@@ -181,6 +183,12 @@ export async function handleSync(
   const nowMs = deps.now();
   const maxWall = nowMs + DRIFT_LIMIT_MS;
   const pushJson = JSON.stringify(req.push);
+  // Payloads travel re-escaped as JSON strings, which can nearly double a body
+  // of quotes or backslashes. Refuse here so the client never retries a request
+  // D1 would reject with a 500.
+  if (new TextEncoder().encode(pushJson).byteLength > MAX_PUSH_PARAM_BYTES) {
+    throw new ApiError("body_too_large");
+  }
 
   // The auth read above is a separate batch, so a delete-data, revoke or
   // format bump can land after it. Every statement below therefore re-checks,
