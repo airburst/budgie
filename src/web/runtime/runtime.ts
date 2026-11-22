@@ -8,6 +8,8 @@ import { acquireInstanceLock, type InstanceLock } from "./instance-lock";
 export type WebRuntime = {
   database: BrowserDatabase;
   persistence: "granted" | "denied" | "unavailable";
+  /** True while this tab holds the instance lock (until `shutdown`). */
+  isActive: () => boolean;
   resume: () => Promise<void>;
   shutdown: () => Promise<void>;
 };
@@ -58,13 +60,16 @@ export const initializeWebRuntime = async (
   const persistence = await dependencies.requestPersistence();
   await dependencies.processAutoPost(database);
 
+  let closed = false;
   return {
     database,
     persistence,
+    isActive: () => !closed,
     resume: async () => {
       await dependencies.processAutoPost(database);
     },
     shutdown: async () => {
+      closed = true;
       await database.close();
       lock.release();
     },

@@ -6,7 +6,11 @@ import {
 } from "@/services/sync/errors";
 import type { SyncRequest, SyncResponse } from "@/services/sync/payload";
 import { classifySyncError } from "@/services/sync/status";
-import { createFetchTransport, syncEndpoint } from "@/services/sync/transport";
+import {
+  createFetchServerClient,
+  createFetchTransport,
+  syncEndpoint,
+} from "@/services/sync/transport";
 import { describe, expect, it, vi } from "vitest";
 
 const request: SyncRequest = { formatVersion: 1, cursor: "0", push: [] };
@@ -148,5 +152,127 @@ describe("classifySyncError", () => {
     [new Error("boom"), "error"],
   ])("%s -> %s", (error, state) => {
     expect(classifySyncError(error).state).toBe(state);
+  });
+});
+
+describe("createFetchServerClient", () => {
+  const base = { baseUrl: "https://sync.example.dev" };
+  const authed = { token: "tok_123", serverUrl: null };
+
+  it("enrols without a token and returns the checked body", async () => {
+    const fetchImpl = fakeFetch(() =>
+      json({ deviceId: "d1", token: "t1", hasData: true }, 201),
+    );
+    const client = createFetchServerClient({ ...base, fetch: fetchImpl });
+    expect(await client.enrol({ code: "AAAA-BBBB", deviceName: "Mac" })).toEqual({
+      deviceId: "d1",
+      token: "t1",
+      hasData: true,
+    });
+    const [url, init] = fetchImpl.mock.calls[0] as [
+      string,
+      NonNullable<Parameters<typeof fetch>[1]>,
+    ];
+    expect(url).toBe("https://sync.example.dev/v1/enrol");
+    expect(init.method).toBe("POST");
+    expect(init.headers).toEqual({ "Content-Type": "application/json" });
+    expect(JSON.parse(init.body as string)).toEqual({
+      code: "AAAA-BBBB",
+      deviceName: "Mac",
+    });
+    expect(init.credentials).toBe("omit");
+    expect(init.redirect).toBe("error");
+  });
+
+  it("maps a bad code to SyncHttpError and no answer to SyncNetworkError", async () => {
+    const bad = createFetchServerClient({
+      ...base,
+      fetch: fakeFetch(() => json({ error: "bad_code" }, 400)),
+    });
+    const error = await failure(bad.enrol({ code: "x", deviceName: "y" }));
+    expect(error).toBeInstanceOf(SyncHttpError);
+    expect(error).toMatchObject({ status: 400, code: "bad_code" });
+
+    const down = createFetchServerClient({
+      ...base,
+      fetch: vi.fn<typeof fetch>(() => Promise.reject(new TypeError("offline"))),
+    });
+    expect(await failure(down.listDevices(authed))).toBeInstanceOf(
+      SyncNetworkError,
+    );
+  });
+
+  it("calls the device and data endpoints with the bearer token", async () => {
+    const calls: Array<[string, string, unknown]> = [];
+    const fetchImpl = vi.fn<typeof fetch>((url, init) => {
+      calls.push([String(url), init?.method ?? "", init?.headers]);
+      const path = new URL(String(url)).pathname;
+      if (path === "/v1/devices/code") {
+        return Promise.resolve(json({ code: "CODE-1234", expiresAt: "t" }, 201));
+      }
+      if (path === "/v1/devices") {
+        return Promise.resolve(
+          json({
+            devices: [
+              {
+                id: "d1",
+                name: "Mac",
+                createdAt: "t",
+                lastSeenAt: null,
+                current: true,
+              },
+            ],
+          }),
+        );
+      }
+      if (path === "/v1/data") {
+        return Promise.resolve(
+          json({ deletedRows: 3, deletedSnapshots: 1, timeTravelRetentionDays: 7 }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 204 }));
+    });
+    const client = createFetchServerClient({ ...base, fetch: fetchImpl });
+    expect(await client.createDeviceCode(authed)).toEqual({
+      code: "CODE-1234",
+      expiresAt: "t",
+    });
+    expect((await client.listDevices(authed))[0]?.name).toBe("Mac");
+    await client.revokeDevice(authed, "a/b");
+    expect((await client.deleteData(authed)).deletedRows).toBe(3);
+    expect(calls.map(([url, method]) => `${method} ${url}`)).toEqual([
+      "POST https://sync.example.dev/v1/devices/code",
+      "GET https://sync.example.dev/v1/devices",
+      "DELETE https://sync.example.dev/v1/devices/a%2Fb",
+      "DELETE https://sync.example.dev/v1/data",
+    ]);
+    for (const [, , headers] of calls) {
+      expect(headers).toMatchObject({ Authorization: "Bearer tok_123" });
+    }
+  });
+
+  it("treats a malformed success body as bad_response", async () => {
+    const client = createFetchServerClient({
+      ...base,
+      fetch: fakeFetch(() => json({ nope: true }, 201)),
+    });
+    expect(await failure(client.createDeviceCode(authed))).toMatchObject({
+      status: 201,
+      code: "bad_response",
+    });
+  });
+
+  it("needs a server url, and refuses plain http", async () => {
+    const none = createFetchServerClient({ fetch: fakeFetch(() => json({})) });
+    expect(await failure(none.listDevices(authed))).toBeInstanceOf(
+      SyncNotConfiguredError,
+    );
+    const http = createFetchServerClient({
+      baseUrl: "http://sync.example.dev",
+      fetch: fakeFetch(() => json({})),
+    });
+    expect(
+      await failure(http.enrol({ code: "x", deviceName: "y" })),
+    ).toBeInstanceOf(SyncNotConfiguredError);
   });
 });

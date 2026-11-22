@@ -11,6 +11,7 @@ import type {
   settings,
   transactions,
 } from "@/main/db/schema";
+import type { SyncApi } from "@/services/sync/api-types";
 import type { InferSelectModel } from "drizzle-orm";
 
 export type SyncMetadataFields =
@@ -91,7 +92,10 @@ export type BackupInfo = {
   createdAt: string;
 };
 
-export interface ApplicationAPI {
+// The sync methods exist on the web runtime only. Electron's preload does not
+// provide them (frozen, no new IPC): renderer code reaches them through
+// `getSyncApi()` (src/platform/sync-api.ts), which answers "unsupported".
+export interface ApplicationAPI extends SyncApi {
   getAccounts: () => Promise<AccountWithBalances[]>;
   getAccount: (id: number) => Promise<AccountWithBalances | null>;
   createAccount: (

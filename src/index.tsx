@@ -125,7 +125,9 @@ const start = async () => {
       return;
     }
     registerBrowserServiceWorker();
-    window.api = createBrowserApplicationApi(runtime.database);
+    window.api = createBrowserApplicationApi(runtime.database, {
+      hasLock: runtime.isActive,
+    });
     const resume = () => {
       if (document.visibilityState === "visible") void runtime.resume();
     };

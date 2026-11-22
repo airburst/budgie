@@ -14,6 +14,12 @@ import { createReconciliationService } from "@/services/reconciliation";
 import { createScheduledTransactionService } from "@/services/scheduled-transactions";
 import { createSettingsService } from "@/services/settings";
 import { createTransactionService } from "@/services/transactions";
+import { createSyncApi, type SyncApiDeps } from "@/services/sync/api";
+import { SYNC_SERVER_URL } from "@/services/sync/config";
+import {
+  createFetchServerClient,
+  createFetchTransport,
+} from "@/services/sync/transport";
 import type { ApplicationAPI } from "@/types/electron";
 import type { BrowserDatabase } from "@/web/db/browser-database";
 
@@ -21,9 +27,38 @@ const unsupported = (operation: string): never => {
   throw new Error(`${operation} is unavailable in the browser runtime`);
 };
 
+export type BrowserApiOptions = {
+  /**
+   * True while this tab holds the instance lock. Defaults to false: without
+   * it every mutating sync method refuses (`not_active_tab`).
+   */
+  hasLock?: () => boolean;
+  /** Overrides for tests; default to the real fetch client and config. */
+  sync?: Partial<
+    Pick<
+      SyncApiDeps,
+      "transport" | "server" | "serverUrl" | "appVersion" | "now"
+    >
+  >;
+};
+
 export const createBrowserApplicationApi = (
   database: BrowserDatabase,
+  options: BrowserApiOptions = {},
 ): ApplicationAPI => {
+  const sync = createSyncApi({
+    database,
+    transport: createFetchTransport(
+      SYNC_SERVER_URL ? { baseUrl: SYNC_SERVER_URL } : {},
+    ),
+    server: createFetchServerClient(
+      SYNC_SERVER_URL ? { baseUrl: SYNC_SERVER_URL } : {},
+    ),
+    serverUrl: SYNC_SERVER_URL,
+    appVersion: __APP_VERSION__,
+    hasLock: options.hasLock ?? (() => false),
+    ...options.sync,
+  });
   const accounts = createAccountService(database);
   const reconciliations = createAccountReconciliationService(database);
   const categories = createCategoryService(database);
@@ -36,6 +71,7 @@ export const createBrowserApplicationApi = (
   const reconciliation = createReconciliationService(database);
 
   return {
+    ...sync,
     getAccounts: accounts.getAll,
     getAccount: accounts.getById,
     createAccount: accounts.create,

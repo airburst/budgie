@@ -115,6 +115,18 @@ export class EnvelopeTooLargeError extends Error {
 }
 
 /** The two apply errors of SPEC.md 10.6, by contract name. */
+/**
+ * Start (or Join) was asked for on a device that never recorded consent
+ * (`sync_state.consent_at` is NULL): nothing may be uploaded or replaced.
+ */
+export class SyncConsentRequiredError extends Error {
+  readonly code = "consent_required";
+  constructor() {
+    super("Sync was not consented to on this device");
+    this.name = "SyncConsentRequiredError";
+  }
+}
+
 export const applyErrorCode = (
   error: unknown,
 ): "missing_reference" | "invalid_envelope" | null =>

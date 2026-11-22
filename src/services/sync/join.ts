@@ -27,11 +27,13 @@ import {
 } from "@/services/portable-data";
 import { applyPull, bufferPull, countByTable } from "@/services/sync/apply";
 import {
-  readSyncState,
   type SyncCounts,
   type SyncEngineDeps,
 } from "@/services/sync/engine";
-import { FormatTooNewError } from "@/services/sync/errors";
+import {
+  FormatTooNewError,
+  SyncNotConfiguredError,
+} from "@/services/sync/errors";
 import { SYNC_FORMAT_VERSION, toTimestamp } from "@/services/sync/payload";
 
 export type SyncJoinResult = {
@@ -46,6 +48,21 @@ export type SyncJoinResult = {
 /** Tables whose payload also carries the legacy `deleted` flag. */
 const LEGACY_DELETED_FLAG = new Set(["accounts", "categories"]);
 
+/** Enrolment only: a joining device is enrolled but not started (no cursor). */
+const readEnrolment = async (database: DatabaseCapability) => {
+  const [row] = await database.query<{
+    device_id: string | null;
+    token: string | null;
+    server_url: string | null;
+  }>({ sql: "SELECT device_id, token, server_url FROM sync_state WHERE id = 1" });
+  if (!row?.device_id) throw new SyncNotConfiguredError("device id");
+  if (!row.token) throw new SyncNotConfiguredError("token");
+  return {
+    deviceId: row.device_id,
+    auth: { token: row.token, serverUrl: row.server_url },
+  };
+};
+
 /**
  * Joins sync on this device (SPEC.md 11.2 steps 3 and 4). Throws, with the
  * local data unchanged, if any request or the apply fails. Run an ordinary
@@ -58,7 +75,7 @@ export const joinSync = async (
   deps: Pick<SyncEngineDeps, "transport" | "now" | "afterApply" | "formatVersion">,
 ): Promise<SyncJoinResult> => {
   const formatVersion = deps.formatVersion ?? SYNC_FORMAT_VERSION;
-  const state = await readSyncState(database);
+  const state = await readEnrolment(database);
 
   // 1. Pull everything; push nothing.
   let cursor = "0";

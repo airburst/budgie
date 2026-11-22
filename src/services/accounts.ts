@@ -122,7 +122,7 @@ export const createAccountService = (
         ],
       });
       const transferParents = await transaction.query<{ id: number }>({
-        sql: "SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL LIMIT 1",
+        sql: "SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL AND deleted = 0 AND deleted_at IS NULL LIMIT 1",
       });
       if (rows[0] && transferParents[0]) {
         await transaction.execute({
@@ -175,7 +175,7 @@ export const createAccountService = (
         });
       }
       await transaction.execute({
-        sql: "UPDATE categories SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE parent_id = (SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL) AND name = (SELECT name FROM accounts WHERE id = ?)",
+        sql: "UPDATE categories SET deleted = 1, deleted_at = CURRENT_TIMESTAMP WHERE parent_id = (SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL AND deleted = 0 AND deleted_at IS NULL) AND name = (SELECT name FROM accounts WHERE id = ?)",
         params: [id],
       });
     }),

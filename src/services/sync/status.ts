@@ -30,6 +30,7 @@ import type { DatabaseCapability } from "@/platform/database";
 import { PORTABLE_TABLES } from "@/services/portable-data";
 import {
   runSyncCycle,
+  type SyncCycleResult,
   type SyncEngineDeps,
   type SyncTransport,
 } from "@/services/sync/engine";
@@ -234,7 +235,7 @@ export const classifySyncError = (error: unknown): Outcome => {
 };
 
 /** Any failure of the transport other than an HTTP error answer is "offline". */
-const offlineAware =
+export const offlineAware =
   (transport: SyncTransport): SyncTransport =>
   async (request, auth) => {
     try {
@@ -276,6 +277,33 @@ const writeState = (
   });
 };
 
+export type SyncNowDeps = SyncEngineDeps & {
+  /** Called with the result of a completed cycle (SY-035: applied counts). */
+  onCycle?: (result: SyncCycleResult) => void;
+};
+
+/**
+ * Records a stopping state without a cycle: sync off on this device and the
+ * state shown until the user acts, as `syncNow` does for the same outcome
+ * (SY-035: a 401 on a device call, and "Delete my cloud data"). Token and
+ * cursor are kept.
+ */
+export const recordSyncStop = (
+  database: DatabaseCapability,
+  stop: { state: SyncState; code: string; message: string; nowMs: number },
+) =>
+  writeState(database, {
+    enabled: false,
+    error: {
+      state: stop.state,
+      code: stop.code,
+      message: stop.message,
+      at: toTimestamp(stop.nowMs),
+      retryAt: null,
+      formatVersion: null,
+    },
+  });
+
 /**
  * One sync cycle with status handling. Never throws for a sync outcome;
  * returns the resulting status. Does nothing (returns the stored status) when
@@ -283,7 +311,7 @@ const writeState = (
  */
 export const syncNow = async (
   database: DatabaseCapability,
-  deps: SyncEngineDeps,
+  deps: SyncNowDeps,
 ): Promise<SyncStatus> => {
   const formatVersion = deps.formatVersion ?? SYNC_FORMAT_VERSION;
   const status = () => readSyncStatus(database, { now: deps.now });
@@ -308,6 +336,7 @@ export const syncNow = async (
       ...deps,
       transport: offlineAware(deps.transport),
     });
+    deps.onCycle?.(result);
     const nowMs = deps.now();
     const drift = result.rejected.filter((r) => r.reason === "drift");
     await writeState(database, {

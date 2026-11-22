@@ -41,6 +41,7 @@ import type { SyncEngineDeps } from "@/services/sync/engine";
 import {
   FormatTooNewError,
   InvalidOutgoingEnvelopeError,
+  SyncConsentRequiredError,
   SyncNotConfiguredError,
 } from "@/services/sync/errors";
 import {
@@ -50,7 +51,11 @@ import {
   UUID_PATTERN,
   type SyncPayload,
 } from "@/services/sync/payload";
-import { syncNow, type SyncStatus } from "@/services/sync/status";
+import {
+  syncNow,
+  type SyncNowDeps,
+  type SyncStatus,
+} from "@/services/sync/status";
 
 /** The server already holds rows for this user: Join, do not Start. */
 export class StartRefusedError extends Error {
@@ -400,10 +405,14 @@ export type StartResult = {
  */
 export const startSync = async (
   database: DatabaseCapability,
-  deps: SyncEngineDeps,
+  deps: SyncNowDeps,
   options: StartOptions = {},
 ): Promise<StartResult> => {
   await readEnrolment(database);
+  const [consent] = await database.query<{ consent_at: string | null }>({
+    sql: "SELECT consent_at FROM sync_state WHERE id = 1",
+  });
+  if (!consent?.consent_at) throw new SyncConsentRequiredError();
   const hasData = options.hasData ?? (await serverHasData(database, deps));
   if (hasData) throw new StartRefusedError();
   const prepared = await prepareStart(database, { now: deps.now });

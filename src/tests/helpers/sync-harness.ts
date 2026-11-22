@@ -177,8 +177,8 @@ const createClient = async (
   }
   await database.execute({
     sql: fresh
-      ? "UPDATE sync_state SET device_id = ?, token = ?, server_url = ? WHERE id = 1"
-      : "UPDATE sync_state SET device_id = ?, token = ?, server_url = ?, cursor = '0', enabled = 1 WHERE id = 1",
+      ? "UPDATE sync_state SET device_id = ?, token = ?, server_url = ?, consent_at = '2026-11-22 10:00:00', consent_app_version = 'test' WHERE id = 1"
+      : "UPDATE sync_state SET device_id = ?, token = ?, server_url = ?, cursor = '0', enabled = 1, consent_at = '2026-11-22 10:00:00', consent_app_version = 'test' WHERE id = 1",
     params: [device.deviceId, device.token, "https://sync.test"],
   });
 

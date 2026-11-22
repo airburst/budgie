@@ -665,7 +665,15 @@ Acceptance:
 - [unit] Electron reports sync as unsupported; no IPC channels are added.
 - [unit] Only the tab holding the instance lock can call the mutating
   methods.
-Status: todo
+Status: done. Controller `createSyncApi` in `src/services/sync/api.ts`
+(types in `api-types.ts`), wired in `src/platform/browser-api.ts` (flat methods
+on `ApplicationAPI`: `getSyncStatus`, `enrolSync`, `startSync`, `joinSync`,
+`syncNow`, `disableSync`, `enableSync`, `signOutSync`, `deleteSyncCloudData`,
+`listSyncDevices`, `revokeSyncDevice`, `createSyncDeviceCode`, `onSyncChange`).
+Results are `{ ok: true, ... } | { ok: false, reason, message, retryAfter }`.
+Electron: `getSyncApi()` in `src/platform/sync-api.ts` answers "unsupported".
+Sign out and delete offline: refused, nothing changed (sign out has
+`force`). Tests: `src/tests/integration/sync-api.test.ts`.
 
 ### SY-036 Let the web app reach the sync server
 As the web app, my requests to the sync server are allowed and never cached.
