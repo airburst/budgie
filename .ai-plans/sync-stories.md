@@ -613,7 +613,7 @@ Acceptance:
 - [int] Drift rejection and the daily-limit error each produce their own
   status; a drift-rejected row stays dirty.
 - [int] `last_error` and `last_synced_at` in `sync_state` reflect each case.
-Status: todo
+Status: done
 
 ### SY-034 Portable import while synced
 As a user, importing a data file while sync is on updates my other devices

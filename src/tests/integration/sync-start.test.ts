@@ -11,9 +11,9 @@ import {
   startSync,
   StartRefusedError,
 } from "@/services/sync/start";
+import { syncNow } from "@/services/sync/status";
 import {
   createSyncHarness,
-  HarnessNetworkError,
   type SyncHarness,
   type SyncHarnessClient,
 } from "@/tests/helpers/sync-harness";
@@ -229,7 +229,8 @@ describe("Start: first upload", () => {
     const a = h.clients[0] as SyncHarnessClient;
     await seedLegacyData(a);
     const result = await startSync(a.database, a.deps(), { hasData: false });
-    expect(result.cycle.rejected).toEqual([]);
+    expect(result.status).toMatchObject({ state: "synced", pendingCount: 0, lastError: null });
+    expect(result.status.lastSyncedAt).not.toBeNull();
 
     const local = await allRows(a);
     const server = serverRows(h);
@@ -272,7 +273,9 @@ describe("Start: first upload", () => {
       await seedLegacyData(a);
       const deps = a.deps({ maxEnvelopesPerRequest: 10 });
       a.failRequest(stage, { skip: 2 });
-      await expect(startSync(a.database, deps, { hasData: false })).rejects.toBeInstanceOf(HarnessNetworkError);
+      const { status } = await startSync(a.database, deps, { hasData: false });
+      expect(status).toMatchObject({ state: "offline", enabled: true, lastSyncedAt: null });
+      expect(status.pendingCount).toBe((await allRows(a)).length);
       const stored = serverRows(h).length;
       expect(stored).toBeGreaterThan(0);
       expect(stored).toBeLessThan((await allRows(a)).length);
@@ -280,7 +283,7 @@ describe("Start: first upload", () => {
 
       // Any later cycle finishes the job; ids are not rewritten again.
       const ids = (await allRows(a)).map((row) => row.public_id);
-      await a.sync(deps);
+      expect(await syncNow(a.database, deps)).toMatchObject({ state: "synced", pendingCount: 0 });
       const local = await allRows(a);
       expect(local.map((row) => row.public_id)).toEqual(ids);
       expect(serverRows(h)).toHaveLength(local.length);

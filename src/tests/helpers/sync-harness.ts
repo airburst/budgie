@@ -212,6 +212,7 @@ const createClient = async (
         response.status,
         body.error ?? "unknown",
         body.retryAfter ?? null,
+        body,
       );
     }
     return response.body as SyncResponse;

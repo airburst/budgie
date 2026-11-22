@@ -81,9 +81,23 @@ export class SyncHttpError extends Error {
     readonly status: number,
     readonly code: string,
     readonly retryAfter: number | null = null,
+    /** The whole error body, e.g. `formatVersion` of `format_too_old`. */
+    readonly body: Readonly<Record<string, unknown>> = {},
   ) {
     super(`Sync request failed: ${status} ${code}`);
     this.name = "SyncHttpError";
+  }
+}
+
+/**
+ * The request never got an answer (no network, DNS, TLS, timeout, refused
+ * redirect): "offline" (SPEC.md 2.4). Nothing was applied.
+ */
+export class SyncNetworkError extends Error {
+  readonly code = "network";
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = "SyncNetworkError";
   }
 }
 

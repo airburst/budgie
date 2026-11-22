@@ -16,8 +16,9 @@
 //      check, 8.7), failing with a typed error naming the row otherwise;
 //    - set the cursor to "0" (the "started" marker the engine checks) and
 //      enable sync.
-// 3. Run a sync cycle. An interrupted upload is simply resumed by the next
-//    cycle: the rows are still dirty and the cursor still "0".
+// 3. Run a sync cycle (`syncNow`, so the outcome is a status). An
+//    interrupted upload is simply resumed by the next cycle: the rows are
+//    still dirty and the cursor still "0".
 
 import type {
   DatabaseCapability,
@@ -31,11 +32,7 @@ import {
   type PortableTable,
 } from "@/services/portable-data";
 import { encodeSyncRow } from "@/services/sync/codec";
-import {
-  runSyncCycle,
-  type SyncCycleResult,
-  type SyncEngineDeps,
-} from "@/services/sync/engine";
+import type { SyncEngineDeps } from "@/services/sync/engine";
 import {
   FormatTooNewError,
   InvalidOutgoingEnvelopeError,
@@ -48,6 +45,7 @@ import {
   UUID_PATTERN,
   type SyncPayload,
 } from "@/services/sync/payload";
+import { syncNow, type SyncStatus } from "@/services/sync/status";
 
 /** The server already holds rows for this user: Join, do not Start. */
 export class StartRefusedError extends Error {
@@ -362,15 +360,17 @@ export type StartOptions = {
 
 export type StartResult = {
   prepared: StartPreparation;
-  cycle: SyncCycleResult;
+  /** Status after the first cycle (`syncNow`). */
+  status: SyncStatus;
 };
 
 /**
  * Start (SPEC.md 11.1). Requires enrolment (device id and token in
  * `sync_state`). Throws `StartRefusedError` when the server holds data, and
- * otherwise whatever the preparation or the first cycle throws; once the
- * preparation has committed, a failed first cycle is resumed by any later
- * cycle.
+ * whatever the probe or the preparation throws (nothing is changed then).
+ * Once the preparation has committed, the first cycle runs through `syncNow`:
+ * a failure there is a status (offline, error...), and any later `syncNow`
+ * resumes the upload.
  */
 export const startSync = async (
   database: DatabaseCapability,
@@ -381,6 +381,5 @@ export const startSync = async (
   const hasData = options.hasData ?? (await serverHasData(database, deps));
   if (hasData) throw new StartRefusedError();
   const prepared = await prepareStart(database, { now: deps.now });
-  const cycle = await runSyncCycle(database, deps);
-  return { prepared, cycle };
+  return { prepared, status: await syncNow(database, deps) };
 };
