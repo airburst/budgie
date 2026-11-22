@@ -780,6 +780,18 @@ export type ApplyPortableRowOptions = {
    * sync state). Keys are column names; they are set on insert and on update.
    */
   extraColumns?: Record<string, SqlValue>;
+  /**
+   * Columns incremented (`column = column + 1`) when the row already exists,
+   * in the same statement; left to their defaults on insert. The sync engine
+   * passes `sync_rev`, its engine-write marker (migration 0014).
+   */
+  incrementColumns?: readonly string[];
+  /**
+   * Upsert on `public_id` only, never on the table's alternate unique
+   * column: a different row holding that key makes the write fail instead
+   * of being taken over (sync; natural keys are resolved by the engine).
+   */
+  publicIdConflictOnly?: boolean;
   /** Portable field names to leave out: not written, local value kept. */
   skipFields?: readonly string[];
   /**
@@ -806,6 +818,12 @@ const extraColumnEntries = (
   }
   return entries;
 };
+
+const incrementAssignments = (columns: readonly string[] | undefined) =>
+  (columns ?? []).map((column) => {
+    if (!columnName.test(column)) throw new Error(`Invalid column: ${column}`);
+    return `${column} = ${column} + 1`;
+  });
 
 const plainValue = (label: string, raw: unknown): SqlValue => {
   if (raw === undefined || raw === null) return null;
@@ -901,12 +919,17 @@ export const applyPortableRow = async <T extends PortableTable>(
     }
   }
 
+  const increments = incrementAssignments(options.incrementColumns);
   const assignments = (exclude: string) =>
-    columns
-      .filter((column) => column !== exclude)
-      .map((column) => `${column} = excluded.${column}`)
-      .join(", ");
-  const alternate = spec.alternateConflictColumn;
+    [
+      ...columns
+        .filter((column) => column !== exclude)
+        .map((column) => `${column} = excluded.${column}`),
+      ...increments,
+    ].join(", ");
+  const alternate = options.publicIdConflictOnly
+    ? undefined
+    : spec.alternateConflictColumn;
   await transaction.execute({
     sql: `INSERT INTO ${table} (${columns.join(", ")})
       VALUES (${columns.map(() => "?").join(", ")})
@@ -928,6 +951,8 @@ const secondPassSpec = (table: PortableTable) =>
 
 export type ResolveSecondPassOptions = {
   extraColumns?: Record<string, SqlValue>;
+  /** As for `applyPortableRow`: `column = column + 1` in the same UPDATE. */
+  incrementColumns?: readonly string[];
   resolver?: ReferenceResolver;
   skipFields?: readonly string[];
 };
@@ -962,11 +987,11 @@ export const resolveSecondPassReferences = async <T extends PortableTable>(
   const extra = extraColumnEntries(options.extraColumns);
   await transaction.execute({
     sql: `UPDATE ${table} SET ${[
-      spec.column,
-      ...extra.map(([column]) => column),
-    ]
-      .map((column) => `${column} = ?`)
-      .join(", ")} WHERE public_id = ?`,
+      ...[spec.column, ...extra.map(([column]) => column)].map(
+        (column) => `${column} = ?`,
+      ),
+      ...incrementAssignments(options.incrementColumns),
+    ].join(", ")} WHERE public_id = ?`,
     params: [
       id,
       ...extra.map(([, extraValue]) => toParam(extraValue)),

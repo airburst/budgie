@@ -508,7 +508,7 @@ Acceptance:
   lost rows; a failed apply rolls back and leaves the cursor unchanged.
 - [unit] The engine runs every fixture in `sync-server/contract/fixtures/`.
 - [int] The cycle returns counts per table of rows applied and pushed.
-Status: todo
+Status: done
 
 ### SY-027 Keep transfer pairs whole
 As a user, a transfer never ends up with one side missing after a sync.
