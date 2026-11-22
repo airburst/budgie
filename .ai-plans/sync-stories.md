@@ -390,7 +390,10 @@ Acceptance:
 - [unit] `list-snapshots <user>` prints dates and sizes.
 - [unit] `get-snapshot <user> <date>` writes the JSON file unchanged.
 - [manual] A downloaded snapshot imports in the web app.
-Status: todo
+Status: done except the [manual] import check in the web app (not run). The
+scripts read the D1 snapshot index and fetch objects with `wrangler r2 object
+get`; tested through the functions on in-memory stores, not against a real R2
+bucket. `--local` reads wrangler's local R2, not celld's.
 
 ### SY-021 Deploy a staging server
 As the maintainer, the server runs on Cloudflare as `budgie-sync-staging`
