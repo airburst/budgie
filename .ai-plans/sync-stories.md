@@ -31,7 +31,7 @@ Acceptance:
 - [manual] `web-deploy.yml` is unchanged and still deploys production on a
   `v*` tag after its own checks.
 - [doc] `docs/RELEASE_RUNBOOK.md` describes a web-only release.
-Status: todo
+Status: done
 
 ### SY-002 Mark Electron as deprecated
 As a reader of the repo, I can see that Electron is frozen, gets no new
@@ -45,7 +45,7 @@ Acceptance:
 - [doc] `CLAUDE.md` gets a short note: Electron code and its tests stay, IPC
   parity is still required for existing channels, new features need no
   Electron wiring. (The full rules cleanup is step 9.)
-Status: todo
+Status: done
 
 ## M2 Spikes (step 2)
 

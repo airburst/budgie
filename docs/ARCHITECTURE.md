@@ -1,11 +1,15 @@
 # Budgie Architecture
 
 React 19 + TypeScript + Tailwind v4 + SQLite + Drizzle ORM. Single-user personal
-finance app shipping on two platforms from one codebase:
+finance app shipping from one codebase.
 
-- **Electron** (desktop): better-sqlite3, `~/budgie.db`, IPC.
-- **Web / PWA** (https://budget.fairhursts.net): SQLite WASM in a worker on OPFS,
-  installable and fully offline.
+Supported apps: the **Web / PWA** (https://budget.fairhursts.net; SQLite WASM in
+a worker on OPFS, installable and fully offline) and **BudgieMac**, a separate
+native Mac app (`../budgie-mac`).
+
+**Electron is deprecated and frozen** (desktop: better-sqlite3, `~/budgie.db`,
+IPC). It gets no new features, no releases and no sync. Its code and tests stay
+in the repo, and existing IPC channels keep parity with the web API.
 
 Both run the same UI and the same domain services. Local-first: there is no
 server and no sync; data lives on the device (portable export/import moves it).
@@ -189,8 +193,8 @@ Vite builds:
 them after changing `src/main/db` or `src/services` (CI also rebuilds services
 for Electron releases).
 
-Releases are tag-driven (`docs/RELEASE_RUNBOOK.md`): one `v*` tag builds Electron
-(GitHub release, auto-update) and deploys the web artifact to Cloudflare Pages.
+Releases are tag-driven and web-only (`docs/RELEASE_RUNBOOK.md`): a `v*` tag
+deploys the web artifact to Cloudflare Pages. Electron is no longer released.
 
 ---
 

@@ -1,6 +1,6 @@
 # Budgie
 
-Personal finance app for desktop (Electron) and the web (offline-first PWA at https://budget.fairhursts.net). React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device.
+Personal finance app for the web (offline-first PWA at https://budget.fairhursts.net). The supported apps are the web PWA and BudgieMac (a separate native Mac app). The Electron desktop app is frozen: no new features, no releases and no sync. React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device.
 
 ## Features
 
@@ -55,8 +55,8 @@ the full release, rollback and rehearsal procedures.
   branch (optional `alias` and `project` inputs). There is no automatic
   deployment on push, pull request or merge.
 - Pushing a `v*` tag (which must be on `main`) runs lint, types, unit and e2e
-  checks and then deploys production using the `main` Pages branch, while the
-  Release workflow builds Electron from the same tag.
+  checks and then deploys production using the `main` Pages branch. The
+  Electron Release workflow no longer runs on tags (manual dispatch only).
 - Each deployment downloads the verified artifact from its workflow run;
   artifacts are retained for 30 days.
 
