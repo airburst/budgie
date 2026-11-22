@@ -1,10 +1,8 @@
+import { generateInviteCode, hashCode } from "./crypto";
 import type { SqlExecutor } from "./executor";
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-// No 0/O/1/I/L, so a code read aloud or typed from a screen is not ambiguous.
-const ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
-const CODE_LENGTH = 16;
 const MAX_ATTEMPTS = 5;
 
 export interface AdminDeps {
@@ -12,6 +10,8 @@ export interface AdminDeps {
   /** Returns a fresh invite code; injectable for tests. */
   generateCode?: () => string;
   newId?: () => string;
+  /** Invite lifetime; defaults to 7 days (SPEC 3.4: server configuration). */
+  inviteTtlMs?: number;
 }
 
 export interface IssuedInvite {
@@ -22,42 +22,10 @@ export interface IssuedInvite {
   expiresAt: number;
 }
 
-/** 16 characters from a 31-letter alphabet (about 79 bits), shown as XXXX-XXXX-XXXX-XXXX. */
-export function generateInviteCode(): string {
-  const bytes = new Uint8Array(CODE_LENGTH);
-  let out = "";
-  // Rejection sampling keeps the distribution uniform.
-  const limit = 256 - (256 % ALPHABET.length);
-  let filled = 0;
-  while (filled < CODE_LENGTH) {
-    crypto.getRandomValues(bytes);
-    for (const b of bytes) {
-      if (b < limit && filled < CODE_LENGTH) {
-        out += ALPHABET[b % ALPHABET.length];
-        filled++;
-      }
-    }
-  }
-  return out.match(/.{4}/g)!.join("-");
-}
-
-export function normaliseCode(code: string): string {
-  return code.replace(/[\s-]/g, "").toUpperCase();
-}
-
-export async function hashCode(code: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(normaliseCode(code)),
-  );
-  return [...new Uint8Array(digest)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function isCodeCollision(error: unknown): boolean {
   return (
-    error instanceof Error && /invites\.code_hash/.test(String(error.message))
+    error instanceof Error &&
+    /enrol_codes\.code_hash/.test(String(error.message))
   );
 }
 
@@ -75,15 +43,15 @@ export async function addUser(
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generate();
-    const expiresAt = now + INVITE_TTL_MS;
+    const expiresAt = now + (deps.inviteTtlMs ?? INVITE_TTL_MS);
     try {
       await executor.batch([
         {
-          sql: "INSERT INTO users (id, name, seq, created_at) VALUES (?, ?, 0, ?)",
+          sql: "INSERT INTO users (id, name, created_at) VALUES (?, ?, ?)",
           params: [userId, trimmed, now],
         },
         {
-          sql: "INSERT INTO invites (code_hash, user_id, kind, created_at, expires_at) VALUES (?, ?, 'invite', ?, ?)",
+          sql: "INSERT INTO enrol_codes (code_hash, user_id, kind, created_at, expires_at) VALUES (?, ?, 'invite', ?, ?)",
           params: [await hashCode(code), userId, now, expiresAt],
         },
       ]);
@@ -113,12 +81,12 @@ export async function newInvite(
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generate();
-    const expiresAt = now + INVITE_TTL_MS;
+    const expiresAt = now + (deps.inviteTtlMs ?? INVITE_TTL_MS);
     let results;
     try {
       results = await executor.batch([
         {
-          sql: "INSERT INTO invites (code_hash, user_id, kind, created_at, expires_at) SELECT ?, id, 'invite', ?, ? FROM users WHERE name = ?",
+          sql: "INSERT INTO enrol_codes (code_hash, user_id, kind, created_at, expires_at) SELECT ?, id, 'invite', ?, ? FROM users WHERE name = ?",
           params: [await hashCode(code), now, expiresAt, name],
         },
         { sql: "SELECT id FROM users WHERE name = ?", params: [name] },

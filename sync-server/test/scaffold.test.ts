@@ -4,8 +4,9 @@ import { describe, expect, it } from "vitest";
 import { createD1Executor, type D1DatabaseLike } from "../src/d1-executor";
 import { applyMigration, splitStatements } from "../src/migrate";
 import { createSqliteExecutor } from "../src/sqlite-executor";
-import worker from "../src/index";
-import { CONTRACT_VERSION } from "../src/version";
+import { handleRequest } from "../src/app";
+import { ensureDevSchema } from "../src/dev-bootstrap";
+import { CONTRACT_VERSION, FORMAT_VERSION } from "../src/version";
 
 const migration = readFileSync(
   new URL("../migrations/0001_init.sql", import.meta.url),
@@ -32,7 +33,7 @@ describe("migration", () => {
       "users",
       "devices",
       "changes",
-      "invites",
+      "enrol_codes",
       "changes_cursor_idx",
     ]) {
       expect(names).toContain(n);
@@ -88,7 +89,7 @@ describe("migration", () => {
     };
     await applyMigration(createD1Executor(fake), migration);
     expect(seen).toEqual(splitStatements(migration));
-    expect(seen.length).toBe(7);
+    expect(seen.length).toBe(splitStatements(migration).length);
   });
 
   it("rolls the whole batch back when a statement fails", async () => {
@@ -110,14 +111,83 @@ describe("migration", () => {
 });
 
 describe("GET /v1/health", () => {
-  it("returns the contract version", async () => {
-    const res = worker.fetch(new Request("https://x.test/v1/health"), {
-      DB: {} as D1DatabaseLike,
+  it("returns the format and contract versions", async () => {
+    const { executor } = freshDb();
+    const res = await handleRequest(new Request("https://x.test/v1/health"), {
+      executor,
+      now: Date.now,
+      devMode: false,
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
-      ok: true,
+      status: "ok",
+      formatVersion: FORMAT_VERSION,
       contractVersion: CONTRACT_VERSION,
     });
+  });
+
+  it("answers an unknown path or method with the standard error body", async () => {
+    const { executor } = freshDb();
+    const res = await handleRequest(
+      new Request("https://x.test/v1/health", { method: "POST" }),
+      { executor, now: Date.now, devMode: false },
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ error: "not_found" });
+  });
+
+  it("does not expose /dev/admin routes outside dev mode", async () => {
+    const { executor } = freshDb();
+    const res = await handleRequest(
+      new Request("https://x.test/dev/admin/add-user", {
+        method: "POST",
+        body: JSON.stringify({ name: "x" }),
+      }),
+      { executor, now: Date.now, devMode: false },
+    );
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("dev bootstrap", () => {
+  it("applies the schema once and leaves existing data alone", async () => {
+    const { db, executor } = freshDb();
+    await ensureDevSchema(executor);
+    await executor.batch([
+      { sql: "INSERT INTO users (id, name, created_at) VALUES ('u','n',1)" },
+    ]);
+    await ensureDevSchema(executor);
+    expect(db.prepare("SELECT count(*) n FROM users").get()).toEqual({ n: 1 });
+  });
+
+  it("seeds a user and invite through the dev admin routes", async () => {
+    const { executor } = freshDb();
+    await ensureDevSchema(executor);
+    const deps = { executor, now: Date.now, devMode: true };
+    const add = await handleRequest(
+      new Request("https://x.test/dev/admin/add-user", {
+        method: "POST",
+        body: JSON.stringify({ name: "alice" }),
+      }),
+      deps,
+    );
+    expect(add.status).toBe(201);
+    const invite = await handleRequest(
+      new Request("https://x.test/dev/admin/new-invite", {
+        method: "POST",
+        body: JSON.stringify({ user: "alice" }),
+      }),
+      deps,
+    );
+    expect(invite.status).toBe(201);
+    expect(await invite.json()).toMatchObject({ userName: "alice" });
+    const missing = await handleRequest(
+      new Request("https://x.test/dev/admin/new-invite", {
+        method: "POST",
+        body: JSON.stringify({ user: "ghost" }),
+      }),
+      deps,
+    );
+    expect(missing.status).toBe(404);
   });
 });

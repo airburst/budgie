@@ -1,9 +1,13 @@
 // Local config for celld (and `wrangler dev`). Same bindings as wrangler.jsonc
 // but without `jurisdiction` and `workers_dev`, which celld refuses.
+// DEV_MODE enables the schema bootstrap and the /dev/admin routes. It must
+// never appear in wrangler.jsonc.
 {
   "name": "budgie-sync",
   "main": "src/index.ts",
   "compatibility_date": "2026-01-01",
+  "vars": { "DEV_MODE": "1" },
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
   "d1_databases": [
     {
       "binding": "DB",
