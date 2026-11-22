@@ -146,7 +146,7 @@ export async function handleSync(
 
   // SPEC 2.4 order: schema, then token, then endpoint rules.
   const req = parseRequest(text);
-  const auth = await authenticate(executor, request);
+  const auth = await authenticate(executor, request, deps.now());
 
   if (req.formatVersion < auth.maxFormatVersion) {
     throw new ApiError("format_too_old", {

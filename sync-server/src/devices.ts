@@ -24,7 +24,7 @@ export async function handleDeviceCode(
   deps: DeviceDeps,
 ): Promise<Response> {
   const { executor } = deps;
-  const auth = await authenticate(executor, request);
+  const auth = await authenticate(executor, request, deps.now());
   const now = deps.now();
   const bucket = `devcode:user:${auth.userId}`;
   await assertNotLimited(executor, bucket, DEVICE_CODE_LIMIT, now);
@@ -59,4 +59,54 @@ export async function handleDeviceCode(
     );
   }
   throw new Error("could not generate an unused device code");
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+const iso = (ms: unknown) =>
+  ms === null || ms === undefined ? null : new Date(Number(ms)).toISOString();
+
+/** GET /v1/devices (SPEC 9.5): the caller's active devices, oldest first. */
+export async function handleListDevices(
+  request: Request,
+  deps: DeviceDeps,
+): Promise<Response> {
+  const auth = await authenticate(deps.executor, request, deps.now());
+  const [res] = await deps.executor.batch([
+    {
+      sql: `SELECT id, name, created_at, last_seen_at FROM devices
+            WHERE user_id = ? AND revoked_at IS NULL
+            ORDER BY created_at, id`,
+      params: [auth.userId],
+    },
+  ]);
+  return jsonResponse({
+    devices: (res?.rows ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      createdAt: iso(r.created_at),
+      lastSeenAt: iso(r.last_seen_at),
+      current: r.id === auth.deviceId,
+    })),
+  });
+}
+
+/** DELETE /v1/devices/:id (SPEC 9.6). */
+export async function handleRevokeDevice(
+  request: Request,
+  deps: DeviceDeps,
+  deviceId: string,
+): Promise<Response> {
+  const auth = await authenticate(deps.executor, request, deps.now());
+  if (!UUID.test(deviceId)) throw new ApiError("bad_request");
+  const [res] = await deps.executor.batch([
+    {
+      sql: `UPDATE devices SET revoked_at = ?
+            WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
+      params: [deps.now(), deviceId, auth.userId],
+    },
+  ]);
+  // Unknown, another user's and already revoked all look the same.
+  if (!res || res.changes !== 1) throw new ApiError("not_found");
+  return new Response(null, { status: 204 });
 }

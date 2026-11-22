@@ -1,5 +1,9 @@
 import { addUser, newInvite } from "./admin";
-import { handleDeviceCode } from "./devices";
+import {
+  handleDeviceCode,
+  handleListDevices,
+  handleRevokeDevice,
+} from "./devices";
 import { handleEnrol } from "./enrol";
 import { ApiError, errorResponse, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
@@ -39,10 +43,17 @@ async function route(request: Request, deps: AppDeps): Promise<Response> {
       });
     case "POST /v1/enrol":
       return handleEnrol(request, deps);
+    case "GET /v1/devices":
+      return handleListDevices(request, deps);
     case "POST /v1/devices/code":
       return handleDeviceCode(request, deps);
     case "POST /v1/sync":
       return handleSync(request, { ...deps, pageSize: deps.pageSize });
+  }
+
+  const revoke = /^\/v1\/devices\/([^/]+)$/.exec(pathname);
+  if (revoke && request.method === "DELETE") {
+    return handleRevokeDevice(request, deps, revoke[1] as string);
   }
 
   if (deps.devMode && request.method === "POST") {

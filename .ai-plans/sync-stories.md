@@ -309,7 +309,9 @@ Acceptance:
   token stops working at once; another user's device id returns not found.
 - [unit] A device can revoke itself (used by "Sign out").
 - [unit] `revoke-device` admin script does the same.
-Status: todo
+Status: done. `last_seen_at` is updated by a conditional UPDATE batched with the
+token lookup (a write at most once an hour per device, no extra write on
+other requests). `revoke-device <deviceId>` takes a device id.
 
 ### SY-017 Delete a user's cloud data
 As a user, I can remove everything the server holds about my finances.

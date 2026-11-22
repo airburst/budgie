@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "celld dev wrangler.local.jsonc --port 8787 --no-watch",
     "add-user": "bun run scripts/add-user.ts",
-    "new-invite": "bun run scripts/new-invite.ts"
+    "new-invite": "bun run scripts/new-invite.ts",
+    "revoke-device": "bun run scripts/revoke-device.ts"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
