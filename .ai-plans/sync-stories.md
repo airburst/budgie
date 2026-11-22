@@ -432,7 +432,7 @@ Acceptance:
   `bankText`).
 - [unit] Applying a row whose referenced parent is missing fails with a named
   error rather than writing a broken link.
-Status: todo
+Status: done
 
 ### SY-025 Importing a snapshot keeps my preferences
 As a user, restoring from a server snapshot does not reset my settings.
