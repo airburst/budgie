@@ -30,6 +30,18 @@ curl localhost:8787/v1/health
 
 `celld` needs `esbuild` on `PATH` (the root install provides it).
 
+### In e2e (SY-044)
+
+`bun run test:e2e` starts this Worker on celld itself (Playwright `webServer`,
+`scripts/e2e-sync-server.ts`): it copies `src/`, `migrations/` and
+`wrangler.local.jsonc` to a fresh temp directory, so the e2e database is
+empty on every run and never touches `sync-server/.celld`, sets
+`ALLOWED_ORIGIN` to the e2e app origin via `.dev.vars`, listens on port 4600
+and deletes the directory on shutdown. `e2e/sync-real.spec.ts` seeds its user
+and invite with `POST /dev/admin/add-user`. celld is found via `$CELLD`,
+`PATH` or `~/.local/bin`; CI installs a pinned release. `E2E_SYNC_LOGS=1`
+prints the Worker's request log.
+
 ## Admin scripts
 
 ```
@@ -91,7 +103,10 @@ Values live in `src/rate-limit.ts`:
   upsert-and-count statement per request (authenticated, so bounded by the
   number of devices).
 - Every route, per IP: 120 requests per minute (`MemoryIpLimiter` in
-  `src/limits.ts`). It lives in Worker memory, so it costs no D1 write (the
+  `src/limits.ts`). CORS preflights (`OPTIONS`) are answered `204` first and
+  not counted: a browser treats a failed preflight as a network error, so a
+  limited preflight would hide the `429` and its `retryAfter` (found by the
+  SY-044 e2e). It lives in Worker memory, so it costs no D1 write (the
   free plan allows 100k row writes a day). Each isolate counts separately, so
   the effective ceiling is 120 times the number of live isolates and the
   counter resets when an isolate is recycled: a best-effort brake on a runaway

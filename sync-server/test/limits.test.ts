@@ -259,6 +259,39 @@ describe("per-IP request limit", () => {
     s.clock.now += 60_000;
     expect((await hit("1.1.1.1")).status).toBe(200);
   });
+
+  it("always answers a CORS preflight with 204 and does not count it (SY-044)", async () => {
+    // A browser reads a non-2xx preflight as a network error, so a limited
+    // preflight would hide the 429 and its retryAfter from the web app.
+    const origin = "https://budget.fairhursts.net";
+    const s = await createTestServer({
+      ipLimiter: new MemoryIpLimiter(2, 60_000),
+      allowedOrigins: [origin],
+    });
+    const send = (method: string) =>
+      handleRequest(
+        new Request("https://x.test/v1/health", {
+          method,
+          headers: {
+            origin,
+            "cf-connecting-ip": "1.1.1.1",
+            ...(method === "OPTIONS"
+              ? { "access-control-request-method": "GET" }
+              : {}),
+          },
+        }),
+        s.deps,
+      );
+    for (let i = 0; i < 5; i++) expect((await send("OPTIONS")).status).toBe(204);
+    expect((await send("GET")).status).toBe(200);
+    expect((await send("GET")).status).toBe(200);
+    const limited = await send("GET");
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("access-control-allow-origin")).toBe(origin);
+    const pre = await send("OPTIONS");
+    expect(pre.status).toBe(204);
+    expect(pre.headers.get("access-control-allow-origin")).toBe(origin);
+  });
 });
 
 describe("DEV_MODE gate", () => {
