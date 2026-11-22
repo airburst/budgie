@@ -1,6 +1,8 @@
 import { addUser, newInvite } from "./admin";
+import { handleEnrol } from "./enrol";
 import { ApiError, errorResponse, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
+import { readJsonBody } from "./http";
 import { CONTRACT_VERSION, FORMAT_VERSION } from "./version";
 
 export interface AppDeps {
@@ -11,14 +13,6 @@ export interface AppDeps {
    * deployed config). Enables the /dev/admin routes.
    */
   devMode: boolean;
-}
-
-export async function readJsonBody(request: Request): Promise<unknown> {
-  try {
-    return JSON.parse(await request.text());
-  } catch {
-    throw new ApiError("bad_request");
-  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -39,6 +33,8 @@ async function route(request: Request, deps: AppDeps): Promise<Response> {
         formatVersion: FORMAT_VERSION,
         contractVersion: CONTRACT_VERSION,
       });
+    case "POST /v1/enrol":
+      return handleEnrol(request, deps);
   }
 
   if (deps.devMode && request.method === "POST") {

@@ -237,7 +237,11 @@ Acceptance:
   nothing.
 - [unit] Attempts are rate-limited per IP and per user; codes never appear in
   logs.
-Status: todo
+Status: done, with two deviations from the story text. Rate limiting is per IP
+only (failed attempts, 10 per 15 minutes, counted in D1 table `rate_limits`),
+because SPEC 2.5 limits `POST /v1/enrol` per IP and a failed code has no user
+to count against. The device-code half of enrol is SY-015. Logging beyond
+"codes never appear in logs" is SY-018.
 
 ### SY-013 Push changes
 As a device, I send my changed rows and the server keeps the newest version
