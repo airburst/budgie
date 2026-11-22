@@ -415,7 +415,7 @@ Acceptance:
   always gets a higher `hlc` than the applied one.
 - [unit] Ties in the same second on two devices are broken by counter, then
   device id.
-Status: todo
+Status: done
 
 ### SY-024 One row codec for export, import and sync
 As the maintainer, portable export, portable import and sync all read and
