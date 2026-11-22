@@ -8,10 +8,10 @@ import type {
 } from "@/platform/database";
 import {
   createPortableData,
-  importPortableData,
   parsePortableData,
   type PortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";

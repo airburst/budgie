@@ -7,10 +7,10 @@ import type {
 } from "@/platform/database";
 import {
   createPortableData,
-  importPortableData,
   parsePortableData,
   serializePortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import goldenPackage from "@/tests/fixtures/portable-data-v1.json";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";

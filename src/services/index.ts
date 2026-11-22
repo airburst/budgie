@@ -6,13 +6,13 @@ export { createEnvelopeService } from "./envelopes";
 export { createPayeeService } from "./payees";
 export {
   createPortableData,
-  importPortableData,
   parsePortableData,
   PORTABLE_FORMAT_VERSION,
   serializePortableData,
   validatePortableData,
   verifyPortableData,
 } from "./portable-data";
+export { importPortableData } from "./portable-import";
 export { createReconciliationService } from "./reconciliation";
 export {
   createScheduledTransactionService,

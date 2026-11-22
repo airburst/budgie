@@ -5,7 +5,6 @@ import type {
 } from "@/platform/database";
 import {
   deleteTombstone,
-  isNaturalKeyTable,
   NATURAL_KEYS,
   readTombstone,
   readTombstones,
@@ -1129,8 +1128,10 @@ export type PlacePortableRowOptions = {
   /**
    * An engine write: this sync state is written wherever the row lands (a
    * table write also bumps `sync_rev`). Without it the write is a user write
-   * (portable import): table writes are left to the triggers, store writes
-   * become dirty and unsealed, and a row's HLC is kept when it moves.
+   * (portable import): the row becomes dirty and unsealed wherever it lands
+   * and keeps its HLC. A table write says so itself, with the `sync_rev`
+   * bump, so that the triggers leave `updated_at` as the row gives it (an
+   * insert without an HLC still goes through the insert trigger).
    */
   state?: RowSyncState;
   /**
@@ -1217,24 +1218,20 @@ export const placePortableRow = async <T extends NaturalKeyTable>(
   }
 
   if (stored) await deleteTombstone(transaction, table, publicId);
-  const state =
-    options.state ??
-    (stored && stored.hlc !== null
-      ? { hlc: stored.hlc, dirty: true, unsealed: true }
-      : undefined);
+  const state = options.state ?? {
+    hlc: stored?.hlc ?? current?.hlc ?? null,
+    dirty: true,
+    unsealed: true,
+  };
   await applyPortableRow(transaction, table, row, {
     resolver,
     publicIdConflictOnly: true,
-    ...(state
-      ? {
-          extraColumns: {
-            hlc: state.hlc,
-            sync_dirty: Number(state.dirty),
-            sync_unsealed: Number(state.unsealed),
-          },
-          incrementColumns: ["sync_rev"],
-        }
-      : {}),
+    extraColumns: {
+      hlc: state.hlc,
+      sync_dirty: Number(state.dirty),
+      sync_unsealed: Number(state.unsealed),
+    },
+    incrementColumns: ["sync_rev"],
   });
   return "table";
 };
@@ -1243,19 +1240,14 @@ export const placePortableRow = async <T extends NaturalKeyTable>(
 // Portable import and export
 // ---------------------------------------------------------------------------
 
-const tombstone = async (transaction: DatabaseTransaction, table: string) => {
-  await transaction.execute({
-    sql: `UPDATE ${table} SET deleted_at = CURRENT_TIMESTAMP`,
-  });
-};
-
 /**
  * Settings for an import. Non-empty package preferences replace the stored
  * ones, with shortcuts mapped from public ids (any that do not resolve are
  * dropped). Empty package preferences keep the stored settings; only their
  * shortcuts are re-checked against the imported accounts by public id.
+ * The import itself is `importPortableData` in `portable-import.ts`.
  */
-const importPreferences = async (
+export const importPreferences = async (
   transaction: DatabaseTransaction,
   preferences: PortablePreferences,
 ) => {
@@ -1343,51 +1335,6 @@ export const remapAccountShortcuts = async (
   await transaction.execute({
     sql: "UPDATE settings SET preferences = ? WHERE id = 1",
     params: [JSON.stringify({ ...current, accountShortcuts: kept })],
-  });
-};
-
-export const importPortableData = async (
-  database: DatabaseCapability,
-  value: unknown,
-) => {
-  const data = await verifyPortableData(value);
-
-  await database.transaction(async (transaction) => {
-    for (const table of PORTABLE_TABLES) await tombstone(transaction, table);
-    await transaction.execute({
-      sql: "UPDATE accounts SET deleted = 1",
-    });
-    await transaction.execute({
-      sql: "UPDATE categories SET deleted = 1",
-    });
-
-    const resolver = createReferenceResolver(transaction);
-    for (const table of PORTABLE_TABLES) {
-      const rows = data[PORTABLE_COLLECTIONS[table]] as Array<
-        PortableRowFor[typeof table]
-      >;
-      for (const row of rows) {
-        // Natural-key tables can hold a deleted and a live row with one key
-        // (a server snapshot can): the deleted one goes to the store.
-        if (isNaturalKeyTable(table)) {
-          await placePortableRow(transaction, table, row as never, {
-            resolver,
-          });
-          continue;
-        }
-        await applyPortableRow(transaction, table, row as never, {
-          resolver,
-          deferSecondPass: true,
-        });
-      }
-      for (const row of rows) {
-        await resolveSecondPassReferences(transaction, table, row as never, {
-          resolver,
-        });
-      }
-      await resolver.preload(table);
-    }
-    await importPreferences(transaction, data.preferences);
   });
 };
 

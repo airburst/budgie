@@ -6,10 +6,10 @@ import { createEnvelopeService } from "@/services/envelopes";
 import { createPayeeService } from "@/services/payees";
 import {
   createPortableData,
-  importPortableData,
   parsePortableData,
   serializePortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import { createReconciliationService } from "@/services/reconciliation";
 import { createScheduledTransactionService } from "@/services/scheduled-transactions";
 import { createSettingsService } from "@/services/settings";
