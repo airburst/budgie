@@ -244,6 +244,34 @@ test("the header indicator shows offline and error states, and the panel shows t
   await expect(page.getByTestId("sync-last-error")).toContainText("None");
 });
 
+test("an edit shows as pending, then synced without user action", async ({
+  page,
+}) => {
+  const mock = await mockSyncServer(page, { hasData: false });
+  await openSettings(page);
+  await giveConsent(page);
+  await connect(page);
+  await page.getByRole("button", { name: "Start sync" }).click();
+  await expect(indicator(page)).toHaveAttribute("data-sync-state", "synced");
+  const pushedBefore = mock.pushed;
+
+  await page.evaluate(() => {
+    window.location.hash = "#/payees";
+  });
+  await page.getByRole("button", { name: "New Payee" }).click();
+  await page.getByLabel("Name").fill("Edited Payee");
+  await page.getByRole("button", { name: "Create" }).click();
+  await expect(page.getByText("Edited Payee")).toBeVisible();
+
+  await expect(indicator(page)).toHaveAttribute("data-sync-state", "pending");
+  await expect(indicator(page)).toContainText("Pending 1");
+  // The background scheduler syncs about 5 seconds after the write.
+  await expect(indicator(page)).toHaveAttribute("data-sync-state", "synced", {
+    timeout: 20_000,
+  });
+  expect(mock.pushed).toBeGreaterThan(pushedBefore);
+});
+
 test.describe("on a phone", () => {
   test.use({ hasTouch: true, viewport: { width: 320, height: 568 } });
 

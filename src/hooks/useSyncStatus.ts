@@ -1,3 +1,4 @@
+import { LOCAL_WRITE_EVENT } from "@/hooks/useSyncRefresh";
 import { getSyncApi } from "@/platform/sync-api";
 import type { SyncStatusView } from "@/services/sync/api-types";
 import { useCallback, useEffect, useState } from "react";
@@ -19,7 +20,13 @@ export function useSyncStatus() {
 
   useEffect(() => {
     void refresh();
-    return getSyncApi().onSyncChange((event) => setStatus(event.status));
+    const off = getSyncApi().onSyncChange((event) => setStatus(event.status));
+    const onWrite = () => void refresh();
+    window.addEventListener(LOCAL_WRITE_EVENT, onWrite);
+    return () => {
+      off();
+      window.removeEventListener(LOCAL_WRITE_EVENT, onWrite);
+    };
   }, [refresh]);
 
   return { status, refresh };

@@ -64,7 +64,9 @@ export function SyncStartJoinStep({
           className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
         >
           Joining replaces all the data on this device with the cloud copy. If
-          you want to keep what is on this device, download a backup first.
+          you want to keep what is on this device, download a backup first. Changes on this device that have not yet reached
+          the cloud will be lost, including after being signed out or removed
+          and connecting again.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row">
           <DownloadBackupButton />

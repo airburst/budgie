@@ -716,7 +716,7 @@ Acceptance:
 - [int] Consent date and app version are stored in `sync_state`.
 - [doc] In-app wording and `docs/ARCHITECTURE.md` no longer claim there is
   no server.
-Status: todo
+Status: done. Sync card in Settings (`src/pages/Settings/sync/`); [int] consent_at and app version covered by `sync-api.test.ts` ("stores device id, token, consent date and app version"); e2e in `e2e/sync-ui.spec.ts` with a mocked server (`e2e/helpers/sync-mock.ts`).
 
 ### SY-038 Sync now and see the status
 As a user, I can sync on demand and see whether I am up to date.
@@ -729,7 +729,7 @@ Acceptance:
 - [e2e] After a sync that applied rows, open pages show the new data without
   a reload.
 - [e2e] Works at phone width.
-Status: todo
+Status: done. Status panel, "Sync now", header `SyncIndicator`; e2e in `e2e/sync-ui.spec.ts`.
 
 ### SY-039 Sync in the background
 As a user, my devices stay up to date without me pressing anything.
