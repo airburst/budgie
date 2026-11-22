@@ -261,7 +261,11 @@ Acceptance:
 - [unit] Each accepted row gets a `seq` higher than any earlier row for that
   user; the payload is stored byte for byte.
 - [unit] A newer `formatVersion` in the request is accepted.
-Status: todo
+Status: done. The handler runs the whole four-statement batch, including the
+pull page (tested under SY-014). Not covered: body cap and 500-envelope limit
+(SY-018), `last_seen_at` update (SY-016). The batch was also run on celld
+0.6.3 (650-row push, `json_each` upsert with `RETURNING`, row-value cursor
+paging); not yet on real D1 or staging.
 
 ### SY-014 Pull changes
 As a device, I receive every row other devices changed since my cursor.

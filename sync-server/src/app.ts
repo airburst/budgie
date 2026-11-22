@@ -3,6 +3,7 @@ import { handleEnrol } from "./enrol";
 import { ApiError, errorResponse, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
 import { readJsonBody } from "./http";
+import { handleSync } from "./sync";
 import { CONTRACT_VERSION, FORMAT_VERSION } from "./version";
 
 export interface AppDeps {
@@ -13,6 +14,8 @@ export interface AppDeps {
    * deployed config). Enables the /dev/admin routes.
    */
   devMode: boolean;
+  /** Pull page size; defaults to 500 (SPEC 9.3). Tests use small values. */
+  pageSize?: number;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -35,6 +38,8 @@ async function route(request: Request, deps: AppDeps): Promise<Response> {
       });
     case "POST /v1/enrol":
       return handleEnrol(request, deps);
+    case "POST /v1/sync":
+      return handleSync(request, { ...deps, pageSize: deps.pageSize });
   }
 
   if (deps.devMode && request.method === "POST") {
