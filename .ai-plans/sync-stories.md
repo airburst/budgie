@@ -221,7 +221,9 @@ Acceptance:
 - [unit] Codes are single use and expire; the script never prints a code
   that is already stored.
 - [manual] Both scripts work against the local stack and a remote database.
-Status: todo
+Status: done except the remote half of the [manual] check, which was not run
+(no Cloudflare access). Both scripts were run against wrangler's local D1;
+they cannot reach the D1 of a running `celld dev` (see `sync-server/README.md`).
 
 ### SY-012 Enrol the first app with an invite
 As a user, I enter my invite code and my app is connected to my account.
