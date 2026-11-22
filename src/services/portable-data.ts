@@ -3,6 +3,16 @@ import type {
   DatabaseRow,
   DatabaseTransaction,
 } from "@/platform/database";
+import {
+  deleteTombstone,
+  isNaturalKeyTable,
+  NATURAL_KEYS,
+  readTombstone,
+  readTombstones,
+  writeTombstone,
+  type NaturalKeyTable,
+  type TombstonePayload,
+} from "@/services/tombstone-store";
 import type { Preferences } from "@/types/electron";
 
 export const PORTABLE_FORMAT_VERSION = 1;
@@ -1001,6 +1011,235 @@ export const resolveSecondPassReferences = async <T extends PortableTable>(
 };
 
 // ---------------------------------------------------------------------------
+// Natural keys and the tombstone store (SPEC.md 8.10, migration 0015)
+//
+// A live row always lives in its table. A deleted row of a natural-key table
+// lives in its table unless another row holds its key when it is written, or
+// a live row needs the key later; it then moves to the tombstone store until
+// it is live again. `placePortableRow` is the only writer that moves rows.
+// ---------------------------------------------------------------------------
+
+type TableRow = Row & {
+  hlc: string | null;
+  sync_dirty: number;
+  sync_unsealed: number;
+};
+
+/** The row in payload shape, with exactly the table's fields in export order. */
+const portablePayload = (
+  table: PortableTable,
+  source: Record<string, unknown>,
+): TombstonePayload => {
+  const payload: Record<string, unknown> = {
+    publicId: source.publicId,
+    createdAt: source.createdAt ?? null,
+    updatedAt: source.updatedAt ?? null,
+    deletedAt: source.deletedAt ?? null,
+  };
+  for (const field of tableSpecs[table].fields) {
+    payload[field.field] = source[field.field] ?? null;
+  }
+  return payload as TombstonePayload;
+};
+
+/**
+ * The row of `table` (deleted or not, other than `exceptPublicId`) that holds
+ * the natural key of `row`, read with `SELECT *`; null if none, or if a key
+ * reference does not resolve (then no row can hold it).
+ */
+export const findNaturalKeyHolder = async (
+  transaction: DatabaseTransaction,
+  table: NaturalKeyTable,
+  row: Record<string, unknown>,
+  resolver: ReferenceResolver,
+  exceptPublicId: string | null = null,
+): Promise<TableRow | null> => {
+  const conditions: string[] = [];
+  const params: SqlValue[] = [];
+  for (const name of NATURAL_KEYS[table].key) {
+    const spec = tableSpecs[table].fields.find((field) => field.field === name);
+    if (!spec) throw new Error(`Unknown natural key field ${table}.${name}`);
+    const raw = row[name];
+    if (isReference(spec)) {
+      if (typeof raw !== "string") return null;
+      const id = await resolver.resolve(spec.target, raw);
+      if (id === null) return null;
+      params.push(id);
+    } else {
+      params.push(plainValue(spec.label, raw));
+    }
+    conditions.push(`${spec.column} = ?`);
+  }
+  const [holder] = await transaction.query<TableRow>({
+    sql: `SELECT * FROM ${table} WHERE ${conditions.join(" AND ")} AND public_id IS NOT ?`,
+    params: [...params.map(toParam), exceptPublicId],
+  });
+  return holder ?? null;
+};
+
+/** Copies a table row into the store with its sync state, then removes it from the table. */
+const moveToStore = async (
+  transaction: DatabaseTransaction,
+  table: NaturalKeyTable,
+  row: TableRow,
+) => {
+  const publicIdOf = await loadPublicIdLookup(transaction, table, [row]);
+  const payload = portablePayload(
+    table,
+    toPortableRow(table, row, publicIdOf) as unknown as Record<string, unknown>,
+  );
+  await writeTombstone(transaction, {
+    tbl: table,
+    publicId: payload.publicId,
+    hlc: row.hlc,
+    dirty: row.sync_dirty === 1,
+    unsealed: row.sync_unsealed === 1,
+    payload,
+  });
+  await transaction.execute({
+    sql: `DELETE FROM ${table} WHERE id = ?`,
+    params: [row.id],
+  });
+};
+
+/** Sync state of a row, as its table's columns or the store keep it. */
+export type RowSyncState = {
+  hlc: string | null;
+  dirty: boolean;
+  unsealed: boolean;
+};
+
+/** Two live rows of a natural-key table would hold one key. */
+export class NaturalKeyConflictError extends Error {
+  readonly code = "natural_key_conflict";
+  constructor(
+    readonly table: NaturalKeyTable,
+    readonly publicId: string,
+    readonly holderPublicId: string,
+  ) {
+    super(
+      `${table} ${publicId} and ${holderPublicId} are both live with the same natural key`,
+    );
+    this.name = "NaturalKeyConflictError";
+  }
+}
+
+export type PlacePortableRowOptions = {
+  resolver?: ReferenceResolver;
+  /**
+   * An engine write: this sync state is written wherever the row lands (a
+   * table write also bumps `sync_rev`). Without it the write is a user write
+   * (portable import): table writes are left to the triggers, store writes
+   * become dirty and unsealed, and a row's HLC is kept when it moves.
+   */
+  state?: RowSyncState;
+  /**
+   * Public ids whose own write is still to come in this batch. A live row in
+   * this set that holds the key a live write needs is parked in the store
+   * until its own write moves it back (a key swap). Any other live holder
+   * throws `NaturalKeyConflictError`: collisions are resolved before writing.
+   */
+  pending?: ReadonlySet<string>;
+};
+
+/**
+ * Upserts one portable row of a natural-key table by public id, in its table
+ * or in the tombstone store (see above), and returns where it went. A live
+ * row first moves a deleted row holding its key into the store. References
+ * are checked like `applyPortableRow` (`MissingReferenceError`), also for a
+ * row that goes to the store.
+ */
+export const placePortableRow = async <T extends NaturalKeyTable>(
+  transaction: DatabaseTransaction,
+  table: T,
+  row: PortableRowFor[T],
+  options: PlacePortableRowOptions = {},
+): Promise<"table" | "store"> => {
+  const source = row as unknown as Record<string, unknown>;
+  const publicId = source.publicId;
+  if (typeof publicId !== "string") {
+    throw new Error(`Invalid ${table} public ID`);
+  }
+  const resolver = options.resolver ?? createReferenceResolver(transaction);
+  for (const spec of tableSpecs[table].fields) {
+    if (isReference(spec)) {
+      await resolveReference(
+        resolver,
+        table,
+        publicId,
+        spec,
+        source[spec.field],
+      );
+    }
+  }
+  const payload = portablePayload(table, source);
+  const [current] = await transaction.query<TableRow>({
+    sql: `SELECT * FROM ${table} WHERE public_id = ?`,
+    params: [publicId],
+  });
+  const stored = current
+    ? null
+    : await readTombstone(transaction, table, publicId);
+  const holder = await findNaturalKeyHolder(
+    transaction,
+    table,
+    source,
+    resolver,
+    publicId,
+  );
+
+  if (payload.deletedAt !== null) {
+    if (stored || holder) {
+      await writeTombstone(transaction, {
+        tbl: table,
+        publicId,
+        ...(options.state ?? {
+          hlc: stored?.hlc ?? current?.hlc ?? null,
+          dirty: true,
+          unsealed: true,
+        }),
+        payload,
+      });
+      if (current) {
+        await transaction.execute({
+          sql: `DELETE FROM ${table} WHERE id = ?`,
+          params: [current.id],
+        });
+      }
+      return "store";
+    }
+  } else if (holder) {
+    const holderId = holder.public_id ?? "";
+    if (holder.deleted_at === null && !options.pending?.has(holderId)) {
+      throw new NaturalKeyConflictError(table, publicId, holderId);
+    }
+    await moveToStore(transaction, table, holder);
+  }
+
+  if (stored) await deleteTombstone(transaction, table, publicId);
+  const state =
+    options.state ??
+    (stored && stored.hlc !== null
+      ? { hlc: stored.hlc, dirty: true, unsealed: true }
+      : undefined);
+  await applyPortableRow(transaction, table, row, {
+    resolver,
+    publicIdConflictOnly: true,
+    ...(state
+      ? {
+          extraColumns: {
+            hlc: state.hlc,
+            sync_dirty: Number(state.dirty),
+            sync_unsealed: Number(state.unsealed),
+          },
+          incrementColumns: ["sync_rev"],
+        }
+      : {}),
+  });
+  return "table";
+};
+
+// ---------------------------------------------------------------------------
 // Portable import and export
 // ---------------------------------------------------------------------------
 
@@ -1057,7 +1296,23 @@ const importPreferences = async (
     });
     return;
   }
+  await remapAccountShortcuts(transaction);
+};
 
+/**
+ * Keeps the stored settings, re-checking only their account shortcuts by
+ * public id: a shortcut whose account is no longer live is dropped, the rest
+ * point at the live row with that public id. Used by import with empty
+ * preferences and by sync Join (SPEC.md 11.2).
+ */
+export const remapAccountShortcuts = async (
+  transaction: DatabaseTransaction,
+) => {
+  const accounts = await transaction.query<{
+    id: number;
+    public_id: string;
+    deleted_at: string | null;
+  }>({ sql: "SELECT id, public_id, deleted_at FROM accounts" });
   const [stored] = await transaction.query<{ preferences: string }>({
     sql: "SELECT preferences FROM settings WHERE id = 1",
   });
@@ -1112,6 +1367,14 @@ export const importPortableData = async (
         PortableRowFor[typeof table]
       >;
       for (const row of rows) {
+        // Natural-key tables can hold a deleted and a live row with one key
+        // (a server snapshot can): the deleted one goes to the store.
+        if (isNaturalKeyTable(table)) {
+          await placePortableRow(transaction, table, row as never, {
+            resolver,
+          });
+          continue;
+        }
         await applyPortableRow(transaction, table, row as never, {
           resolver,
           deferSecondPass: true,
@@ -1151,8 +1414,21 @@ export const createPortableData = async (
     ) as Record<PortableTable, Map<number, string>>;
     const publicIdOf: PublicIdLookup = (table, id) =>
       ids[table].get(id) ?? null;
-    const encode = <T extends PortableTable>(table: T) =>
-      rows[table].map((row) => toPortableRow(table, row, publicIdOf));
+    // Stored tombstones follow their table's rows (none: output unchanged).
+    const stored = Object.fromEntries(
+      await Promise.all(
+        PORTABLE_TABLES.map(async (table) => [
+          table,
+          (await readTombstones(transaction, table)).map((tombstone) =>
+            portablePayload(table, tombstone.payload),
+          ),
+        ]),
+      ),
+    ) as Record<PortableTable, TombstonePayload[]>;
+    const encode = <T extends PortableTable>(table: T) => [
+      ...rows[table].map((row) => toPortableRow(table, row, publicIdOf)),
+      ...(stored[table] as unknown as PortableRowFor[T][]),
+    ];
 
     const result: PortableData = {
       manifest: {

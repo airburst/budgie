@@ -554,7 +554,18 @@ Acceptance:
   pushed, pulled and undeleted like any row, and appears in exports.
 - [int] Portable import of a package holding a deleted and a live row with
   the same natural key (a server snapshot can) succeeds.
-Status: todo
+Status: done. Migration `0015_sync_tombstones.sql` adds the store
+`sync_tombstones(tbl, public_id, hlc, dirty, unsealed, payload)` and lets a
+natural-key row leave its table only once the store holds it. Rule: live rows
+always live in their table; a deleted row stays in its table unless another
+row holds its key when it is written, or a live row needs the key later, and
+then lives in the store until it is live again. `placePortableRow`
+(`portable-data.ts`) is the only writer that moves rows; resolution is in
+`sync/natural-keys.ts`, store sealing, push and ack in `sync/tombstones.ts`.
+Export appends stored rows after their table's rows (unchanged output when the
+store is empty); import places natural-key rows the same way. Tests:
+`sync-natural-keys.test.ts`, `portable-tombstones.unit.test.ts`,
+`sync-tombstones-migration.test.ts`, and all twelve fixtures.
 
 ### SY-030 Flag reconciliations that no longer add up
 As a user, I am told when a sync changed transactions I had already
@@ -598,7 +609,13 @@ Acceptance:
 - [int] Account shortcuts are remapped by public id; ones that do not
   resolve are dropped. Other preferences are kept.
 - [int] A failed join leaves the device's data as it was.
-Status: todo
+Status: done. `sync/join.ts` exports `joinSync(database, deps)` (enrolment
+already done). It pulls everything from cursor `"0"` with empty pushes into
+memory first, then in one transaction marks every row deleted (clean, no
+HLC, store rows included), applies the pull with the after-apply hooks,
+remaps account shortcuts by public id and stores the cursor; any failure
+leaves the data untouched. The joining device keeps its old rows as clean
+deleted rows that are never pushed. Tests: `sync-join.test.ts`.
 
 ### SY-033 Handle sync errors
 As a user, a failed sync tells me what is wrong and loses nothing.

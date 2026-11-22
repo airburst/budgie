@@ -16,6 +16,10 @@ import {
   type SyncEnvelope,
   type SyncPayload,
 } from "@/services/sync/payload";
+import {
+  collectDirtyTombstoneEnvelopes,
+  sealDirtyTombstones,
+} from "@/services/sync/tombstones";
 
 /** Server limits (SPEC.md 2.2 and 9.3). */
 export const MAX_PUSH_ENVELOPES = 500;
@@ -49,7 +53,10 @@ export const sealRow = async (
   return hlc;
 };
 
-/** Seals every unsealed (and therefore dirty) row of every synced table. */
+/**
+ * Seals every unsealed (and therefore dirty) row of every synced table,
+ * including the tombstone store.
+ */
 export const sealDirtyRows = async (
   transaction: DatabaseTransaction,
   deviceId: string,
@@ -65,7 +72,7 @@ export const sealDirtyRows = async (
       sealed++;
     }
   }
-  return sealed;
+  return sealed + (await sealDirtyTombstones(transaction, deviceId, nowMs));
 };
 
 /** Categories with their parents first (SPEC.md 10.2), stable otherwise. */
@@ -103,7 +110,12 @@ export const collectDirtyEnvelopes = async (
     const rows = await transaction.query<DatabaseRow & { hlc: string | null }>(
       { sql: `SELECT * FROM ${table} WHERE sync_dirty = 1 ORDER BY id` },
     );
-    if (rows.length === 0) continue;
+    // Rows in the tombstone store (SPEC.md 8.10) follow their table's rows.
+    const stored = await collectDirtyTombstoneEnvelopes(transaction, table);
+    if (rows.length === 0) {
+      envelopes.push(...stored);
+      continue;
+    }
     const publicIdOf = await loadPublicIdLookup(transaction, table, rows);
     const encoded = rows.map((row) => {
       if (row.hlc === null) {
@@ -112,7 +124,10 @@ export const collectDirtyEnvelopes = async (
       const payload = encodeSyncRow(table, row, publicIdOf) as SyncPayload;
       return toOutgoingEnvelope(table, row.hlc, payload);
     });
-    envelopes.push(...(table === "categories" ? parentsFirst(encoded) : encoded));
+    envelopes.push(
+      ...(table === "categories" ? parentsFirst(encoded) : encoded),
+      ...stored,
+    );
   }
   return envelopes;
 };
