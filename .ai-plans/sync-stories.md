@@ -535,7 +535,7 @@ Acceptance:
 - [int] A user who deleted an auto-posted transaction does not get it back
   when another device posts the same occurrence with an older `hlc`.
 - [int] Existing auto-post tests still pass.
-Status: todo
+Status: done
 
 ### SY-029 Resolve natural-key collisions
 As a user, creating the same payee or budget entry on two devices offline
