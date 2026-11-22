@@ -1,0 +1,129 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "id": "budget-allocation-collision-local-keeps-key",
+  "description": "Two devices create the same budget_allocations(envelopePublicId, month) offline. The local row has the lower public id, so it keeps the key, and the higher HLC, so its content stays. The incoming row is stored as deleted (dirty, sealed now) so the next round pushes its delete. The local row's push was stored, so it ends clean.",
+  "given": [
+    {
+      "tbl": "envelopes",
+      "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "e0e0e0e0-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-01 08:00:00",
+        "deletedAt": null,
+        "name": "Food",
+        "active": true,
+        "sortOrder": 0
+      }
+    },
+    {
+      "tbl": "budget_allocations",
+      "hlc": null,
+      "dirty": true,
+      "unsealed": true,
+      "payload": {
+        "publicId": "33333333-3333-4333-8333-333333333333",
+        "createdAt": "2026-11-22 10:20:00",
+        "updatedAt": "2026-11-22 10:20:00",
+        "deletedAt": null,
+        "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+        "month": "2026-12",
+        "assigned": 300
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "budget_allocations",
+        "publicId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        "hlc": "001795342200000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          "createdAt": "2026-11-22 10:10:00",
+          "updatedAt": "2026-11-22 10:10:00",
+          "deletedAt": null,
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "month": "2026-12",
+          "assigned": 250
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [
+      {
+        "tbl": "budget_allocations",
+        "publicId": "33333333-3333-4333-8333-333333333333",
+        "hlc": "001795342800000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "deleted": false,
+        "payload": {
+          "publicId": "33333333-3333-4333-8333-333333333333",
+          "createdAt": "2026-11-22 10:20:00",
+          "updatedAt": "2026-11-22 10:20:00",
+          "deletedAt": null,
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "month": "2026-12",
+          "assigned": 300
+        }
+      }
+    ],
+    "rows": [
+      {
+        "tbl": "envelopes",
+        "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-01 08:00:00",
+          "deletedAt": null,
+          "name": "Food",
+          "active": true,
+          "sortOrder": 0
+        }
+      },
+      {
+        "tbl": "budget_allocations",
+        "hlc": "001795342800000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "33333333-3333-4333-8333-333333333333",
+          "createdAt": "2026-11-22 10:20:00",
+          "updatedAt": "2026-11-22 10:20:00",
+          "deletedAt": null,
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "month": "2026-12",
+          "assigned": 300
+        }
+      },
+      {
+        "tbl": "budget_allocations",
+        "hlc": "001795343400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": true,
+        "unsealed": false,
+        "payload": {
+          "publicId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          "createdAt": "2026-11-22 10:10:00",
+          "updatedAt": "2026-11-22 10:30:00",
+          "deletedAt": "2026-11-22 10:30:00",
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "month": "2026-12",
+          "assigned": 250
+        }
+      }
+    ],
+    "error": null
+  }
+}

@@ -539,11 +539,17 @@ every edit. Sealing changes only the HLC; it is not itself an edit.
 Inputs: the row's current HLC `h` (may be absent), the device's own id `D`,
 and `edit`, the wall time in milliseconds of the row's latest local edit.
 
-- Web: `edit` is the row's `updatedAt` parsed as UTC (second resolution, so a
-  multiple of 1000).
-- A client without a reliable `updatedAt` (BudgieMac) uses the clock reading it
-  recorded when it noticed the edit, in milliseconds. If no edit time is known,
-  it uses the current clock.
+`edit` is found the same way on every client:
+
+1. Web: the row's `updatedAt` parsed as UTC (second resolution, so a multiple
+   of 1000). BudgieMac, whose `updatedAt` is unreliable, uses instead the
+   clock reading it recorded when it noticed the edit, in milliseconds.
+2. If that gives no value (`updatedAt` is `null` or not in the `timestamp`
+   format of section 5.1, or no edit time was recorded), `edit` is the
+   current clock reading, in milliseconds, at the moment of sealing.
+3. Edits made by the engine itself (section 8.10) set `updatedAt` to the
+   current clock truncated to the second, and `edit` is that value on every
+   client.
 
 Then:
 
@@ -625,6 +631,8 @@ Given an incoming envelope `e` and the local row `r` with the same
    (section 5.4); set the row's HLC to `e.hlc`; mark the row **not dirty**.
    This write is not a local edit: it MUST NOT mark the row dirty or change its
    `updatedAt` from the payload's value.
+4. For `payees`, `envelope_categories` and `budget_allocations`, step 3 is
+   subject to the natural-key rules of section 8.10.
 
 ### 8.3 Dirty and sealed state (client)
 
@@ -778,15 +786,111 @@ refused. Both engines run all of them.
 
 ### 8.10 Natural-key collisions
 
-> **Placeholder: defined by story SY-009.** The rule for two rows with
-> different public ids claiming one natural key (`payees.name`,
-> `envelope_categories.categoryPublicId`,
-> `budget_allocations(envelopePublicId, month)`) goes here: which row keeps
-> the key, what happens to the losing public id on the device, on the server
-> and on a third device, and the case where a deleted row holds the key. The
-> plan's proposal (higher HLC keeps the key; the local row is re-keyed to the
-> winner) is not yet confirmed. Until then engines MUST NOT ship behaviour for
-> this case.
+Three tables have a **natural key**: a combination of fields that at most one
+live row may hold (`naturalKeys` in `tables.json`).
+
+| Table                 | Natural key                 | Content fields (copied by rule 3) |
+| --------------------- | --------------------------- | --------------------------------- |
+| `payees`              | `name`                      | `categoryPublicId`, `amount`      |
+| `envelope_categories` | `categoryPublicId`          | `envelopePublicId`                |
+| `budget_allocations`  | `(envelopePublicId, month)` | `assigned`                        |
+
+Two devices can create rows with different public ids and the same key while
+offline. The server knows nothing about natural keys: it stores both by pure
+last-write-wins (section 8.1). Each client resolves the collision when it
+applies a pull, by these rules:
+
+1. **Deleted rows never hold a natural key.** Only live rows (`deletedAt` is
+   `null`) can collide. A deleted row keeps its own key fields in its payload.
+2. **The lowest public id keeps the key.** Among the live rows claiming one
+   key, the row whose `publicId` is lowest (string order) is the **winner**.
+   This choice does not depend on clocks or on which versions a device has
+   seen, so the winner can only change if a user deletes it.
+3. **The newest content wins.** The live claimant with the highest HLC (ties:
+   lowest public id) is the **source**. If the source is not the winner, the
+   winner's content fields (table above) are set from the source.
+4. **Every other claimant is deleted.** Each loser becomes a deleted version
+   of its own public id, which is pushed like any other local change. The
+   server ends up holding a deleted version of every losing public id.
+
+**Procedure.** For each of the three tables, after deciding by
+last-write-wins which incoming envelopes apply (section 8.2), group the live
+rows that will exist by key: local live rows that are not being overwritten,
+plus incoming live versions that apply. Resolve each group of two or more as
+one set (not pairwise, which would depend on order):
+
+- The loser's payload is its own payload with `deletedAt` and `updatedAt` set
+  to the current clock as a `timestamp` (section 5.1).
+- The winner, if its content changes, gets the source's content fields and
+  `updatedAt` set the same way. Its other fields, including `createdAt` and
+  the key, are its own.
+- These are **engine edits**: the rows become dirty, and are sealed at once
+  in the apply transaction (section 7.3, with `edit` = the new `updatedAt`).
+  They are pushed by the next round of the cycle (section 10.5).
+- A winner whose content does not change is stored as applied (clean, if it
+  was incoming) or left as it was (if it was local).
+- All claimants are sealed before they are compared (section 8.2 step 1).
+
+The losing row is always deleted and pushed, whether or not it was ever
+pushed before: the server may receive the delete of a public id it has not
+seen, which is harmless.
+
+**Storage.** A client whose local uniqueness rule also covers deleted rows
+MUST store a deleted row that would block a key somewhere else, keeping its
+HLC, payload and dirty state (a tombstone store). Applying a pull therefore
+never fails on a unique constraint:
+
+- Budgie web keeps plain `UNIQUE` constraints on these tables (two of them
+  are inline table constraints, which cannot be changed without rebuilding
+  the table), so it needs such a store for deleted rows of these three
+  tables. A row in the store is still a row of its table for every other
+  rule: lookups by public id, last-write-wins, pushing, and undelete (an
+  undelete moves it back into the table, or into collision resolution if a
+  live row now holds the key).
+- BudgieMac already keeps deleted rows only as tombstones, so its unique
+  `Payee.name` holds live payees only. Before inserting or renaming a live
+  row it MUST apply these rules itself, because SwiftData would otherwise
+  merge the two objects silently.
+
+Deleted rows are part of the local state and MUST be kept (in the table or
+the store) with their latest version; engines MUST NOT drop them.
+
+**References.** No synced table references `payees`,
+`envelope_categories` or `budget_allocations` by public id (see
+`references` in `tables.json`), so deleting a loser leaves every reference
+valid. The content fields copied by rule 3 are references that already
+resolved when the source was applied.
+
+**On each device.**
+
+| Where                           | What happens to the losing public id                                                                                                                                                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| The device that resolves        | Stored as deleted, dirty; pushed next round.                                                                                                                                                                                                                                                           |
+| The server                      | Stores the delete by last-write-wins, like any delete.                                                                                                                                                                                                                                                 |
+| A third device                  | Pulls the delete and, if the winner changed, the winner's new version. If it still has the loser live when the winner arrives (the delete not yet pushed), it resolves the same collision itself with the same winner, and pushes its own delete; last-write-wins keeps one of the identical outcomes. |
+| A joining device (section 11.2) | Its old rows are deleted before the pull, so they never collide; pulled deleted losers are stored as deleted.                                                                                                                                                                                          |
+
+**Why this converges.** Assume users stop editing and every device keeps
+syncing.
+
+- Resolution only ever deletes rows that are not the lowest live public id
+  for their key, so the lowest live claimant on the server is never deleted
+  by resolution. Every resolution that is stored removes at least one live
+  claimant on the server, so the number of live rows per key falls until it
+  is one.
+- A resolution can be undone only by a newer version of a loser, which comes
+  from a user edit (excluded) or from a device that has not yet seen the
+  delete, which then pulls it, sees the collision again, and repeats the same
+  choice of winner.
+- When no key has two live rows, no device makes engine edits, so the server
+  stops changing. Every device then holds the server's latest version of
+  every public id (section 10), so all devices have identical live rows and
+  the same deleted state.
+
+Different devices can pick different content sources while they have seen
+different versions; the winner's final content is whichever of their engine
+edits has the highest HLC. That is the same lost-update risk as any
+concurrent edit of one row (plan section 12).
 
 ### 8.11 After apply (client, informative)
 
@@ -1269,3 +1373,9 @@ These were decided while writing this contract and are open to review.
     `transfer`; schedules without a canonical id post with random ids; an
     existing row with the computed id (live or deleted) is never recreated
     (section 8.9).
+21. **Natural-key collisions** (section 8.10) replace the plan's proposal
+    ("higher HLC keeps the key; the local row is re-keyed to the winner"):
+    the lowest public id keeps the key, the highest HLC supplies the content,
+    every other claimant is deleted and pushed, and deleted rows never hold a
+    key. A clock-based winner could make two devices delete different rows
+    and leave no live row; a public-id winner cannot.

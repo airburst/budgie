@@ -82,6 +82,9 @@ Python's `hashlib`, independently of either engine.
   `unsealed: true` implies `dirty: true`.
 - `payload` is the row exactly as it would be sent, including `publicId`,
   `deletedAt` and, for accounts and categories, the `deleted` flag.
+- Deleted rows are part of the store, wherever the engine keeps them (in its
+  table or in a tombstone store, `../SPEC.md` section 8.10). A harness loads
+  and reports them like any other row.
 - `local` holds local-only values that are never sent (section 5.4). Only the
   two pending reconcile fields of `accounts` are defined. In `given`, absent
   means `null`. In `expect.rows`, it is compared only when present.
@@ -101,16 +104,21 @@ an ordinary local edit (the row becomes dirty and unsealed). Its
 2. Set the engine's device id to `device.deviceId` and its clock to
    `device.now`.
 3. Seal and encode (section 10.1). The edit time of an unsealed row is its
-   `payload.updatedAt` read as UTC; if that is `null`, `device.now`. Engines
-   that record edit times separately (BudgieMac) set them from the same value
-   when loading.
+   `payload.updatedAt` read as UTC; if that is `null` or not a valid
+   `timestamp`, the clock (`device.now`), as section 7.3 says for every
+   client. Engines that record edit times separately (BudgieMac) set them
+   from `payload.updatedAt` when loading, and leave them unset when it is
+   `null`.
 4. Compare the outgoing envelopes with `expect.push`: the same set, keyed by
    `(tbl, publicId)`, order ignored, every field equal (payloads compared as
    JSON values).
 5. Apply `editsInFlight`, if present, as local edits.
 6. Treat `response` as the only server response: apply `pull` and acknowledge
    the push using `rejected` (sections 10.3 and 10.4), including the
-   transfer-pair rule (section 8.8). Do not start a second round.
+   transfer-pair rule (section 8.8) and natural-key resolution (section
+   8.10). Engine edits made here use `device.now` as the clock: they set
+   `updatedAt` (and `deletedAt` for losers) to it, and are sealed at once.
+   Do not start a second round, so they stay dirty.
 7. If `expect.error` is a string, the apply must fail with that error.
    Sealing (step 3) is not undone by a failed apply.
 8. Compare the whole store with `expect.rows`: the same set of
@@ -131,12 +139,24 @@ Numbers compare by value (`1500` equals `1500.0`). Strings compare exactly.
 
 ## Fixtures
 
-| File                                      | Story  | Behaviour                                                         |
-| ----------------------------------------- | ------ | ----------------------------------------------------------------- |
-| `remote-newer-wins.json`                  | SY-007 | Higher remote HLC replaces the local row; local-only fields stay. |
-| `remote-older-ignored.json`               | SY-007 | Lower remote HLC is skipped.                                      |
-| `equal-hlc-ignored.json`                  | SY-007 | Equal HLC is skipped even with a different payload.               |
-| `remote-delete.json`                      | SY-007 | Remote delete applies `deletedAt` and the `deleted` flag.         |
-| `remote-undelete-beats-older-delete.json` | SY-007 | Undelete with a higher HLC revives; with a lower one, skipped.    |
-| `local-dirty-sealed-and-pushed.json`      | SY-007 | Seal rule on new, re-edited and already sealed rows; ack.         |
-| `ids.json`                                | SY-008 | Deterministic auto-post id vectors (kind `ids`).                  |
+| File                                                    | Story  | Behaviour                                                                                                   |
+| ------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `remote-newer-wins.json`                                | SY-007 | Higher remote HLC replaces the local row; local-only fields stay.                                           |
+| `remote-older-ignored.json`                             | SY-007 | Lower remote HLC is skipped.                                                                                |
+| `equal-hlc-ignored.json`                                | SY-007 | Equal HLC is skipped even with a different payload.                                                         |
+| `remote-delete.json`                                    | SY-007 | Remote delete applies `deletedAt` and the `deleted` flag.                                                   |
+| `remote-undelete-beats-older-delete.json`               | SY-007 | Undelete with a higher HLC revives; with a lower one, skipped.                                              |
+| `local-dirty-sealed-and-pushed.json`                    | SY-007 | Seal rule on new, re-edited and already sealed rows; ack.                                                   |
+| `ids.json`                                              | SY-008 | Deterministic auto-post id vectors (kind `ids`).                                                            |
+| `payee-collision-local-keeps-key.json`                  | SY-009 | payees.name: local row has the lowest id and newest content; remote row deleted.                            |
+| `payee-collision-remote-keeps-key.json`                 | SY-009 | payees.name: remote row keeps the key, takes the local content; local row deleted.                          |
+| `payee-collision-loser-already-pushed.json`             | SY-009 | payees.name: clean, already pushed local row loses and is deleted.                                          |
+| `payee-key-held-by-deleted-row.json`                    | SY-009 | payees.name: a deleted row does not hold the key.                                                           |
+| `envelope-category-collision-local-keeps-key.json`      | SY-009 | envelope_categories.categoryPublicId: local row has the lowest id and newest content; remote row deleted.   |
+| `envelope-category-collision-remote-keeps-key.json`     | SY-009 | envelope_categories.categoryPublicId: remote row keeps the key, takes the local content; local row deleted. |
+| `envelope-category-collision-loser-already-pushed.json` | SY-009 | envelope_categories.categoryPublicId: clean, already pushed local row loses and is deleted.                 |
+| `envelope-category-key-held-by-deleted-row.json`        | SY-009 | envelope_categories.categoryPublicId: a deleted row does not hold the key.                                  |
+| `budget-allocation-collision-local-keeps-key.json`      | SY-009 | budget_allocations(envelope, month): local row has the lowest id and newest content; remote row deleted.    |
+| `budget-allocation-collision-remote-keeps-key.json`     | SY-009 | budget_allocations(envelope, month): remote row keeps the key, takes the local content; local row deleted.  |
+| `budget-allocation-collision-loser-already-pushed.json` | SY-009 | budget_allocations(envelope, month): clean, already pushed local row loses and is deleted.                  |
+| `budget-allocation-key-held-by-deleted-row.json`        | SY-009 | budget_allocations(envelope, month): a deleted row does not hold the key. Join-style row with no HLC.       |
