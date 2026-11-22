@@ -8,7 +8,36 @@ import type {
   SyncMetadataFields,
 } from "@/types/electron";
 import { RRule } from "rrule";
+import { autoPostTransactionId } from "./sync/ids";
 import { createTransaction } from "./transactions";
+
+/**
+ * Deterministic ids for one occurrence (SPEC 8.9). A schedule whose public id
+ * is not yet a canonical UUID (or a bad date) gets none and posts with random
+ * ids.
+ */
+const occurrenceIds = async (
+  schedulePublicId: string | null,
+  dueDate: string,
+) => {
+  if (!schedulePublicId) return undefined;
+  try {
+    return {
+      account: await autoPostTransactionId(
+        schedulePublicId,
+        dueDate,
+        "account",
+      ),
+      transfer: await autoPostTransactionId(
+        schedulePublicId,
+        dueDate,
+        "transfer",
+      ),
+    };
+  } catch {
+    return undefined;
+  }
+};
 
 type ScheduledRow = DatabaseRow & {
   id: number;
@@ -152,15 +181,30 @@ export const processAutoPost = async (
     let nextDue: string | null = row.next_due_date;
 
     while (nextDue && nextDue <= thresholdStr) {
-      await createTransaction(database, {
-        accountId: row.account_id,
-        categoryId: row.category_id,
-        date: nextDue,
-        payee: row.payee,
-        amount: row.amount,
-        notes: row.notes,
-        cleared: false,
-      });
+      const ids = await occurrenceIds(row.public_id, nextDue);
+      // Already posted here or on another device (live or deleted): leave it
+      // alone, only advance the schedule.
+      const posted = ids
+        ? await database.query({
+            sql: "SELECT 1 FROM transactions WHERE public_id IN (?, ?) LIMIT 1",
+            params: [ids.account, ids.transfer],
+          })
+        : [];
+      if (posted.length === 0) {
+        await createTransaction(
+          database,
+          {
+            accountId: row.account_id,
+            categoryId: row.category_id,
+            date: nextDue,
+            payee: row.payee,
+            amount: row.amount,
+            notes: row.notes,
+            cleared: false,
+          },
+          ids,
+        );
+      }
       const dtstart = new Date(`${nextDue}T12:00:00Z`);
       const rule = new RRule({ ...RRule.parseString(row.rrule), dtstart });
       const next = rule.after(dtstart, false);
