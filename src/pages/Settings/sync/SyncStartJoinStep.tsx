@@ -22,6 +22,55 @@ export function SyncStartJoinStep({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmJoin, setConfirmJoin] = useState(false);
+  const [offerForce, setOfferForce] = useState(false);
+
+  /** A way out of the half-set-up state: sign this device out again. */
+  async function cancel(force: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await getSyncApi().signOutSync(
+        force ? { force: true } : undefined,
+      );
+      if (!result.ok) {
+        if (result.reason === "offline") setOfferForce(true);
+        setError(describeSyncFailure(result));
+      }
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Sign out failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const cancelButton = (
+    <Button
+      variant="outline"
+      className="w-full min-h-11 sm:w-auto md:min-h-0"
+      disabled={busy}
+      onClick={() => void cancel(false)}
+    >
+      Cancel
+    </Button>
+  );
+
+  const forceBlock = offerForce && (
+    <div className="space-y-2" data-testid="sync-cancel-offline">
+      <p className="text-sm text-muted-foreground">
+        Budgie could not reach the sync server to remove this device. You can
+        cancel on this device only, then remove this device from the device
+        list on another of your devices later.
+      </p>
+      <Button
+        variant="destructive"
+        className="w-full min-h-11 sm:w-auto md:min-h-0"
+        disabled={busy}
+        onClick={() => void cancel(true)}
+      >
+        Cancel on this device only
+      </Button>
+    </div>
+  );
 
   async function run(action: "start" | "join") {
     setBusy(true);
@@ -78,7 +127,9 @@ export function SyncStartJoinStep({
           >
             {busy ? "Joining…" : "Join and replace this device's data"}
           </Button>
+          {cancelButton}
         </div>
+        {forceBlock}
         {errorText}
         <ConfirmDialog
           open={confirmJoin}
@@ -102,13 +153,17 @@ export function SyncStartJoinStep({
           ? "This device is connected and the cloud is empty. Start will upload all of your budget data."
           : "This device is connected. Continue to finish turning on sync."}
       </p>
-      <Button
-        className="w-full min-h-11 sm:w-auto md:min-h-0"
-        disabled={busy}
-        onClick={() => void run("start")}
-      >
-        {busy ? "Starting…" : hasData === false ? "Start sync" : "Continue"}
-      </Button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          className="w-full min-h-11 sm:w-auto md:min-h-0"
+          disabled={busy}
+          onClick={() => void run("start")}
+        >
+          {busy ? "Starting…" : hasData === false ? "Start sync" : "Continue"}
+        </Button>
+        {cancelButton}
+      </div>
+      {forceBlock}
       {errorText}
     </div>
   );

@@ -704,6 +704,33 @@ describe("delete cloud data", () => {
   });
 });
 
+describe("start after delete", () => {
+  it("Start works again from another device, and from a newly enrolled one", async () => {
+    const { server, invite } = await newServer();
+    const a = makeDevice(server);
+    await a.accounts.create(account("A data"));
+    await enrolAndStart(a, await invite());
+    const b = makeDevice(server);
+    await b.accounts.create(account("B data"));
+    const { code } = ok(await a.api.createSyncDeviceCode());
+    ok(await b.api.enrolSync({ code, deviceName: "B", consent: true }));
+    ok(await b.api.joinSync());
+    ok(await a.api.deleteSyncCloudData());
+    expect(ok(await b.api.syncNow()).status.state).toBe("cloud_data_deleted");
+
+    // B, which was not the device that deleted, starts the cloud copy again.
+    const started = ok(await b.api.startSync());
+    expect(started.status).toMatchObject({ enabled: true, state: "synced" });
+
+    // A third device can then join it.
+    const c = makeDevice(server);
+    const { code: code2 } = ok(await b.api.createSyncDeviceCode());
+    ok(await c.api.enrolSync({ code: code2, deviceName: "C", consent: true }));
+    expect(ok(await c.api.joinSync()).status.state).toBe("synced");
+    expect(await accountNames(c)).toContain("A data");
+  });
+});
+
 describe("devices", () => {
   it("lists, creates codes and revokes another device", async () => {
     const { server, invite } = await newServer();

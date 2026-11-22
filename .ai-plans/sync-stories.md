@@ -759,7 +759,7 @@ Acceptance:
 - [e2e] The device list shows each app's name, when it was added and last
   seen, and marks this one; any other can be revoked after confirmation.
 - [e2e] A second browser context enrols with the code and joins.
-Status: todo
+Status: done
 
 ### SY-041 Stop, sign out, or delete my cloud data
 As a user, I can stop syncing, disconnect this app, or erase the cloud copy,
@@ -775,7 +775,7 @@ Acceptance:
   device, and says other devices will stop syncing and that copies may
   persist for up to 7 days.
 - [int] After delete, Start sync from any device works again.
-Status: todo
+Status: done
 
 ### SY-042 Download a backup
 As a user, I can save a full copy of my data to a file at any time.

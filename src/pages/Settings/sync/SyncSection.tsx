@@ -28,7 +28,11 @@ export function SyncSection() {
   } else if (step === "connect") {
     body = (
       <SyncConnectStep
-        onEnrolled={setHasData}
+        onEnrolled={(enrolledWithData) => {
+          setHasData(enrolledWithData);
+          // So that signing out later returns to "Sync is off".
+          setStep("off");
+        }}
         onCancel={() => setStep("off")}
       />
     );

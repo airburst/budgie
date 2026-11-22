@@ -3,6 +3,8 @@ import { getSyncApi } from "@/platform/sync-api";
 import type { SyncStatusView } from "@/services/sync/api-types";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { SyncDangerZone } from "./SyncDangerZone";
+import { SyncDevices } from "./SyncDevices";
 import {
   describeSyncFailure,
   formatSyncTime,
@@ -90,6 +92,8 @@ export function SyncStatusPanel({ status }: { status: SyncStatusView }) {
           {failure}
         </p>
       )}
+      <SyncDevices />
+      <SyncDangerZone status={status} />
     </div>
   );
 }
