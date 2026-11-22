@@ -1,6 +1,7 @@
 import { hashToken } from "./crypto";
 import { ApiError } from "./errors";
 import type { SqlExecutor } from "./executor";
+import type { LogContext } from "./log";
 
 export const LAST_SEEN_INTERVAL_MS = 60 * 60_000;
 
@@ -20,6 +21,7 @@ export async function authenticate(
   executor: SqlExecutor,
   request: Request,
   now: number,
+  ctx?: LogContext,
 ): Promise<AuthContext> {
   const header = request.headers.get("authorization") ?? "";
   const match = /^Bearer ([A-Za-z0-9_-]{1,128})$/i.exec(header.trim());
@@ -45,6 +47,10 @@ export async function authenticate(
   if (!row) throw new ApiError("bad_token");
   if (row.revoked_at !== null && row.revoked_at !== undefined) {
     throw new ApiError("revoked");
+  }
+  if (ctx) {
+    ctx.userId = row.user_id as string;
+    ctx.deviceId = row.device_id as string;
   }
   return {
     userId: row.user_id as string,

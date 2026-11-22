@@ -341,7 +341,11 @@ Acceptance:
 - [unit] A per-IP request limit is enforced inside the Worker on every
   route (there is no Cloudflare zone to hold a rate-limit rule); over the
   limit returns a distinct retryable error. The README records the limits.
-Status: todo
+Status: done. Per-IP limit is 120 requests per minute held in Worker memory (no
+D1 write; per isolate, so approximate; see README). The D1 daily-quota error
+text is not documented by Cloudflare, so `daily_limit` matches the message
+conservatively and is UNVERIFIED against the real error. CORS, body cap,
+envelope cap and logging are tested on better-sqlite3 only.
 
 ### SY-019 Daily snapshots to R2
 As a user, a copy of my data from each of the last 30 days exists, so a bad

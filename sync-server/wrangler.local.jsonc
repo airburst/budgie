@@ -6,7 +6,10 @@
   "name": "budgie-sync",
   "main": "src/index.ts",
   "compatibility_date": "2026-01-01",
-  "vars": { "DEV_MODE": "1" },
+  "vars": {
+    "DEV_MODE": "1",
+    "ALLOWED_ORIGIN": "https://budget.fairhursts.net",
+  },
   "rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
   "d1_databases": [
     {

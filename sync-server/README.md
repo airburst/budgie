@@ -66,5 +66,39 @@ is per isolate. Values live in `src/rate-limit.ts`:
 - `POST /v1/enrol`: 10 failed attempts per IP per 15 minutes, then `429`.
   A successful enrol is not counted. The IP is `CF-Connecting-IP`.
 
+- `POST /v1/devices/code`: 5 codes per user per 10 minutes.
+- Every route, per IP: 120 requests per minute (`MemoryIpLimiter` in
+  `src/limits.ts`). It lives in Worker memory, so it costs no D1 write (the
+  free plan allows 100k row writes a day). Each isolate counts separately, so
+  the effective ceiling is 120 times the number of live isolates and the
+  counter resets when an isolate is recycled: a best-effort brake on a runaway
+  client, not an exact quota. The failed-enrol and device-code limits above
+  are exact because they live in D1.
+
+## Other limits and behaviour
+
+- Body cap 1 MiB (checked from `Content-Length` and while streaming) and at
+  most 500 envelopes per push.
+- CORS: only the origin in the `ALLOWED_ORIGIN` var (production
+  `https://budget.fairhursts.net`) gets headers; `DEV_MODE` adds
+  `http://localhost:3000` and `http://127.0.0.1:3000`.
+- Logs: one JSON line per request with route label, method, status, user id,
+  device id, counts and a reason. Never bodies, tokens, codes, query strings
+  or error messages.
+- `daily_limit`: Cloudflare does not document the exact error text for the D1
+  free-plan daily quota. `isDailyLimitError` matches messages containing
+  "daily read/write/limit/quota", "exceeded ... daily" or "free tier limit".
+  This is unverified; check the real message when it first happens and adjust.
+  It returns `503 daily_limit` with `retryAfter` to the next 00:00 UTC.
+
+## Deploy checklist (SY-021)
+
+- Create the D1 database and R2 bucket in the EU jurisdiction, put the real
+  ids only in a local copy of `wrangler.jsonc`.
+- Apply `migrations/` with `wrangler d1 migrations apply`.
+- Confirm `DEV_MODE` is not set. After deploying staging, verify
+  `POST /dev/admin/add-user` returns `404 not_found` and that `/v1/health` is
+  `200`.
+
 Expired rows in `rate_limits` are overwritten on the next failure for the same
 bucket; they are never swept (a few bytes per IP that ever failed).

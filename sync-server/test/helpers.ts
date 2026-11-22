@@ -18,6 +18,8 @@ export interface TestServer {
   executor: SqlExecutor;
   deps: AppDeps;
   clock: { now: number };
+  /** Log lines written by the server. */
+  logs: string[];
   call: (
     method: string,
     path: string,
@@ -42,10 +44,12 @@ export async function createTestServer(
   const executor = createSqliteExecutor(db);
   await applyMigration(executor, migration);
   const clock = { now: T0 };
+  const logs: string[] = [];
   const deps: AppDeps = {
     executor,
     now: () => clock.now,
     devMode: false,
+    logSink: (line) => logs.push(line),
     ...extra,
   };
 
@@ -96,5 +100,5 @@ export async function createTestServer(
     return { userId, deviceId: res.body.deviceId, token: res.body.token };
   };
 
-  return { db, executor, deps, clock, call, enrolDevice };
+  return { db, executor, deps, clock, logs, call, enrolDevice };
 }

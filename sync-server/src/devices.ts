@@ -2,6 +2,7 @@ import { authenticate } from "./auth";
 import { DEVICE_CODE_LENGTH, generateCode, hashCode } from "./crypto";
 import { ApiError, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
+import type { LogContext } from "./log";
 import {
   assertNotLimited,
   DEVICE_CODE_LIMIT,
@@ -14,6 +15,7 @@ const MAX_ATTEMPTS = 5;
 export interface DeviceDeps {
   executor: SqlExecutor;
   now: () => number;
+  ctx?: LogContext;
   /** Injectable for tests. */
   generateCode?: () => string;
 }
@@ -24,7 +26,7 @@ export async function handleDeviceCode(
   deps: DeviceDeps,
 ): Promise<Response> {
   const { executor } = deps;
-  const auth = await authenticate(executor, request, deps.now());
+  const auth = await authenticate(executor, request, deps.now(), deps.ctx);
   const now = deps.now();
   const bucket = `devcode:user:${auth.userId}`;
   await assertNotLimited(executor, bucket, DEVICE_CODE_LIMIT, now);
@@ -71,7 +73,7 @@ export async function handleListDevices(
   request: Request,
   deps: DeviceDeps,
 ): Promise<Response> {
-  const auth = await authenticate(deps.executor, request, deps.now());
+  const auth = await authenticate(deps.executor, request, deps.now(), deps.ctx);
   const [res] = await deps.executor.batch([
     {
       sql: `SELECT id, name, created_at, last_seen_at FROM devices
@@ -97,7 +99,7 @@ export async function handleRevokeDevice(
   deps: DeviceDeps,
   deviceId: string,
 ): Promise<Response> {
-  const auth = await authenticate(deps.executor, request, deps.now());
+  const auth = await authenticate(deps.executor, request, deps.now(), deps.ctx);
   if (!UUID.test(deviceId)) throw new ApiError("bad_request");
   const [res] = await deps.executor.batch([
     {
