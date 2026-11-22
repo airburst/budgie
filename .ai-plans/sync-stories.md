@@ -67,7 +67,11 @@ Acceptance:
   same `seq`, the cursor must page by more than `seq` alone.
 - [doc] Decision written into plan §2 and §3: D1, or Durable Object, with the
   reason. "Unresolved questions" updated.
-Status: todo
+Status: done (2026-11-22). D1. All checks passed on a real EU D1 database and
+on local `wrangler dev`: one four-statement batch; rejected rows derived from
+`RETURNING`; compound cursor `(seq, tbl, public_id)`; `WITHOUT ROWID` cuts
+billed writes from 3 to 2 per row; 500 typical rows is about 160 KB, a 2.6 MB
+parameter worked, 10 MB failed. The throwaway Worker and database are deleted.
 
 ### SY-004 Spike: celld as the local stack
 As the maintainer, I know whether dev and e2e run the server on celld or on
@@ -80,7 +84,10 @@ Acceptance:
 - [doc] Recorded: how to start it headless for Playwright, and how to reset
   its data between runs.
 - [doc] Decision written into plan §2: celld or `wrangler dev`.
-Status: todo
+Status: done (2026-11-22). celld 0.6.3. The SY-003 Worker ran unchanged with
+local D1 and R2 and passed every check; a cron handler fired on schedule.
+Differences and usage are in plan §2. Not checked: an R2 binding that sets
+`jurisdiction`, because R2 is not enabled on the account yet.
 
 ### SY-005 Spike: Cloudflare account facts
 As the maintainer, I know the hosting choices in the plan fit the free plan
@@ -93,7 +100,15 @@ Acceptance:
 - [doc] Confirmed: `sync.fairhursts.net` can be bound to the Worker, and a
   staging hostname is chosen.
 - [doc] Anything that does not fit is raised as a change to the plan.
-Status: todo
+Status: done except the hostname, which needs a decision. Confirmed on the
+free plan: D1 in the EU jurisdiction (region EEUR); an R2 bucket in the EU
+jurisdiction, used from a Worker binding; R2 allowance of 10 GB, 1 million
+writes and 10 million reads a month; 5 cron triggers per account; Time Travel
+keeps 7 days. Raised as changes to the plan: `fairhursts.net` is not a
+Cloudflare zone, so `sync.fairhursts.net` cannot be bound yet (plan,
+Unresolved questions); the free plan allows 10 ms of CPU per request, which
+the snapshot job must be measured against; celld needs its own config without
+`jurisdiction` and `workers_dev`.
 
 ## M3 Contract (step 3)
 

@@ -72,20 +72,53 @@ Deferred on purpose:
 ## 2. Hosting and local development
 
 - One Worker, one D1 database, one R2 bucket. No hardware.
+- **D1, not a Durable Object** (spike SY-003, 2026-11-22): the whole sync
+  request runs as one `batch()` on a real EU-jurisdiction D1 database.
+- **R2 in the EU works on the free plan** (spike SY-005, 2026-11-22): a
+  bucket created with `--jurisdiction eu` landed in EEUR, and a Worker whose
+  binding sets `"jurisdiction": "eu"` wrote, read, listed and deleted an
+  object. Free allowance each month: 10 GB stored, 1 million writes or lists,
+  10 million reads, no egress charge (Standard storage only). The pricing page
+  does not treat EU buckets differently.
+- Other free-plan facts: 5 cron triggers per account (we use 1); D1 Time
+  Travel keeps 7 days; **10 ms of CPU per request and per cron run**. Time
+  spent waiting on D1 or R2 does not count, but building a large JSON snapshot
+  in the Worker does. So the snapshot job builds its JSON inside D1
+  (`json_group_array`) where it can, and its CPU time is measured on staging
+  with a realistic data set (section 12).
+- **Hostname is not settled.** `fairhursts.net` uses GoDaddy's name servers,
+  and a Worker custom domain needs the domain to be a Cloudflare zone. See
+  Unresolved questions. Until then the plan's `sync.fairhursts.net` is a
+  placeholder; staging would be `sync-staging.fairhursts.net`.
 - Free tier covers 3 users: D1 allows 5M rows read and 100k rows written per
   day. Exceeding a daily limit makes queries fail until 00:00 UTC, so clients
   treat that as a retryable error.
+- Measured cost: a push bills 2 row writes per accepted row (the row plus the
+  pull index), so one day's free allowance is about 50,000 pushed rows. A
+  first sync larger than that must be able to resume the next day.
 - TLS from Cloudflare; D1 and R2 are encrypted at rest by Cloudflare.
 - `sync-server/` has its own `package.json` and wrangler config.
 - The request handler is written against a tiny SQL-executor interface so the
   same code runs on D1 and on in-memory better-sqlite3 in Vitest. The
   interface is **batch-shaped**: D1 has no read-then-write transactions, only
   `batch()` (a list of statements run as one transaction).
-- Local full stack for dev and e2e: **celld**, which reads the same wrangler
-  config and provides D1, R2 and cron triggers locally. It is a separate
-  implementation from Cloudflare's runtime, so anything that depends on exact
-  D1 behaviour (the push batch, limits) is also proven on a staging Worker.
-  Fallback: `wrangler dev`.
+- Local full stack for dev and e2e: **celld** (spike SY-004, celld 0.6.3). It
+  ran the spike Worker unchanged from the same wrangler config, with local D1
+  and R2, and every sync check passed. How to use it:
+  - start: `celld dev <project> --port <port> --no-watch`, with `esbuild` on
+    `PATH`; add `--clean` for an empty database (state otherwise persists in
+    `<project>/.celld/dev`);
+  - cron handlers fire on their real schedule only. There is no way to fire
+    one by hand, so the snapshot job is tested by calling its function
+    directly, and the dev build exposes it on a dev-only route for e2e.
+- Where celld differs from Cloudflare (so these are proven on staging):
+  - `meta.rows_read` / `rows_written` are not Cloudflare's billed counts;
+  - a string over 2.2 MB is refused (Cloudflare accepted 2.6 MB);
+  - no Time Travel;
+  - it refuses to start if the config has an R2 `jurisdiction` or a
+    `workers_dev` key. So `sync-server/` keeps a separate local config for
+    celld without them, and the deployed config carries the EU setting.
+- Fallback if celld causes trouble: `wrangler dev`, which ran the same spike.
 
 ## 3. Server
 
@@ -95,13 +128,18 @@ Deferred on purpose:
 users(id, name, seq, created_at)
 devices(id, user_id, name, token_hash, created_at, revoked_at)
 changes(user_id, tbl, public_id, hlc, deleted, payload, device_id, seq,
-        PRIMARY KEY (user_id, tbl, public_id))
--- index (user_id, seq)
+        PRIMARY KEY (user_id, tbl, public_id)) WITHOUT ROWID
+-- index (user_id, seq, tbl, public_id)
 ```
 
+- `WITHOUT ROWID` matters for cost: with a rowid table each accepted row
+  billed 3 writes instead of 2.
+
 - One entry per row, upserted. No log growth, no compaction job.
-- `users.seq` is the per-user monotonic counter; `changes.seq` is used only as
-  the pull cursor.
+- `users.seq` is the per-user monotonic counter, bumped once per request. All
+  rows accepted in one push share that `seq`.
+- The pull cursor is therefore compound: `(seq, tbl, public_id)`. Clients
+  treat it as an opaque value.
 - `payload` is an opaque JSON string. The sync endpoint never parses it; only
   the snapshot job does (section 9).
 
@@ -115,14 +153,24 @@ response: { cursor, pull: [envelope], more, rejected: [{tbl, publicId, reason}] 
 envelope: { tbl, publicId, hlc, deleted, payload }
 ```
 
-One D1 batch per request:
+Resolve `user_id` and `device_id` from the token hash (never from the body),
+then run one D1 batch of four statements:
 
-1. Resolve `user_id` and `device_id` from the token hash. Never from the body.
-2. Bump `users.seq`, then upsert the pushed envelopes from `json_each` in one
-   statement. An envelope is written only if both hold:
+1. Bump `users.seq`.
+2. Upsert the pushed envelopes from `json_each` over a single JSON parameter,
+   `RETURNING` the accepted keys. An envelope is written only if both hold:
    - `hlc` is greater than the stored `hlc`;
    - `hlc` wall time is no more than 5 min ahead of server time.
-3. Return entries with `seq > cursor` written by other devices, paged.
+3. Select entries after the cursor written by other devices, ordered by
+   `(seq, tbl, public_id)`, one more than the page size to detect `more`.
+4. Read back `users.seq`, used as the cursor when there is no further page.
+
+`rejected` is the pushed envelopes minus the accepted keys, computed in the
+Worker (`drift` if the wall time is too far ahead, otherwise `stale`).
+
+Measured on real D1: a 500-row push with typical rows is about 160 KB and
+runs in a few milliseconds; a 2.6 MB JSON parameter still worked and 10 MB
+failed. The body cap is set well below that, at 1 MB.
 
 Other rules:
 
@@ -385,6 +433,9 @@ Stories for steps 1 to 6 are in `.ai-plans/sync-stories.md`.
   the Mac's own backups hold them.
 - celld is a young, separate implementation; behaviour proven only there is
   not proven for Cloudflare.
+- The free plan's 10 ms of CPU per request may be too little to build a full
+  snapshot. If staging shows that, the fix is the paid Workers plan (about $5
+  a month) or snapshotting one table per run.
 - Accepted: without end-to-end encryption, the server admin can read users 2
   and 3's data.
 
@@ -454,8 +505,12 @@ choice, and a second app must prove it belongs to the same person.
   Check that `build.sh` always signs with a stable identity, or every rebuild
   will prompt for Keychain access.
 
-- D1 push batch: can one batch do the `seq` bump, conditional upsert and
-  paged pull? If not, use a Durable Object per user. (Spike.)
+- Hostname for the sync server. `fairhursts.net` is on GoDaddy's name
+  servers, so a Worker cannot be bound to `sync.fairhursts.net` today, and
+  the planned Cloudflare rate-limit rule needs a zone too. Choices: move the
+  domain's DNS to Cloudflare (free; every existing record must be copied
+  first), or serve from the `workers.dev` address and rate-limit inside the
+  Worker. Blocks the rate-limit rule and the staging deploy stories.
 - BudgieMac change tracking: save hook or SwiftData history. (Spike.)
 - BudgieMac lifecycle rules: Start, Join with existing data, backup restore.
 - Natural-key collision rule: confirm the re-key proposal in the spec.
