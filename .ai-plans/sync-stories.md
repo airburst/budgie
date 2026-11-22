@@ -743,7 +743,13 @@ Acceptance:
   server does not block startup; offline, auto-post runs as today.
 - [unit] A tab without the instance lock never syncs.
 - [e2e] An edit shows as "pending 1", then "synced" without user action.
-Status: todo
+Status: done except the [e2e] criterion (pending the UI). Scheduler in
+`src/services/sync/scheduler.ts`; local writes detected by
+`src/services/sync/write-observer.ts` (wraps the database the services use;
+the sync engine keeps the raw one, so engine writes never notify). Backoff
+30 s, 1 m, 2 m, 4 m, 8 m, then 15 m cap; `retryAfter` honoured; no auto-retry
+for stopped states or `clock_ahead`. Startup sync (3 s timeout) runs before
+auto-post in `runtime.ts`.
 
 ### SY-040 Add and manage devices
 As a user, I can connect another app and disconnect ones I no longer use.
