@@ -6,6 +6,25 @@ PowerSync recommendation in `docs/SYNC_ENGINE_PLAN.md`.
 Clients: **BudgieMac** (`../budgie-mac`, SwiftUI + SwiftData, the daily driver)
 and the **web PWA** on mobile. The Electron app is frozen and gets no sync.
 
+> **The contract is now the source of truth for wire and merge rules:**
+> `sync-server/contract/SPEC.md` (SY-006). Where this plan and the spec
+> differ, the spec wins. Points where the spec changed or tightened the plan:
+>
+> - The web app's 0013 triggers create 32-hex public ids, not UUIDs.
+>   Migration 0014 must make new ids canonical UUIDs, and Start rewrites every
+>   non-UUID id, not only `legacy:*`.
+> - `sync_dirty = 1` cannot tell that a row was edited again while its push
+>   was in flight (a local edit does not change `hlc`). 0014 must record
+>   "edited since sealed" separately, for example as a change counter.
+> - A delete carries the full row, so BudgieMac's `Tombstone` must keep the
+>   last payload, not only `(table, uuid, hlc, dirty)`.
+> - "Delete my cloud data" bumps a per-user data epoch carried in the cursor;
+>   other devices get `data_reset` and stop syncing.
+> - The server tracks the highest format version per user and refuses older
+>   clients with `format_too_old`.
+> - Server tables gain `users.max_format_version`, `users.data_epoch`,
+>   `devices.last_seen_at` and an `enrol_codes` table.
+
 ## 1. Decisions already made
 
 Scope and platforms:
@@ -176,7 +195,8 @@ Other rules:
 
 - `formatVersion` newer than the server knows: accept. Clients do the version
   guard.
-- Body size cap, chunked pushes (about 500 rows), Cloudflare rate-limit rule.
+- Body size cap, chunked pushes (about 500 rows), rate limiting inside the
+  Worker (section 2).
 - CORS: allow `https://budget.fairhursts.net` only. BudgieMac is a native
   client, so CORS does not apply to it.
 - Logs carry user id, device id, counts and reasons. Never payloads.

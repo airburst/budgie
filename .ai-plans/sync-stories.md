@@ -393,6 +393,11 @@ Acceptance:
   dirtiness; ack (`sync_dirty = 0`) sticks; a remote apply leaves
   `sync_dirty = 0` and the payload's `updated_at`, including when it equals
   the old value.
+- [int] New rows get a canonical lowercase UUID public id (the 0013 triggers
+  create 32 hex digits without hyphens); existing ids are left for Start.
+- [int] "Edited since sealed" is recorded separately from dirty (for example
+  a change counter), so an edit made while a push is in flight is not
+  acknowledged away (SPEC.md §8.3).
 - [int] Runs on a fresh database and on one upgraded from 0013 with data;
   the web migration bundle includes it.
 - [manual] Manual migration checklist followed (journal, snapshot, rebuild
@@ -518,7 +523,8 @@ Status: todo
 As a user, turning sync on uploads all my data.
 Depends: SY-026
 Acceptance:
-- [int] Start rewrites every `legacy:*` public id to a fresh UUID in one
+- [int] Start rewrites every public id that is not a canonical UUID
+  (`legacy:*` and the 32-hex ids from 0013) to a fresh UUID in one
   transaction, keeping every foreign key and transfer link intact, then marks
   every row dirty.
 - [int] After the first cycle the server holds every row, including deleted
