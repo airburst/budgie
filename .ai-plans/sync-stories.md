@@ -442,7 +442,7 @@ Acceptance:
   `bankText`).
 - [unit] Applying a row whose referenced parent is missing fails with a named
   error rather than writing a broken link.
-Status: todo
+Status: done
 
 ### SY-025 Importing a snapshot keeps my preferences
 As a user, restoring from a server snapshot does not reset my settings.
@@ -452,7 +452,7 @@ Acceptance:
   row unchanged; with non-empty preferences it behaves as today.
 - [int] Account shortcuts that no longer resolve after such an import are
   dropped, the rest remapped by public id.
-Status: todo
+Status: done
 
 ### SY-026 Run one sync cycle
 As a user with sync enabled, my changes reach the server and other devices'
