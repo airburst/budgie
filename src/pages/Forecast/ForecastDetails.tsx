@@ -11,7 +11,7 @@ import { Amount } from "@/components/ui/amount";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import type { Category } from "@/types/electron";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { ForecastRowWithBalance } from "./ForecastTransactionList";
 
 type Props = {
@@ -24,12 +24,30 @@ type Props = {
  * Read-only details for a projected row. It never edits the real transaction
  * or schedule; inclusion is toggled only from the card.
  */
-export function ForecastDetails({ row, category, onClose }: Props) {
+export function ForecastDetails({
+  row: openRow,
+  category: openCategory,
+  onClose,
+}: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  // Keep showing the last row while the drawer animates out. Emptying it on
+  // close shrank the popup (492px to 87px) during its exit transition, and
+  // under load the drawer then sometimes stayed mounted, closed but never
+  // removed, with focus inside (the phase5-forecast "whole card toggles
+  // once" e2e flake: 3 in 40 repeats before, 0 in 175 after).
+  const [shown, setShown] = useState({ row: openRow, category: openCategory });
+  if (
+    openRow !== null &&
+    (openRow !== shown.row || openCategory !== shown.category)
+  ) {
+    setShown({ row: openRow, category: openCategory });
+  }
+  const row = openRow ?? shown.row;
+  const category = openRow ? openCategory : shown.category;
 
   return (
     <ResponsiveOverlay
-      open={row !== null}
+      open={openRow !== null}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
