@@ -40,13 +40,22 @@ export const createPayeeService = (database: DatabaseCapability) => ({
     });
     return rows[0] ? mapPayee(rows[0]) : null;
   },
-  create: async (data: PayeeCreate) =>
-    (
+  create: async (data: PayeeCreate) => {
+    // payees.name is UNIQUE across deleted rows too: revive a deleted payee
+    // with this name (keeping its public id) instead of inserting.
+    const revived = await database.query<PayeeRow>({
+      sql: `UPDATE payees SET category_id = ?, amount = ?, deleted_at = NULL
+        WHERE name = ? AND deleted_at IS NOT NULL RETURNING *`,
+      params: [data.categoryId, data.amount, data.name],
+    });
+    if (revived[0]) return revived.map(mapPayee);
+    return (
       await database.query<PayeeRow>({
         sql: "INSERT INTO payees (name, category_id, amount) VALUES (?, ?, ?) RETURNING *",
         params: [data.name, data.categoryId, data.amount],
       })
-    ).map(mapPayee),
+    ).map(mapPayee);
+  },
   update: async (id: number, data: PayeeUpdate) => {
     const fields = Object.entries(data).filter(
       ([, value]) => value !== undefined,
@@ -77,7 +86,8 @@ export const createPayeeService = (database: DatabaseCapability) => ({
     (
       await database.query<PayeeRow>({
         sql: `INSERT INTO payees (name, category_id, amount) VALUES (?, ?, ?)
-        ON CONFLICT(name) DO UPDATE SET category_id = excluded.category_id, amount = excluded.amount
+        ON CONFLICT(name) DO UPDATE SET category_id = excluded.category_id, amount = excluded.amount,
+          deleted_at = NULL
         RETURNING *`,
         params: [name, categoryId, amount],
       })

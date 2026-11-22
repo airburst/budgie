@@ -283,12 +283,15 @@ can drive it with `createTestDb()`.
   transfers), so two devices posting the same occurrence merge into one row.
   The function is defined in the spec and implemented in TS and Swift.
 - **Natural-key collisions** (`payees.name`, `envelope_categories.category_id`,
-  `budget_allocations(envelope_id, month)`): two rows with different public
-  ids claim one key. Proposed rule: the higher `hlc` keeps the key; the local
-  row is re-keyed to the winner's public id and takes its payload; a delete
-  envelope is pushed for the losing id if it was ever pushed. A deleted row
-  still occupies the inline unique constraint, so the loser cannot simply be
-  kept as a tombstone. To be fixed in the spec with fixtures.
+  `budget_allocations(envelope_id, month)`): decided in SY-009, contract
+  SPEC.md section 8.10, with fixtures. Deleted rows never hold a key; among
+  live rows claiming one key the lowest public id keeps it, the highest
+  `hlc` supplies the content, and every other claimant is deleted and pushed.
+  The earlier "higher `hlc` keeps the key, re-key the local row" proposal was
+  replaced: a clock-based winner lets two devices delete different rows and
+  leave none. The web keeps its plain `UNIQUE` constraints (two are inline
+  and cannot change without a table rebuild) and instead stores a deleted
+  row that would block a key in a tombstone store; SY-029 adds it.
 - **Reconciliation.** After apply, compare each account's reconciled total with
   its last `account_reconciliations` balance. On mismatch show a "review
   reconciliation" notice. No automatic repair.
@@ -527,7 +530,12 @@ choice, and a second app must prove it belongs to the same person.
 
 - BudgieMac change tracking: save hook or SwiftData history. (Spike.)
 - BudgieMac lifecycle rules: Start, Join with existing data, backup restore.
-- Natural-key collision rule: confirm the re-key proposal in the spec.
+- ~~Natural-key collision rule~~: settled in SY-009 (section 6, SPEC.md
+  section 8.10).
 - Payee uniqueness on the Mac. (Deferred.)
-- `budget_allocations` and `payees` inserts may fail today when a deleted row
-  holds the same key. Not confirmed; check before the collision work.
+- ~~`budget_allocations` and `payees` inserts may fail today when a deleted
+  row holds the same key~~: confirmed and fixed in SY-009. `payees.create`
+  and `budgets.upsertAllocation` failed with a UNIQUE error, `payees.upsert`
+  left the payee deleted, and quick fill skipped a month whose allocation was
+  deleted. All now revive the deleted row (same public id), as
+  `envelopes.createCategory` already did.

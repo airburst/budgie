@@ -182,7 +182,7 @@ Acceptance:
   wins; where remote wins; where the losing row was already pushed; where the
   key is held by a deleted row.
 - [doc] Plan §6 and "Unresolved questions" updated.
-Status: todo
+Status: done
 
 ## M4 Server (step 4)
 
