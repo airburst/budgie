@@ -442,7 +442,7 @@ Acceptance:
   row unchanged; with non-empty preferences it behaves as today.
 - [int] Account shortcuts that no longer resolve after such an import are
   dropped, the rest remapped by public id.
-Status: todo
+Status: done
 
 ### SY-026 Run one sync cycle
 As a user with sync enabled, my changes reach the server and other devices'
