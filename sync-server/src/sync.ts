@@ -165,14 +165,36 @@ export async function handleSync(
   const maxWall = nowMs + DRIFT_LIMIT_MS;
   const pushJson = JSON.stringify(req.push);
 
+  // The auth read above is a separate batch, so a delete-data, revoke or
+  // format bump can land after it. Every statement below therefore re-checks,
+  // inside the one transaction, that the device is still active, the user's
+  // data epoch is still the one this request was validated against and no newer
+  // format version exists. If not, nothing is written or returned, and the
+  // read-back (statement 4) tells us which condition failed.
+  const active = `EXISTS (SELECT 1 FROM users WHERE id = ? AND data_epoch = ? AND max_format_version <= ?)
+                  AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`;
+  const activeParams = [
+    auth.userId,
+    auth.dataEpoch,
+    req.formatVersion,
+    auth.deviceId,
+  ];
+
   const [, upsert, page, state] = await executor.batch([
     // 1. Bump the user's sequence once per request, raise max_format_version.
     {
       sql: `UPDATE users
             SET seq = seq + 1,
                 max_format_version = MAX(max_format_version, ?)
-            WHERE id = ?`,
-      params: [req.formatVersion, auth.userId],
+            WHERE id = ? AND data_epoch = ? AND max_format_version <= ?
+              AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`,
+      params: [
+        req.formatVersion,
+        auth.userId,
+        auth.dataEpoch,
+        req.formatVersion,
+        auth.deviceId,
+      ],
     },
     // 2. Upsert the pushed envelopes. The payload travels as a JSON string
     //    inside the parameter, so json_extract returns it unchanged.
@@ -184,23 +206,32 @@ export async function handleSync(
                    (SELECT seq FROM users WHERE id = ?)
             FROM json_each(?) AS e
             WHERE CAST(substr(json_extract(e.value, '$.hlc'), 1, 15) AS INTEGER) <= ?
+              AND ${active}
             ON CONFLICT (user_id, tbl, public_id) DO UPDATE SET
               hlc = excluded.hlc, deleted = excluded.deleted, payload = excluded.payload,
               device_id = excluded.device_id, seq = excluded.seq
             WHERE excluded.hlc > changes.hlc
             RETURNING tbl, public_id`,
-      params: [auth.userId, auth.deviceId, auth.userId, pushJson, maxWall],
+      params: [
+        auth.userId,
+        auth.deviceId,
+        auth.userId,
+        pushJson,
+        maxWall,
+        ...activeParams,
+      ],
     },
     // 3. The next page after the cursor, written by other devices.
     {
       sql: `SELECT tbl, public_id, hlc, deleted, payload, seq FROM changes
-            WHERE user_id = ? AND device_id != ?
+            WHERE user_id = ? AND device_id != ? AND ${active}
               AND (seq, tbl, public_id) > (?, ?, ?)
             ORDER BY seq, tbl, public_id
             LIMIT ?`,
       params: [
         auth.userId,
         auth.deviceId,
+        ...activeParams,
         req.cursor.seq,
         req.cursor.tbl,
         req.cursor.publicId,
@@ -209,10 +240,26 @@ export async function handleSync(
     },
     // 4. Read back the counters.
     {
-      sql: "SELECT seq, max_format_version FROM users WHERE id = ?",
-      params: [auth.userId],
+      sql: `SELECT u.seq AS seq, u.max_format_version AS max_format_version,
+                   u.data_epoch AS data_epoch,
+                   (SELECT revoked_at FROM devices WHERE id = ?) AS revoked_at
+            FROM users u WHERE u.id = ?`,
+      params: [auth.deviceId, auth.userId],
     },
   ]);
+
+  const st = state?.rows[0];
+  if (!st) throw new ApiError("bad_token");
+  if (st.revoked_at !== null && st.revoked_at !== undefined) {
+    throw new ApiError("revoked");
+  }
+  if (Number(st.data_epoch) !== auth.dataEpoch)
+    throw new ApiError("data_reset");
+  if (Number(st.max_format_version) > req.formatVersion) {
+    throw new ApiError("format_too_old", {
+      formatVersion: Number(st.max_format_version),
+    });
+  }
 
   const stored = new Set(
     (upsert?.rows ?? []).map(

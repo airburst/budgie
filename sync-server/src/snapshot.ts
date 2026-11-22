@@ -48,7 +48,17 @@ export async function buildSnapshot(
   userId: string,
   now: number,
 ): Promise<string | null> {
-  const [res] = await executor.batch([
+  return (await buildSnapshotAt(executor, userId, now))?.text ?? null;
+}
+
+/** As buildSnapshot, also returning the data epoch the rows were read under. */
+export async function buildSnapshotAt(
+  executor: SqlExecutor,
+  userId: string,
+  now: number,
+): Promise<{ text: string; epoch: number } | null> {
+  const [epochRes, res] = await executor.batch([
+    { sql: "SELECT data_epoch FROM users WHERE id = ?", params: [userId] },
     {
       sql: `SELECT tbl, chunk, json_group_array(json(doc)) AS arr
             FROM (
@@ -67,7 +77,8 @@ export async function buildSnapshot(
     },
   ]);
   const rows = res?.rows ?? [];
-  if (rows.length === 0) return null;
+  if (rows.length === 0 || !epochRes?.rows[0]) return null;
+  const epoch = Number(epochRes.rows[0].data_epoch);
 
   const byTable = new Map<string, string[]>();
   for (const r of rows) {
@@ -92,13 +103,18 @@ export async function buildSnapshot(
   const canonical = JSON.stringify(JSON.parse(draft));
   const checksum = await sha256Hex(canonical);
   // `"checksum":""` first occurs in the manifest, which is the first key.
-  return canonical.replace('"checksum":""', `"checksum":"${checksum}"`);
+  return {
+    text: canonical.replace('"checksum":""', `"checksum":"${checksum}"`),
+    epoch,
+  };
 }
 
 export interface SnapshotRunResult {
   date: string;
   users: number;
   written: number;
+  /** Not written because the user's data was deleted meanwhile. */
+  skipped: number;
   failed: number;
   removed: number;
 }
@@ -115,6 +131,7 @@ export async function runSnapshots(
     date,
     users: 0,
     written: 0,
+    skipped: 0,
     failed: 0,
     removed: 0,
   };
@@ -125,18 +142,50 @@ export async function runSnapshots(
     const userId = row.user_id as string;
     result.users++;
     try {
-      const body = await buildSnapshot(executor, userId, now);
-      if (body === null) continue;
-      await store.put(snapshotKey(userId, date), body);
-      await executor.batch([
+      const built = await buildSnapshotAt(executor, userId, now);
+      if (built === null) continue;
+      const key = snapshotKey(userId, date);
+      // 1. Index first, and only if the user's data epoch is still the one the
+      //    rows were read under: a delete-data after the read bumped it, so
+      //    nothing is indexed or written for the deleted data.
+      const [indexed] = await executor.batch([
         {
           sql: `INSERT INTO snapshots (user_id, snapshot_date, size, created_at)
-                VALUES (?, ?, ?, ?)
+                SELECT ?, ?, ?, ?
+                WHERE EXISTS (SELECT 1 FROM users WHERE id = ? AND data_epoch = ?)
                 ON CONFLICT (user_id, snapshot_date)
                 DO UPDATE SET size = excluded.size, created_at = excluded.created_at`,
-          params: [userId, date, new TextEncoder().encode(body).length, now],
+          params: [
+            userId,
+            date,
+            new TextEncoder().encode(built.text).length,
+            now,
+            userId,
+            built.epoch,
+          ],
         },
       ]);
+      if (!indexed || indexed.changes === 0) {
+        result.skipped++;
+        continue;
+      }
+      // 2. Put, then confirm the index row survived. delete-data removes index
+      //    rows in the same transaction that deletes the data, before it
+      //    deletes objects, so if the row is gone the delete has run and may
+      //    have missed this object: remove it. If the row is still there, any
+      //    later delete will find it (index and key prefix).
+      await store.put(key, built.text);
+      const [still] = await executor.batch([
+        {
+          sql: "SELECT 1 AS ok FROM snapshots WHERE user_id = ? AND snapshot_date = ?",
+          params: [userId, date],
+        },
+      ]);
+      if (!still || still.rows.length === 0) {
+        await store.delete(key);
+        result.skipped++;
+        continue;
+      }
       result.written++;
     } catch (error) {
       // No payloads, no error message (it can echo data).
