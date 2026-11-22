@@ -609,7 +609,13 @@ Acceptance:
 - [int] Account shortcuts are remapped by public id; ones that do not
   resolve are dropped. Other preferences are kept.
 - [int] A failed join leaves the device's data as it was.
-Status: todo
+Status: done. `sync/join.ts` exports `joinSync(database, deps)` (enrolment
+already done). It pulls everything from cursor `"0"` with empty pushes into
+memory first, then in one transaction marks every row deleted (clean, no
+HLC, store rows included), applies the pull with the after-apply hooks,
+remaps account shortcuts by public id and stores the cursor; any failure
+leaves the data untouched. The joining device keeps its old rows as clean
+deleted rows that are never pushed. Tests: `sync-join.test.ts`.
 
 ### SY-033 Handle sync errors
 As a user, a failed sync tells me what is wrong and loses nothing.
