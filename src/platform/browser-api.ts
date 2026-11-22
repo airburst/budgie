@@ -21,6 +21,7 @@ import {
   createFetchTransport,
 } from "@/services/sync/transport";
 import type { ApplicationAPI } from "@/types/electron";
+import { observeWrites } from "@/services/sync/write-observer";
 import type { BrowserDatabase } from "@/web/db/browser-database";
 
 const unsupported = (operation: string): never => {
@@ -33,6 +34,11 @@ export type BrowserApiOptions = {
    * it every mutating sync method refuses (`not_active_tab`).
    */
   hasLock?: () => boolean;
+  /**
+   * Called after every local write made through the application services
+   * (SY-039). Never called for writes made by the sync engine itself.
+   */
+  onLocalWrite?: () => void;
   /** Overrides for tests; default to the real fetch client and config. */
   sync?: Partial<
     Pick<
@@ -43,11 +49,16 @@ export type BrowserApiOptions = {
 };
 
 export const createBrowserApplicationApi = (
-  database: BrowserDatabase,
+  rawDatabase: BrowserDatabase,
   options: BrowserApiOptions = {},
 ): ApplicationAPI => {
+  // The sync controller keeps the raw handle so engine writes never count as
+  // local writes; everything else goes through the observed one.
+  const database = options.onLocalWrite
+    ? observeWrites(rawDatabase, options.onLocalWrite)
+    : rawDatabase;
   const sync = createSyncApi({
-    database,
+    database: rawDatabase,
     transport: createFetchTransport(
       SYNC_SERVER_URL ? { baseUrl: SYNC_SERVER_URL } : {},
     ),

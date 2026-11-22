@@ -1,4 +1,3 @@
-import { createBrowserApplicationApi } from "@/platform/browser-api";
 import { BrowserDatabaseError } from "@/web/db/browser-database-errors";
 import { initializeWebRuntime } from "@/web/runtime/runtime";
 import { StrictMode } from "react";
@@ -125,9 +124,7 @@ const start = async () => {
       return;
     }
     registerBrowserServiceWorker();
-    window.api = createBrowserApplicationApi(runtime.database, {
-      hasLock: runtime.isActive,
-    });
+    if (runtime.api) window.api = runtime.api;
     const resume = () => {
       if (document.visibilityState === "visible") void runtime.resume();
     };
