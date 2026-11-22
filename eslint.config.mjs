@@ -12,6 +12,7 @@ const eslintConfig = [
       ".vinxi/**",
       ".next/**",
       "node_modules/**",
+      ".claude/**",
       "**/*.js",
       "**/*.mjs",
     ],
