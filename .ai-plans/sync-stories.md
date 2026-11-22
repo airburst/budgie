@@ -133,7 +133,7 @@ Acceptance:
 - [unit] A test checks that every `Portable*` row type in
   `src/services/portable-data.ts` matches the spec's field list for its table,
   so the two cannot drift silently.
-Status: todo
+Status: done
 
 ### SY-007 Define the conformance fixture format
 As the author of either engine, I can run the same merge cases and get a
