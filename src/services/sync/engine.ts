@@ -12,6 +12,7 @@ import type {
   DatabaseTransaction,
 } from "@/platform/database";
 import { type PortableTable, PORTABLE_TABLES } from "@/services/portable-data";
+import { defaultAfterApplyHooks } from "@/services/sync/after-apply";
 import {
   acknowledgePush,
   applyPull,
@@ -19,6 +20,7 @@ import {
   countByTable,
   type AppliedRow,
 } from "@/services/sync/apply";
+import { findReconciliationsNeedingReview } from "@/services/sync/reconciliation-review";
 import {
   FormatTooNewError,
   SyncNotConfiguredError,
@@ -73,6 +75,7 @@ export type SyncEngineDeps = {
   transport: SyncTransport;
   /** Clock in milliseconds since the Unix epoch (seal fallback, engine edits). */
   now: () => number;
+  /** Defaults to `defaultAfterApplyHooks` (after-apply.ts). */
   afterApply?: readonly AfterApplyHook[];
   /** Defaults to SYNC_FORMAT_VERSION. */
   formatVersion?: number;
@@ -97,7 +100,14 @@ export type SyncRoundResult = {
   cursor: string;
 };
 
-export type SyncCycleResult = SyncRoundResult & { rounds: number };
+export type SyncCycleResult = SyncRoundResult & {
+  rounds: number;
+  /**
+   * Public ids of accounts whose reconciliation no longer adds up after this
+   * cycle (SPEC.md 8.11). Computed fresh each cycle, never stored.
+   */
+  reconciliationReview: string[];
+};
 
 type SyncStateRow = {
   device_id: string | null;
@@ -198,7 +208,7 @@ export const runSyncRound = async (
       deviceId: state.deviceId,
       nowMs,
     });
-    for (const hook of deps.afterApply ?? []) {
+    for (const hook of deps.afterApply ?? defaultAfterApplyHooks) {
       await hook(transaction, { deviceId: state.deviceId, nowMs, applied: rows });
     }
     await acknowledgePush(transaction, outgoing, rejected);
@@ -234,7 +244,7 @@ export const runSyncCycle = async (
   deps: SyncEngineDeps,
 ): Promise<SyncCycleResult> => {
   const maxRounds = deps.maxRounds ?? 3;
-  let total: SyncCycleResult | null = null;
+  let total: Omit<SyncCycleResult, "reconciliationReview"> | null = null;
   for (let round = 1; round <= maxRounds; round++) {
     const { pushedEnvelopes, ...result } = await runSyncRound(database, deps);
     total = total
@@ -248,5 +258,8 @@ export const runSyncCycle = async (
       : { ...result, rounds: round };
     if ((await countUnsettled(database, pushedEnvelopes)) === 0) break;
   }
-  return total as SyncCycleResult;
+  return {
+    ...(total as Omit<SyncCycleResult, "reconciliationReview">),
+    reconciliationReview: await findReconciliationsNeedingReview(database),
+  };
 };
