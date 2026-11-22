@@ -36,3 +36,4 @@ budgie-export*.json
 sync-server/.celld
 sync-server/.wrangler
 /build-sync
+/build-sync-real

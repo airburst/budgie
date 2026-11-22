@@ -743,7 +743,9 @@ Acceptance:
   server does not block startup; offline, auto-post runs as today.
 - [unit] A tab without the instance lock never syncs.
 - [e2e] An edit shows as "pending 1", then "synced" without user action.
-Status: done except the [e2e] criterion (pending the UI). Scheduler in
+Status: done. The [e2e] criterion is covered by "an edit shows as pending,
+then synced without user action" in `e2e/sync-ui.spec.ts` (mocked server)
+and, against the real server, by `e2e/sync-real.spec.ts` (SY-044). Scheduler in
 `src/services/sync/scheduler.ts`; local writes detected by
 `src/services/sync/write-observer.ts` (wraps the database the services use;
 the sync engine keeps the raw one, so engine writes never notify). Backoff
@@ -810,7 +812,15 @@ Acceptance:
   enrol with a device code, Join, see the transaction, edit it. A sees the
   edit after a sync. Reloading either keeps the state.
 - [e2e] The run is part of `bun run test:e2e` and CI.
-Status: todo
+Status: done (2026-11-22). `e2e/sync-real.spec.ts` in the Playwright project
+`sync-real`: a third build (port 4175) whose sync URL is the Worker on celld
+0.6.3 (port 4600), started by `scripts/e2e-sync-server.ts` as a `webServer`
+from a fresh temp copy of `sync-server/` (empty database every run; never
+reused). The spec seeds its user and invite through `/dev/admin/add-user`;
+no network mocks. CI installs a pinned, checksummed celld. Found and fixed:
+the server rate-limited CORS preflights, so a limited browser saw "could not
+reach the sync server" instead of `429` with `retryAfter`; preflights now
+answer `204` first and are not counted (SPEC 2.3).
 
 ### SY-045 Seed the PWA from a BudgieMac export
 As the maintainer, I can test sync on my phone with real data before the Mac

@@ -26,4 +26,17 @@ jobs:
       - run: bun run check-types
       - run: bun run test
       - run: bunx playwright install --with-deps chromium
+      # celld runs the real sync server for e2e/sync-real.spec.ts (SY-044).
+      # Pinned release and checksum; scripts/e2e-sync-server.ts reads $CELLD.
+      - name: Install celld
+        env:
+          CELLD_VERSION: v0.6.3
+          CELLD_SHA256: 5084a083472cf036551a7eac63fa24d22bb9a56323c517f63205724c12783047
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/celld.gz" \
+            "https://github.com/denoland/celld/releases/download/$CELLD_VERSION/celld-x86_64-unknown-linux-gnu.gz"
+          echo "$CELLD_SHA256  $RUNNER_TEMP/celld.gz" | sha256sum -c -
+          gzip -dc "$RUNNER_TEMP/celld.gz" > "$RUNNER_TEMP/celld"
+          chmod +x "$RUNNER_TEMP/celld"
+          echo "CELLD=$RUNNER_TEMP/celld" >> "$GITHUB_ENV"
       - run: bun run test:e2e

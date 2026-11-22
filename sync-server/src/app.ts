@@ -137,15 +137,23 @@ async function route(request: Request, deps: HandlerDeps): Promise<Response> {
   throw new ApiError("not_found");
 }
 
-/** Rate limit, preflight, body cap, then the route (SPEC 2.4 order). */
+/**
+ * Preflight, then rate limit, body cap and the route (SPEC 2.4 order).
+ *
+ * A preflight always answers 204 (SPEC 2.3) and is not counted: a browser
+ * treats a non-2xx preflight as a network failure, so a rate-limited
+ * preflight would hide the 429 and its `retryAfter` from the web app (it
+ * would see "offline"). The real request that follows is still limited.
+ * Answering a preflight touches no storage.
+ */
 async function pipeline(
   request: Request,
   deps: HandlerDeps,
 ): Promise<Response> {
+  if (request.method === "OPTIONS") return new Response(null, { status: 204 });
+
   const retryAfter = deps.ipLimiter?.check(clientIp(request), deps.now());
   if (retryAfter) throw new ApiError("rate_limited", { retryAfter });
-
-  if (request.method === "OPTIONS") return new Response(null, { status: 204 });
 
   const text = await readCappedBody(request);
   const bounded =
