@@ -548,6 +548,12 @@ Acceptance:
   order, and end with one live payee and identical rows.
 - [int] The same for an envelope category and for a monthly allocation.
 - [int] An apply never aborts on a unique constraint.
+- [int] Rule and storage per SPEC.md §8.10: the lowest live public id keeps
+  the key; a deleted row that would block a key is held in a tombstone store
+  (the unique constraints stay as they are; no table rebuild), is still
+  pushed, pulled and undeleted like any row, and appears in exports.
+- [int] Portable import of a package holding a deleted and a live row with
+  the same natural key (a server snapshot can) succeeds.
 Status: todo
 
 ### SY-030 Flag reconciliations that no longer add up
