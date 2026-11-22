@@ -279,7 +279,9 @@ Acceptance:
 - [unit] A row changed between two pages is not lost.
 - [unit] Cursor 0 returns the user's whole data set (used by Join).
 - [unit] A push and a pull in the same request work together.
-Status: todo
+Status: done. Tested on better-sqlite3 with small page sizes; paging, cursor
+forms and `data_reset` were also run on celld 0.6.3 (650 rows over two pages).
+The cursor is `<epoch>:<seq>` or `<epoch>:<seq>:<tbl>:<publicId>` (SPEC 12).
 
 ### SY-015 Add a device from an enrolled one
 As a user, I connect a second app by entering a short code shown on my first.

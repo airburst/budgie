@@ -57,3 +57,14 @@ apply `migrations/` on boot and serve `POST /dev/admin/add-user`
 (`{"name"}`) and `POST /dev/admin/new-invite` (`{"user"}`), returning the
 invite code as JSON. `DEV_MODE` must never be set in `wrangler.jsonc`; without
 it those routes answer `404 not_found`.
+
+## Rate limits
+
+Counted in the D1 table `rate_limits` (fixed windows), because Worker memory
+is per isolate. Values live in `src/rate-limit.ts`:
+
+- `POST /v1/enrol`: 10 failed attempts per IP per 15 minutes, then `429`.
+  A successful enrol is not counted. The IP is `CF-Connecting-IP`.
+
+Expired rows in `rate_limits` are overwritten on the next failure for the same
+bucket; they are never swept (a few bytes per IP that ever failed).
