@@ -140,7 +140,7 @@ export const createTransaction = async (
   const target = targetAccount[0];
 
   const counterCategory = await database.query<{ id: number }>({
-    sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? LIMIT 1",
+    sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? AND deleted = 0 AND deleted_at IS NULL LIMIT 1",
     params: [category.parent_id, sourceAccount[0].name],
   });
 
@@ -284,7 +284,7 @@ export const createTransactionService = (database: DatabaseCapability) => ({
         });
         if (!target[0] || !source[0]) return null;
         const counterCategory = await transaction.query<{ id: number }>({
-          sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? LIMIT 1",
+          sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? AND deleted = 0 AND deleted_at IS NULL LIMIT 1",
           params: [category.parent_id, source[0].name],
         });
         const rows = await transaction.query<TransactionRow>({
