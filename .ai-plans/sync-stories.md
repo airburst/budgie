@@ -162,7 +162,7 @@ Acceptance:
   at least 10 input and output vectors and the test runs them all.
 - [unit] Output is a valid lowercase UUID and differs between the two legs of
   a transfer.
-Status: todo
+Status: done
 
 ### SY-009 Decide the natural-key collision rule
 As the author of either engine, I know exactly what happens when two devices

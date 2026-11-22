@@ -5,9 +5,74 @@
   "oneOf": [
     {
       "$ref": "#/definitions/mergeFixture"
+    },
+    {
+      "$ref": "#/definitions/idsFixture"
     }
   ],
   "definitions": {
+    "idsFixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "formatVersion",
+        "function",
+        "description",
+        "vectors",
+        "invalid"
+      ],
+      "properties": {
+        "kind": { "const": "ids" },
+        "formatVersion": { "const": 1 },
+        "function": { "const": "autoPostTransactionId" },
+        "description": { "type": "string", "minLength": 1 },
+        "vectors": {
+          "type": "array",
+          "minItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schedulePublicId",
+              "dueDate",
+              "leg",
+              "input",
+              "sha256",
+              "id"
+            ],
+            "properties": {
+              "schedulePublicId": { "$ref": "#/definitions/uuid" },
+              "dueDate": {
+                "type": "string",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              },
+              "leg": { "enum": ["account", "transfer"] },
+              "input": { "type": "string" },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+              }
+            }
+          }
+        },
+        "invalid": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["schedulePublicId", "dueDate", "leg", "reason"],
+            "properties": {
+              "schedulePublicId": { "type": "string" },
+              "dueDate": { "type": "string" },
+              "leg": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "uuid": {
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"

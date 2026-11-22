@@ -13,6 +13,17 @@ listed fields, with the listed types. Budgie's
 Files are told apart by `kind`:
 
 - `"merge"`: one sync round against a scripted server (below).
+- `"ids"`: test vectors for the deterministic auto-post id function
+  (`ids.json`, `../SPEC.md` section 8.9).
+
+## Id vectors (`ids.json`)
+
+`vectors[]` holds `schedulePublicId`, `dueDate`, `leg`, the exact `input`
+string that is hashed, its `sha256` in lowercase hex, and the resulting `id`.
+A harness checks, for every vector, that its function builds the same input
+string, and returns the same id. `invalid[]` holds inputs the function must
+refuse (`reason` is for people, not compared). The hashes were produced with
+Python's `hashlib`, independently of either engine.
 
 ## Merge fixtures
 
@@ -128,3 +139,4 @@ Numbers compare by value (`1500` equals `1500.0`). Strings compare exactly.
 | `remote-delete.json`                      | SY-007 | Remote delete applies `deletedAt` and the `deleted` flag.         |
 | `remote-undelete-beats-older-delete.json` | SY-007 | Undelete with a higher HLC revives; with a lower one, skipped.    |
 | `local-dirty-sealed-and-pushed.json`      | SY-007 | Seal rule on new, re-edited and already sealed rows; ack.         |
+| `ids.json`                                | SY-008 | Deterministic auto-post id vectors (kind `ids`).                  |
