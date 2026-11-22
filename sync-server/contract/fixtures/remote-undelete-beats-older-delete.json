@@ -1,0 +1,113 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "id": "remote-undelete-beats-older-delete",
+  "description": "Pure last-write-wins on the deleted state. An undelete with a higher HLC revives a locally deleted row with the undelete's payload; an undelete with a lower HLC than a local delete is skipped and the row stays deleted.",
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "given": [
+    {
+      "tbl": "payees",
+      "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+        "createdAt": "2026-11-02 12:00:00",
+        "updatedAt": "2026-11-22 10:13:20",
+        "deletedAt": "2026-11-22 10:13:20",
+        "name": "Tesco",
+        "categoryPublicId": null,
+        "amount": null
+      }
+    },
+    {
+      "tbl": "payees",
+      "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "d5e6f7a8-1b2c-4d3e-9f4a-0b1c2d3e4f5a",
+        "createdAt": "2026-11-02 12:00:00",
+        "updatedAt": "2026-11-22 10:15:30",
+        "deletedAt": "2026-11-22 10:15:30",
+        "name": "Sainsbury's",
+        "categoryPublicId": null,
+        "amount": null
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "payees",
+        "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+          "createdAt": "2026-11-02 12:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 25
+        }
+      },
+      {
+        "tbl": "payees",
+        "publicId": "d5e6f7a8-1b2c-4d3e-9f4a-0b1c2d3e4f5a",
+        "hlc": "001795342400000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "d5e6f7a8-1b2c-4d3e-9f4a-0b1c2d3e4f5a",
+          "createdAt": "2026-11-02 12:00:00",
+          "updatedAt": "2026-11-22 10:13:20",
+          "deletedAt": null,
+          "name": "Sainsbury's",
+          "categoryPublicId": null,
+          "amount": 40
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [],
+    "rows": [
+      {
+        "tbl": "payees",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+          "createdAt": "2026-11-02 12:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 25
+        }
+      },
+      {
+        "tbl": "payees",
+        "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "d5e6f7a8-1b2c-4d3e-9f4a-0b1c2d3e4f5a",
+          "createdAt": "2026-11-02 12:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": "2026-11-22 10:15:30",
+          "name": "Sainsbury's",
+          "categoryPublicId": null,
+          "amount": null
+        }
+      }
+    ],
+    "error": null
+  }
+}

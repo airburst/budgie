@@ -149,7 +149,7 @@ Acceptance:
   local dirty row sealed and pushed.
 - [doc] `contract/VERSION` holds the contract version that BudgieMac's copy
   script will record.
-Status: todo
+Status: done
 
 ### SY-008 Deterministic ids for auto-posted transactions
 As a user with two devices, a scheduled payment that both devices post

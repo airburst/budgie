@@ -1,0 +1,243 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Budgie sync conformance fixture",
+  "description": "Validates every file in sync-server/contract/fixtures/. See fixtures/README.md.",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/mergeFixture"
+    }
+  ],
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "hlc": {
+      "type": "string",
+      "pattern": "^[0-9]{15}:[0-9]{5}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "tbl": {
+      "enum": [
+        "accounts",
+        "categories",
+        "envelopes",
+        "transactions",
+        "account_reconciliations",
+        "scheduled_transactions",
+        "payees",
+        "envelope_categories",
+        "budget_allocations",
+        "budget_transfers"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "required": ["publicId", "createdAt", "updatedAt", "deletedAt"],
+      "properties": {
+        "publicId": {
+          "$ref": "#/definitions/uuid"
+        }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tbl", "publicId", "hlc", "deleted", "payload"],
+      "properties": {
+        "tbl": {
+          "$ref": "#/definitions/tbl"
+        },
+        "publicId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "hlc": {
+          "$ref": "#/definitions/hlc"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "payload": {
+          "$ref": "#/definitions/payload"
+        }
+      }
+    },
+    "localRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tbl", "hlc", "dirty", "unsealed", "payload"],
+      "properties": {
+        "tbl": {
+          "$ref": "#/definitions/tbl"
+        },
+        "hlc": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/hlc"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dirty": {
+          "type": "boolean"
+        },
+        "unsealed": {
+          "type": "boolean"
+        },
+        "payload": {
+          "$ref": "#/definitions/payload"
+        },
+        "local": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pendingReconcileBalance": {
+              "type": ["number", "null"]
+            },
+            "pendingReconcileDate": {
+              "type": ["string", "null"]
+            }
+          }
+        }
+      }
+    },
+    "localEdit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tbl", "payload"],
+      "properties": {
+        "tbl": {
+          "$ref": "#/definitions/tbl"
+        },
+        "payload": {
+          "$ref": "#/definitions/payload"
+        }
+      }
+    },
+    "rejection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tbl", "publicId", "reason"],
+      "properties": {
+        "tbl": {
+          "$ref": "#/definitions/tbl"
+        },
+        "publicId": {
+          "$ref": "#/definitions/uuid"
+        },
+        "reason": {
+          "enum": ["stale", "drift"]
+        }
+      }
+    },
+    "mergeFixture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "formatVersion",
+        "id",
+        "description",
+        "device",
+        "given",
+        "response",
+        "expect"
+      ],
+      "properties": {
+        "kind": {
+          "const": "merge"
+        },
+        "formatVersion": {
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "device": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["deviceId", "now"],
+          "properties": {
+            "deviceId": {
+              "$ref": "#/definitions/uuid"
+            },
+            "now": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "given": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/localRow"
+          }
+        },
+        "editsInFlight": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/localEdit"
+          }
+        },
+        "response": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pull", "rejected"],
+          "properties": {
+            "formatVersion": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "pull": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/envelope"
+              }
+            },
+            "rejected": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/rejection"
+              }
+            }
+          }
+        },
+        "expect": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["push", "rows", "error"],
+          "properties": {
+            "push": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/envelope"
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/localRow"
+              }
+            },
+            "error": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "enum": ["missing_reference", "invalid_envelope"]
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

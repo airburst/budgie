@@ -8,6 +8,10 @@ built from this document alone, plus `tables.json` and the conformance
 fixtures, must interoperate with the others. Where this document and any
 implementation disagree, this document wins until it is changed.
 
+Contract version: see `VERSION` (section 4.1). Conformance fixtures are in
+`fixtures/`, described by `fixtures/README.md` and validated by
+`fixture.schema.json`; both engines MUST pass every fixture.
+
 The key words MUST, MUST NOT, SHOULD and MAY are used in their usual sense.
 
 Contents:
@@ -234,6 +238,20 @@ change what is stored in or read from a payload.
 The sync format version is separate from `PORTABLE_FORMAT_VERSION` in
 `src/services/portable-data.ts` (also 1). The two are expected to move together
 when a payload field changes, but neither implies the other.
+
+### 4.1 Contract version
+
+`contract/VERSION` holds the **contract version**: a positive integer on one
+line, followed by a newline. It identifies the whole contract directory
+(`SPEC.md`, `tables.json`, `fixture.schema.json` and `fixtures/`), not the wire
+format. BudgieMac's fixture copy script records it, so a stale copy fails a
+test, and `GET /v1/health` returns it.
+
+- The server's `CONTRACT_VERSION` constant (`sync-server/src/version.ts`) MUST
+  equal it; a Budgie unit test checks this.
+- It is `1` until BudgieMac first copies the contract. From then on, every
+  change under `contract/` merged to `main` adds one to it, whether or not the
+  format version changes.
 
 ## 5. Row payloads
 
@@ -741,8 +759,8 @@ Response `200`:
 ```
 
 - `formatVersion`: the highest format version this server build knows.
-- `contractVersion`: the contents of `contract/VERSION` that the server was
-  built with (the file is added by story SY-007).
+- `contractVersion`: the contract version the server was built with
+  (section 4.1), as a string.
 
 ### 9.2 `POST /v1/enrol`
 
