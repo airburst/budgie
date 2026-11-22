@@ -40,8 +40,19 @@ bun run new-invite <user>    [--remote] [--env staging]
 Each prints a one-time invite code (12 characters, Crockford base32, SPEC 3.4). It is single use, expires after 7 days,
 and only its SHA-256 is stored. Lose it and run `new-invite` again.
 
-The scripts run their SQL through `wrangler d1 execute --file --json`, so they
-need wrangler (`bun install` in this directory):
+The scripts run their SQL through `wrangler d1 execute --command --json`, so
+they need wrangler (`bun install` in this directory). `--file` is deliberately
+not used: against a remote database it goes through the D1 import API, prints a
+single summary row instead of a result per statement and takes the database
+offline while it runs. The parser (`parseWranglerOutput`) requires one result
+per statement and is unit-tested against the output shapes read from wrangler
+4.166's source. Locally wrangler runs the statements as one `db.batch`
+(a transaction); remotely they go in one `/query` request and the admin logic
+does not rely on that being atomic (a half-done `add-user` is repaired with
+`new-invite`; every other operation changes data with one statement).
+
+**The remote path (`--remote`) is unverified until the staging deploy**: it has
+only been checked against wrangler's source, never run.
 
 - default (`--local`): wrangler's local D1 in `.wrangler/state`. Create the
   schema first with
@@ -60,26 +71,39 @@ it those routes answer `404 not_found`.
 
 ## Rate limits
 
-Counted in the D1 table `rate_limits` (fixed windows), because Worker memory
-is per isolate. Values live in `src/rate-limit.ts`:
+Values live in `src/rate-limit.ts`:
 
-- `POST /v1/enrol`: 10 failed attempts per IP per 15 minutes, then `429`.
-  A successful enrol is not counted. The IP is `CF-Connecting-IP`.
-- `POST /v1/devices/code`: 5 codes per user per 10 minutes.
+- `POST /v1/enrol`: 10 failed attempts per IP per 15 minutes, then `429`. A
+  successful enrol is not counted. The IP is `CF-Connecting-IP`. Failures are
+  counted in Worker memory (`FailedAttemptGuard`); only when an IP reaches the
+  limit does that isolate write one marker row in `rate_limits` for the IP and
+  window (a repeat in the same window is a no-op), and every enrolment reads
+  the marker first, so the block holds across isolates. An IP already blocked
+  in an isolate is refused without touching D1. Because counting is per
+  isolate, an attacker spread over isolates gets up to 10 failures per isolate
+  before the marker lands; with 60-bit codes that is irrelevant to guessing.
+  **Worst-case D1 writes per day from this path:** failed enrols themselves
+  write nothing (the consume batch matches no row); marker writes are capped at
+  60 per hour per isolate, so at most 1,440 per isolate per day, against the
+  free plan's 100,000. The snapshot cron prunes `rate_limits` rows from windows
+  older than a day.
+- `POST /v1/devices/code`: 5 codes per user per 10 minutes, one atomic
+  upsert-and-count statement per request (authenticated, so bounded by the
+  number of devices).
 - Every route, per IP: 120 requests per minute (`MemoryIpLimiter` in
   `src/limits.ts`). It lives in Worker memory, so it costs no D1 write (the
   free plan allows 100k row writes a day). Each isolate counts separately, so
   the effective ceiling is 120 times the number of live isolates and the
   counter resets when an isolate is recycled: a best-effort brake on a runaway
-  client, not an exact quota. The failed-enrol and device-code limits above
-  are exact because they live in D1.
-- Expired `rate_limits` rows are overwritten on the next failure for the same
-  bucket; they are never swept (a few bytes per IP that ever failed).
+  client, not an exact quota.
 
 ## Other limits and behaviour
 
 - Body cap 1 MiB (checked from `Content-Length` and while streaming) and at
-  most 500 envelopes per push.
+  most 500 envelopes per push. Payloads are bound to D1 re-escaped as JSON
+  strings; a push whose encoded parameter exceeds 1,900,000 bytes is refused
+  with `413 body_too_large` (D1's limit is 2,000,000) so a client never loops
+  on a 500.
 - CORS: only the origin in the `ALLOWED_ORIGIN` var (production
   `https://budget.fairhursts.net`) gets headers; `DEV_MODE` adds
   `http://localhost:3000` and `http://127.0.0.1:3000`.

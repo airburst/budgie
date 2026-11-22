@@ -3,11 +3,7 @@ import { DEVICE_CODE_LENGTH, generateCode, hashCode } from "./crypto";
 import { ApiError, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
 import type { LogContext } from "./log";
-import {
-  assertNotLimited,
-  DEVICE_CODE_LIMIT,
-  recordAttempt,
-} from "./rate-limit";
+import { consumeAttempt, DEVICE_CODE_LIMIT } from "./rate-limit";
 
 export const DEVICE_CODE_TTL_MS = 10 * 60_000;
 const MAX_ATTEMPTS = 5;
@@ -29,8 +25,7 @@ export async function handleDeviceCode(
   const auth = await authenticate(executor, request, deps.now(), deps.ctx);
   const now = deps.now();
   const bucket = `devcode:user:${auth.userId}`;
-  await assertNotLimited(executor, bucket, DEVICE_CODE_LIMIT, now);
-  await recordAttempt(executor, bucket, DEVICE_CODE_LIMIT, now);
+  await consumeAttempt(executor, bucket, DEVICE_CODE_LIMIT, now);
 
   const generate =
     deps.generateCode ?? (() => generateCode(DEVICE_CODE_LENGTH));
@@ -38,13 +33,34 @@ export async function handleDeviceCode(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const code = generate();
     try {
-      await executor.batch([
+      // Conditional on the caller still being active: a revoke that landed
+      // after authentication must not be followed by a new code.
+      const [ins, dev] = await executor.batch([
         {
           sql: `INSERT INTO enrol_codes (code_hash, user_id, kind, created_at, expires_at)
-                VALUES (?, ?, 'device', ?, ?)`,
-          params: [await hashCode(code), auth.userId, now, expiresAt],
+                SELECT ?, ?, 'device', ?, ?
+                WHERE EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`,
+          params: [
+            await hashCode(code),
+            auth.userId,
+            now,
+            expiresAt,
+            auth.deviceId,
+          ],
+        },
+        {
+          sql: "SELECT revoked_at FROM devices WHERE id = ?",
+          params: [auth.deviceId],
         },
       ]);
+      if (ins?.changes === 0) {
+        const revokedAt = dev?.rows[0]?.revoked_at;
+        throw new ApiError(
+          revokedAt === null || revokedAt === undefined
+            ? "bad_token"
+            : "revoked",
+        );
+      }
     } catch (error) {
       // A hash collision (never reissue a stored code): try another code.
       if (
@@ -101,14 +117,26 @@ export async function handleRevokeDevice(
 ): Promise<Response> {
   const auth = await authenticate(deps.executor, request, deps.now(), deps.ctx);
   if (!UUID.test(deviceId)) throw new ApiError("bad_request");
-  const [res] = await deps.executor.batch([
+  // Conditional on the caller still being active (a revoke after
+  // authentication must not be followed by this one).
+  const [res, caller] = await deps.executor.batch([
     {
       sql: `UPDATE devices SET revoked_at = ?
-            WHERE id = ? AND user_id = ? AND revoked_at IS NULL`,
-      params: [deps.now(), deviceId, auth.userId],
+            WHERE id = ? AND user_id = ? AND revoked_at IS NULL
+              AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`,
+      params: [deps.now(), deviceId, auth.userId, auth.deviceId],
+    },
+    {
+      sql: "SELECT revoked_at FROM devices WHERE id = ?",
+      params: [auth.deviceId],
     },
   ]);
+  // A device may revoke itself, so success is decided by the UPDATE first.
+  if (res && res.changes === 1) return new Response(null, { status: 204 });
+  const callerRevoked = caller?.rows[0]?.revoked_at;
+  if (callerRevoked !== null && callerRevoked !== undefined) {
+    throw new ApiError("revoked");
+  }
   // Unknown, another user's and already revoked all look the same.
-  if (!res || res.changes !== 1) throw new ApiError("not_found");
-  return new Response(null, { status: 204 });
+  throw new ApiError("not_found");
 }

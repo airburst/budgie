@@ -3,7 +3,7 @@ import { ApiError } from "./errors";
 import type { SqlExecutor } from "./executor";
 import type { LogContext } from "./log";
 import { parseJson } from "./http";
-import { rawPushPayloads } from "./json-ranges";
+import { rawPushPayloads, ScanError } from "./json-ranges";
 
 // POST /v1/sync (SPEC 9.3, section 12).
 
@@ -26,6 +26,8 @@ const HLC =
   /^[0-9]{15}:[0-9]{5}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export const MAX_ENVELOPES = 500;
+/** Below D1's 2,000,000-byte limit on a bound string. */
+export const MAX_PUSH_PARAM_BYTES = 1_900_000;
 export const DRIFT_LIMIT_MS = 300_000;
 export const DEFAULT_PAGE_SIZE = 500;
 
@@ -101,9 +103,8 @@ function parseRequest(text: string): {
   }
   if (push.length > MAX_ENVELOPES) throw new ApiError("too_many_envelopes");
   const parsedCursor = parseCursor(cursor);
-  const raw = rawPushPayloads(text);
   const seen = new Set<string>();
-  const envelopes = push.map((item: unknown, i): PushEnvelope => {
+  const envelopes = push.map((item: unknown): PushEnvelope => {
     if (typeof item !== "object" || item === null || Array.isArray(item)) {
       throw new ApiError("bad_request");
     }
@@ -130,10 +131,25 @@ function parseRequest(text: string): {
       publicId: e.publicId,
       hlc: e.hlc,
       deleted: e.deleted,
-      payload: raw[i] as string,
+      payload: "", // the exact text is attached after authentication
     };
   });
   return { formatVersion, cursor: parsedCursor, push: envelopes };
+}
+
+/** Fill in each envelope's exact payload text from the request body. */
+function attachRawPayloads(text: string, push: PushEnvelope[]): void {
+  let raw: string[];
+  try {
+    raw = rawPushPayloads(text);
+  } catch (error) {
+    if (error instanceof ScanError) throw new ApiError("bad_request");
+    throw error;
+  }
+  if (raw.length !== push.length) throw new ApiError("bad_request");
+  push.forEach((e, i) => {
+    e.payload = raw[i] as string;
+  });
 }
 
 function hlcWall(hlc: string): number {
@@ -161,9 +177,33 @@ export async function handleSync(
     throw new ApiError("data_reset");
   }
 
+  // Authenticated: only now do the O(n) raw-text scan and the re-encoding.
+  attachRawPayloads(text, req.push);
+
   const nowMs = deps.now();
   const maxWall = nowMs + DRIFT_LIMIT_MS;
   const pushJson = JSON.stringify(req.push);
+  // Payloads travel re-escaped as JSON strings, which can nearly double a body
+  // of quotes or backslashes. Refuse here so the client never retries a request
+  // D1 would reject with a 500.
+  if (new TextEncoder().encode(pushJson).byteLength > MAX_PUSH_PARAM_BYTES) {
+    throw new ApiError("body_too_large");
+  }
+
+  // The auth read above is a separate batch, so a delete-data, revoke or
+  // format bump can land after it. Every statement below therefore re-checks,
+  // inside the one transaction, that the device is still active, the user's
+  // data epoch is still the one this request was validated against and no newer
+  // format version exists. If not, nothing is written or returned, and the
+  // read-back (statement 4) tells us which condition failed.
+  const active = `EXISTS (SELECT 1 FROM users WHERE id = ? AND data_epoch = ? AND max_format_version <= ?)
+                  AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`;
+  const activeParams = [
+    auth.userId,
+    auth.dataEpoch,
+    req.formatVersion,
+    auth.deviceId,
+  ];
 
   const [, upsert, page, state] = await executor.batch([
     // 1. Bump the user's sequence once per request, raise max_format_version.
@@ -171,8 +211,15 @@ export async function handleSync(
       sql: `UPDATE users
             SET seq = seq + 1,
                 max_format_version = MAX(max_format_version, ?)
-            WHERE id = ?`,
-      params: [req.formatVersion, auth.userId],
+            WHERE id = ? AND data_epoch = ? AND max_format_version <= ?
+              AND EXISTS (SELECT 1 FROM devices WHERE id = ? AND revoked_at IS NULL)`,
+      params: [
+        req.formatVersion,
+        auth.userId,
+        auth.dataEpoch,
+        req.formatVersion,
+        auth.deviceId,
+      ],
     },
     // 2. Upsert the pushed envelopes. The payload travels as a JSON string
     //    inside the parameter, so json_extract returns it unchanged.
@@ -184,23 +231,32 @@ export async function handleSync(
                    (SELECT seq FROM users WHERE id = ?)
             FROM json_each(?) AS e
             WHERE CAST(substr(json_extract(e.value, '$.hlc'), 1, 15) AS INTEGER) <= ?
+              AND ${active}
             ON CONFLICT (user_id, tbl, public_id) DO UPDATE SET
               hlc = excluded.hlc, deleted = excluded.deleted, payload = excluded.payload,
               device_id = excluded.device_id, seq = excluded.seq
             WHERE excluded.hlc > changes.hlc
             RETURNING tbl, public_id`,
-      params: [auth.userId, auth.deviceId, auth.userId, pushJson, maxWall],
+      params: [
+        auth.userId,
+        auth.deviceId,
+        auth.userId,
+        pushJson,
+        maxWall,
+        ...activeParams,
+      ],
     },
     // 3. The next page after the cursor, written by other devices.
     {
       sql: `SELECT tbl, public_id, hlc, deleted, payload, seq FROM changes
-            WHERE user_id = ? AND device_id != ?
+            WHERE user_id = ? AND device_id != ? AND ${active}
               AND (seq, tbl, public_id) > (?, ?, ?)
             ORDER BY seq, tbl, public_id
             LIMIT ?`,
       params: [
         auth.userId,
         auth.deviceId,
+        ...activeParams,
         req.cursor.seq,
         req.cursor.tbl,
         req.cursor.publicId,
@@ -209,10 +265,26 @@ export async function handleSync(
     },
     // 4. Read back the counters.
     {
-      sql: "SELECT seq, max_format_version FROM users WHERE id = ?",
-      params: [auth.userId],
+      sql: `SELECT u.seq AS seq, u.max_format_version AS max_format_version,
+                   u.data_epoch AS data_epoch,
+                   (SELECT revoked_at FROM devices WHERE id = ?) AS revoked_at
+            FROM users u WHERE u.id = ?`,
+      params: [auth.deviceId, auth.userId],
     },
   ]);
+
+  const st = state?.rows[0];
+  if (!st) throw new ApiError("bad_token");
+  if (st.revoked_at !== null && st.revoked_at !== undefined) {
+    throw new ApiError("revoked");
+  }
+  if (Number(st.data_epoch) !== auth.dataEpoch)
+    throw new ApiError("data_reset");
+  if (Number(st.max_format_version) > req.formatVersion) {
+    throw new ApiError("format_too_old", {
+      formatVersion: Number(st.max_format_version),
+    });
+  }
 
   const stored = new Set(
     (upsert?.rows ?? []).map(

@@ -3,6 +3,8 @@ export interface SnapshotStore {
   put(key: string, body: string): Promise<void>;
   get(key: string): Promise<string | null>;
   delete(key: string): Promise<void>;
+  /** Keys under a prefix. Optional: the wrangler CLI store cannot list. */
+  list?(prefix: string): Promise<string[]>;
 }
 
 /** The slice of the R2 bucket binding this project uses. */
@@ -10,6 +12,11 @@ export interface R2BucketLike {
   put(key: string, value: string): Promise<unknown>;
   get(key: string): Promise<{ text(): Promise<string> } | null>;
   delete(key: string): Promise<void>;
+  list(options: { prefix: string; cursor?: string }): Promise<{
+    objects: { key: string }[];
+    truncated: boolean;
+    cursor?: string;
+  }>;
 }
 
 export function createR2Store(bucket: R2BucketLike): SnapshotStore {
@@ -22,6 +29,16 @@ export function createR2Store(bucket: R2BucketLike): SnapshotStore {
       return object ? object.text() : null;
     },
     delete: (key) => bucket.delete(key),
+    async list(prefix) {
+      const keys: string[] = [];
+      let cursor: string | undefined;
+      for (;;) {
+        const page = await bucket.list({ prefix, cursor });
+        keys.push(...page.objects.map((o) => o.key));
+        if (!page.truncated) return keys;
+        cursor = page.cursor;
+      }
+    },
   };
 }
 
@@ -38,7 +55,14 @@ export class MemoryStore implements SnapshotStore {
     this.objects.delete(key);
     return Promise.resolve();
   }
+  list(prefix: string) {
+    return Promise.resolve(
+      [...this.objects.keys()].filter((k) => k.startsWith(prefix)),
+    );
+  }
 }
+
+export const snapshotPrefix = (userId: string) => `snapshots/${userId}/`;
 
 export const snapshotKey = (userId: string, date: string) =>
   `snapshots/${userId}/${date}.json`;

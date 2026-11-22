@@ -16,7 +16,7 @@ import {
   secondsToUtcMidnight,
 } from "./limits";
 import { consoleSink, writeLog, type LogContext, type LogSink } from "./log";
-import { clientIp } from "./rate-limit";
+import { clientIp, type FailedAttemptGuard } from "./rate-limit";
 import { runSnapshots } from "./snapshot";
 import type { SnapshotStore } from "./store";
 import { handleSync } from "./sync";
@@ -37,6 +37,8 @@ export interface AppDeps {
   /** Per-IP request limiter on every route (in memory; see README). */
   ipLimiter?: MemoryIpLimiter;
   logSink?: LogSink;
+  /** Failed-enrolment limiter (in-memory counts, shared marker in D1). */
+  enrolGuard?: FailedAttemptGuard;
   /** Snapshot object storage (R2). */
   store?: SnapshotStore;
 }
