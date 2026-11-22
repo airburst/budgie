@@ -402,7 +402,14 @@ Acceptance:
   the web migration bundle includes it.
 - [manual] Manual migration checklist followed (journal, snapshot, rebuild
   `public/db.js`, fresh-DB test).
-Status: todo
+Status: done. `0014_sync_state.sql` adds `hlc`, `sync_dirty`, `sync_unsealed`
+and `sync_rev` (a per-row write counter). Every engine UPDATE sets
+`sync_rev = sync_rev + 1`, which is how the triggers tell it from a user edit;
+every engine INSERT supplies `hlc`. Ack is `... WHERE hlc = :pushed AND
+sync_dirty = 1 AND sync_unsealed = 0`. The exact seal, ack, apply, Start and
+Join statements are in the migration header. Existing rows start clean with no
+`hlc`. `sync_state` is seeded with its single row (id 1). Tests:
+`src/tests/integration/sync-state-migration.test.ts`.
 
 ### SY-023 Hybrid logical clock
 As the engine, I can order two versions of a row from different devices.
