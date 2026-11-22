@@ -40,8 +40,19 @@ bun run new-invite <user>    [--remote] [--env staging]
 Each prints a one-time invite code (12 characters, Crockford base32, SPEC 3.4). It is single use, expires after 7 days,
 and only its SHA-256 is stored. Lose it and run `new-invite` again.
 
-The scripts run their SQL through `wrangler d1 execute --file --json`, so they
-need wrangler (`bun install` in this directory):
+The scripts run their SQL through `wrangler d1 execute --command --json`, so
+they need wrangler (`bun install` in this directory). `--file` is deliberately
+not used: against a remote database it goes through the D1 import API, prints a
+single summary row instead of a result per statement and takes the database
+offline while it runs. The parser (`parseWranglerOutput`) requires one result
+per statement and is unit-tested against the output shapes read from wrangler
+4.166's source. Locally wrangler runs the statements as one `db.batch`
+(a transaction); remotely they go in one `/query` request and the admin logic
+does not rely on that being atomic (a half-done `add-user` is repaired with
+`new-invite`; every other operation changes data with one statement).
+
+**The remote path (`--remote`) is unverified until the staging deploy**: it has
+only been checked against wrangler's source, never run.
 
 - default (`--local`): wrangler's local D1 in `.wrangler/state`. Create the
   schema first with
