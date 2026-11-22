@@ -237,11 +237,11 @@ Acceptance:
   nothing.
 - [unit] Attempts are rate-limited per IP and per user; codes never appear in
   logs.
-Status: done, with two deviations from the story text. Rate limiting is per IP
-only (failed attempts, 10 per 15 minutes, counted in D1 table `rate_limits`),
-because SPEC 2.5 limits `POST /v1/enrol` per IP and a failed code has no user
-to count against. The device-code half of enrol is SY-015. Logging beyond
-"codes never appear in logs" is SY-018.
+Status: done. Rate limiting is per IP only (failed attempts, 10 per 15 minutes,
+counted in D1 table `rate_limits`): the spec wins over the story text (SPEC 2.5
+limits `POST /v1/enrol` per IP, and a failed code has no user to count
+against). Maintainer accepted this deviation. Device codes use the same
+endpoint (SY-015); logging rules are SY-018.
 
 ### SY-013 Push changes
 As a device, I send my changed rows and the server keeps the newest version
@@ -294,7 +294,10 @@ Acceptance:
 - [unit] An expired, used or wrong code fails with the same error as SY-012
   and is rate-limited the same way.
 - [unit] A revoked device cannot request a code.
-Status: todo
+Status: done. Device codes share `enrol_codes` (kind `device`, 8 characters,
+10 minutes, single use); issuing is limited to 5 per user per 10 minutes
+(counted in `rate_limits`); failed attempts count in the same per-IP bucket as
+invites.
 
 ### SY-016 List and revoke devices
 As a user, I can see which apps are connected and disconnect any of them.

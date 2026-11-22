@@ -9,6 +9,9 @@ export interface RateLimit {
 /** Failed enrolment attempts per IP (SPEC 2.5). Recorded in the README. */
 export const ENROL_FAIL_LIMIT: RateLimit = { max: 10, windowMs: 15 * 60_000 };
 
+/** Device codes issued per user (SPEC 2.5): 5 per 10 minutes. */
+export const DEVICE_CODE_LIMIT: RateLimit = { max: 5, windowMs: 10 * 60_000 };
+
 export function clientIp(request: Request): string {
   return request.headers.get("cf-connecting-ip") ?? "unknown";
 }
