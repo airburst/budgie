@@ -408,7 +408,10 @@ Acceptance:
   admin scripts and restoring from Time Travel.
 - [doc] Production (`budgie-sync`) is not created here; that is go-live
   (step 8).
-Status: todo
+Status: done (2026-11-22). Snapshot tested by a temporary every-minute cron,
+not a hand-fired one. CPU is over the free plan's 10 ms for 500-row pushes
+and for snapshots (297 ms at 20,100 rows); not enforced so far. See
+"Measured on staging" in `sync-server/README.md`.
 
 ## M5 Web engine (step 5)
 

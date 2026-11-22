@@ -32,6 +32,11 @@ import {
   type PortableTable,
 } from "@/services/portable-data";
 import { encodeSyncRow } from "@/services/sync/codec";
+import {
+  isNaturalKeyTable,
+  readTombstones,
+  rewriteTombstonePublicIds,
+} from "@/services/tombstone-store";
 import type { SyncEngineDeps } from "@/services/sync/engine";
 import {
   FormatTooNewError,
@@ -277,14 +282,27 @@ export const prepareStart = (
         id: number;
         public_id: string | null;
       }>({ sql: `SELECT id, public_id FROM ${table}` });
+      const mapping = new Map<string, string>();
       for (const row of ids) {
         if (row.public_id !== null && UUID_PATTERN.test(row.public_id)) continue;
+        const publicId = crypto.randomUUID();
         await transaction.execute({
           sql: `UPDATE ${table} SET public_id = ?, sync_rev = sync_rev + 1 WHERE id = ?`,
-          params: [crypto.randomUUID(), row.id],
+          params: [publicId, row.id],
         });
+        if (row.public_id !== null) mapping.set(row.public_id, publicId);
         rewrittenIds[table]++;
       }
+      // Rows held in the tombstone store (SY-029) are sent too: give them
+      // canonical ids and follow the rewritten ids they refer to.
+      if (isNaturalKeyTable(table)) {
+        for (const stored of await readTombstones(transaction, table)) {
+          if (UUID_PATTERN.test(stored.publicId)) continue;
+          mapping.set(stored.publicId, crypto.randomUUID());
+          rewrittenIds[table]++;
+        }
+      }
+      await rewriteTombstonePublicIds(transaction, table, mapping);
 
       const rows = await transaction.query({ sql: `SELECT * FROM ${table}` });
       for (const row of rows) {
@@ -304,6 +322,14 @@ export const prepareStart = (
       });
       markedRows += rows.length;
     }
+
+    const stored = await transaction.query<{ count: number }>({
+      sql: "SELECT COUNT(*) AS count FROM sync_tombstones",
+    });
+    await transaction.execute({
+      sql: "UPDATE sync_tombstones SET dirty = 1, unsealed = 1",
+    });
+    markedRows += Number(stored[0]?.count ?? 0);
 
     for (const table of PORTABLE_TABLES) await validateTable(transaction, table);
 

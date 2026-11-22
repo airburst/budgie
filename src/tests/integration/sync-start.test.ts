@@ -17,6 +17,7 @@ import {
   type SyncHarness,
   type SyncHarnessClient,
 } from "@/tests/helpers/sync-harness";
+import { writeTombstone } from "@/services/tombstone-store";
 import { afterEach, describe, expect, it } from "vitest";
 
 let harness: SyncHarness | undefined;
@@ -220,6 +221,42 @@ describe("Start: local preparation", () => {
     expect(await allRows(a)).toEqual(before);
     expect(await stateOf(a)).toMatchObject({ cursor: null, enabled: 0 });
     expect(tx).toBeDefined();
+  });
+});
+
+describe("Start: rows held in the tombstone store", () => {
+  it("gives stored rows canonical ids, follows rewritten references and marks them to send", async () => {
+    const { clients } = await fresh();
+    const a = clients[0] as SyncHarnessClient;
+    const category = await one<{ id: number }>(a, "SELECT id FROM categories LIMIT 1");
+    await raw(a, "UPDATE categories SET public_id = 'legacy:cat' WHERE id = ?", [category.id]);
+    await a.database.transaction((transaction) =>
+      writeTombstone(transaction, {
+        tbl: "payees",
+        publicId: "legacy:payee",
+        hlc: null,
+        dirty: false,
+        unsealed: false,
+        payload: {
+          publicId: "legacy:payee", createdAt: "2026-01-01 00:00:00",
+          updatedAt: "2026-01-01 00:00:00", deletedAt: "2026-01-02 00:00:00",
+          name: "Tesco", categoryPublicId: "legacy:cat", amount: null,
+        },
+      }),
+    );
+
+    await prepareStart(a.database, { now: () => a.clock.now });
+
+    const renamed = await one<{ public_id: string }>(a, "SELECT public_id FROM categories WHERE id = ?", [category.id]);
+    const stored = await one<{ public_id: string; dirty: number; unsealed: number; payload: string }>(
+      a, "SELECT * FROM sync_tombstones",
+    );
+    expect(stored.public_id).toMatch(UUID_PATTERN);
+    expect(stored).toMatchObject({ dirty: 1, unsealed: 1 });
+    expect(JSON.parse(stored.payload)).toMatchObject({
+      publicId: stored.public_id,
+      categoryPublicId: renamed.public_id,
+    });
   });
 });
 

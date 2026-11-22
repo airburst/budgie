@@ -125,6 +125,47 @@ Values live in `src/rate-limit.ts`:
   `POST /dev/admin/add-user` returns `404 not_found` and that `/v1/health` is
   `200`.
 
+## Staging (deployed 2026-11-22)
+
+`https://budgie-sync-staging.mark-fairhurst.workers.dev`, D1
+`budgie-sync-staging` and R2 `budgie-sync-snapshots-staging`, both EU. The
+database id lives only in the maintainer's local `wrangler.jsonc`
+(`wrangler d1 list` shows it).
+
+```
+bunx wrangler d1 migrations apply budgie-sync-staging --remote --env staging
+bunx wrangler deploy --env staging
+bun run add-user <name> --remote --env staging
+```
+
+A cron cannot be fired by hand. To test the snapshot, set the staging cron to
+`* * * * *`, deploy, watch `bunx wrangler tail --env staging --format json`,
+then set it back to `0 3 * * *` and deploy again. A schedule change can take
+a few minutes to take effect.
+
+### Measured on staging
+
+CPU per invocation, from `wrangler tail` (free plan, documented limit 10 ms):
+
+| Call                                   | CPU       |
+| -------------------------------------- | --------- |
+| health                                 | 0–1 ms    |
+| sync, nothing to send or fetch         | 2–5 ms    |
+| sync, pull one page of 500 rows        | 1–8 ms    |
+| sync, push 100 rows                    | 13 ms     |
+| sync, push 500 rows                    | 11–42 ms  |
+| snapshot, 2 rows                       | 8 ms      |
+| snapshot, 1,100 rows                   | 13–33 ms  |
+| snapshot, 20,100 rows (8 MB package)   | 130–297 ms |
+
+Every call finished with outcome `ok`: Cloudflare did not enforce the 10 ms
+limit on these runs. Do not rely on that. A 500-row push and any real
+snapshot are well over the documented limit, so a first upload or the nightly
+snapshot may start failing with error 1102 without warning. The Workers Paid
+plan (30 s CPU) removes the risk.
+
+The snapshot job rewrites today's object each time it runs.
+
 ## Snapshots
 
 A cron trigger (03:00 UTC) runs `runSnapshots` (`src/snapshot.ts`): for every
@@ -139,8 +180,7 @@ cannot list R2 objects) and removes snapshots older than 30 days.
   hashes: `portable-data.ts` verifies SHA-256 of
   `JSON.stringify(JSON.parse(document))`, and stored payloads are client bytes
   that may not be canonical, so the checksum cannot be computed without a
-  parse. CPU is linear in data size and is not yet measured against the 10 ms
-  free-plan limit; measure on staging.
+  parse. CPU is linear in data size; see "Measured on staging" below.
 - Free plan: 50 D1 queries per Worker invocation. The job uses about three
   per user plus one per pruned snapshot, which is fine for a few users.
 - A snapshot built just before `DELETE /v1/data` can land after it; it
