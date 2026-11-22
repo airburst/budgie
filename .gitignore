@@ -35,3 +35,4 @@ budgie-export*.json
 # sync server local state
 sync-server/.celld
 sync-server/.wrangler
+/build-sync

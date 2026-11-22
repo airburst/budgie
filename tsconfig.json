@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "vite.config.ts"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "vite.config.ts", "vite.sync-origin.ts"],
   "compilerOptions": {
     "target": "esnext",
     "jsx": "react-jsx",

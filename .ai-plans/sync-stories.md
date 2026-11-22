@@ -656,7 +656,11 @@ Acceptance:
 - [e2e] `sw.js` does not intercept or cache requests to the sync origin.
 - [manual] A request from `budget.fairhursts.net` preview to staging passes
   CORS and CSP.
-Status: todo
+Status: done except the [manual] staging check (staging does not exist yet).
+Setting: `VITE_SYNC_SERVER_URL`, read in `src/services/sync/config.ts`
+(`SYNC_SERVER_URL`, null when unset); parsing in `vite.sync-origin.ts`.
+`sw.js` returns early for the sync origin before any other rule. E2E:
+`e2e/sync-origin.spec.ts` (second build on port 4174, stub on 4599).
 
 ### SY-037 Turn sync on, with consent
 As a user, I choose to send my data to the cloud knowing what that means,

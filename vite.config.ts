@@ -1,10 +1,21 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { readdir, readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import pkg from "./package.json" with { type: "json" };
+import { parseSyncServerUrl, syncConnectOrigin } from "./vite.sync-origin";
+
+// Build-time sync server (SY-036). Unset: no extra origin anywhere.
+const syncServerUrl = parseSyncServerUrl(process.env.VITE_SYNC_SERVER_URL);
+const syncOrigin = syncConnectOrigin(syncServerUrl);
+const withSyncOrigin = (csp: string): string =>
+  syncOrigin
+    ? csp.replace("connect-src 'self'", `connect-src 'self' ${syncOrigin}`)
+    : csp;
+const outDir = process.env.BUDGIE_OUT_DIR ?? "build";
 
 const isolationHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
@@ -13,8 +24,9 @@ const isolationHeaders = {
 
 const securityHeaders = {
   ...isolationHeaders,
-  "Content-Security-Policy":
+  "Content-Security-Policy": withSyncOrigin(
     "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; form-action 'self'; upgrade-insecure-requests",
+  ),
   "Referrer-Policy": "no-referrer",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
   "X-Content-Type-Options": "nosniff",
@@ -35,7 +47,9 @@ const listFiles = async (directory: string): Promise<string[]> => {
 const webArtifactPlugin = (): Plugin => ({
   name: "budgie-web-artifact",
   async closeBundle() {
-    const outputDirectory = fileURLToPath(new URL("./build/", import.meta.url));
+    const outputDirectory = fileURLToPath(
+      new URL(`./${outDir}/`, import.meta.url),
+    );
     await writeFile(
       join(outputDirectory, "_headers"),
       `/*\n${Object.entries(securityHeaders)
@@ -64,6 +78,10 @@ const webArtifactPlugin = (): Plugin => ({
       .replace(
         'const PRECACHE_URLS = ["./"];',
         `const PRECACHE_URLS = ${JSON.stringify(precacheUrls)};`,
+      )
+      .replace(
+        "const SYNC_ORIGIN = null;",
+        `const SYNC_ORIGIN = ${JSON.stringify(syncOrigin)};`,
       );
     await writeFile(serviceWorkerPath, generated);
   },
@@ -85,7 +103,7 @@ export default defineConfig({
   },
   base: "./",
   build: {
-    outDir: "../build",
+    outDir: `../${outDir}`,
     emptyOutDir: true,
     sourcemap: false,
     rollupOptions: {
@@ -113,8 +131,9 @@ export default defineConfig({
     strictPort: true,
     headers: {
       ...isolationHeaders,
-      "Content-Security-Policy":
+      "Content-Security-Policy": withSyncOrigin(
         "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws://localhost:* http://localhost:*; worker-src 'self' blob:; manifest-src 'self';",
+      ),
     },
   },
   preview: {

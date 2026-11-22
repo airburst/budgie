@@ -1,6 +1,8 @@
 const version = new URL(self.location.href).searchParams.get("version") ?? "1";
 const CACHE_NAME = `budgie-runtime-v${version}`;
 const PRECACHE_URLS = ["./"];
+// Sync server origin (build setting, null when unset). Never intercepted.
+const SYNC_ORIGIN = null;
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
@@ -29,6 +31,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+  // Sync traffic (cross-origin, POST/DELETE, Authorization header) must reach
+  // the network every time: never respondWith, never cache. Checked first so
+  // no later rule can ever change that.
+  if (SYNC_ORIGIN !== null && new URL(request.url).origin === SYNC_ORIGIN)
+    return;
   if (
     request.method !== "GET" ||
     new URL(request.url).origin !== self.location.origin

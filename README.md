@@ -61,6 +61,19 @@ the full release, rollback and rehearsal procedures.
   artifacts are retained for 30 days.
 
 Run `bun run verify:web` to build and verify the deployment artifact locally.
+
+### Sync server build setting
+
+`VITE_SYNC_SERVER_URL` (read at build time by `vite.config.ts` and
+`src/services/sync/config.ts`) is the sync server base URL, for example
+`https://<worker>.<account>.workers.dev`. It must be https (http only for
+localhost) with no credentials, query or fragment. When set, its origin is
+added to `connect-src` in the generated `_headers`, and the service worker is
+told to never intercept or cache requests to that origin. When unset (the
+default) the app has no sync origin: the CSP is unchanged and nothing can reach
+a server. `verify:web` checks the built `_headers` against the variable. The
+URL is never hard-coded so a custom domain can be added later. `web-deploy.yml`
+will need the variable set on its build step once the sync server is live.
 The build generates Cloudflare security/isolation headers and the offline
 precache. Keep preview access protection enabled in Cloudflare Access. Use a
 stable preview alias for device testing: browser databases are isolated by

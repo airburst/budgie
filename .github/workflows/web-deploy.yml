@@ -38,6 +38,8 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
+      # Set VITE_SYNC_SERVER_URL here (as a repository variable) once the sync
+      # server is live; unset keeps the CSP free of any sync origin. See README.
       - run: bun run verify:web
       - uses: actions/upload-artifact@v7
         with:
