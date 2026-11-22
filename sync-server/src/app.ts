@@ -10,12 +10,14 @@ import type { SqlExecutor } from "./executor";
 import { readJsonBody } from "./http";
 import {
   isDailyLimitError,
-  MemoryIpLimiter,
+  type MemoryIpLimiter,
   readCappedBody,
   secondsToUtcMidnight,
 } from "./limits";
 import { consoleSink, writeLog, type LogContext, type LogSink } from "./log";
 import { clientIp } from "./rate-limit";
+import { runSnapshots } from "./snapshot";
+import type { SnapshotStore } from "./store";
 import { handleSync } from "./sync";
 import { CONTRACT_VERSION, FORMAT_VERSION } from "./version";
 
@@ -34,6 +36,8 @@ export interface AppDeps {
   /** Per-IP request limiter on every route (in memory; see README). */
   ipLimiter?: MemoryIpLimiter;
   logSink?: LogSink;
+  /** Snapshot object storage (R2). */
+  store?: SnapshotStore;
 }
 
 export type HandlerDeps = AppDeps & { ctx: LogContext };
@@ -98,6 +102,13 @@ async function route(request: Request, deps: HandlerDeps): Promise<Response> {
       return jsonResponse(
         await addUser(deps.executor, body.name, { now: deps.now }),
         201,
+      );
+    }
+    if (pathname === "/dev/admin/run-snapshots") {
+      // celld cannot fire a cron by hand, so dev builds expose the job.
+      if (!deps.store) throw new ApiError("not_found");
+      return jsonResponse(
+        await runSnapshots(deps.executor, deps.store, deps.now()),
       );
     }
     if (pathname === "/dev/admin/new-invite") {

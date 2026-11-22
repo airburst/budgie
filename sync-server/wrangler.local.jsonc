@@ -10,6 +10,7 @@
     "DEV_MODE": "1",
     "ALLOWED_ORIGIN": "https://budget.fairhursts.net",
   },
+  "triggers": { "crons": ["0 3 * * *"] },
   "rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
   "d1_databases": [
     {

@@ -364,7 +364,17 @@ Acceptance:
   with no changes since the last snapshot still gets one.
 - [unit] One user's failure does not stop the others; failures are logged
   without payloads.
-Status: todo
+Status: done. Built inside D1 (`json_group_array` over stored payload text in
+300-row chunks, `json_set` adds the two null pending-reconcile fields); the
+Worker concatenates, parses once, stringifies once and hashes. The checksum
+cannot be computed without a parse because portable-data.ts hashes
+`JSON.stringify(JSON.parse(doc))` and stored client payloads may not be
+canonical (`1.0`, `\u00e9`), so CPU is linear in data size: UNMEASURED against
+the 10 ms free-plan limit, to be measured on staging (plan section 12). An index
+table `snapshots` in D1 lists snapshots so scripts need no R2 listing. [int]
+test imports through the real `importPortableData`. Run on celld 0.6.3 with
+local R2 via the DEV_MODE route (701 rows, 2 chunks). The cron itself was not
+fired.
 
 ### SY-020 Fetch a snapshot
 As the operator, I can list a user's snapshots and download one as a file

@@ -45,6 +45,11 @@ export default defineConfig({
             },
           },
         ],
+        resolve: {
+          alias: {
+            "@": new URL("./src", import.meta.url).pathname,
+          },
+        },
         test: {
           name: "sync-server",
           environment: "node",
