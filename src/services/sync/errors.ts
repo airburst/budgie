@@ -16,6 +16,35 @@ export class SyncNotConfiguredError extends Error {
   }
 }
 
+/**
+ * Neither Start nor Join has run on this device (the stored cursor is NULL),
+ * so its rows may still hold non-UUID public ids and must not be pushed.
+ */
+export class SyncNotStartedError extends Error {
+  readonly code = "not_started";
+  constructor() {
+    super("Sync has not been started on this device: run Start or Join");
+    this.name = "SyncNotStartedError";
+  }
+}
+
+/**
+ * A local row would go out as an envelope that breaks the contract (the same
+ * check a receiver applies, SPEC.md 8.7). Nothing is pushed: other devices
+ * would fail their apply on it forever.
+ */
+export class InvalidOutgoingEnvelopeError extends Error {
+  readonly code = "invalid_outgoing_envelope";
+  constructor(
+    readonly table: string,
+    readonly publicId: string | null,
+    readonly problem: string,
+  ) {
+    super(`Cannot push ${table} ${publicId ?? "?"}: ${problem}`);
+    this.name = "InvalidOutgoingEnvelopeError";
+  }
+}
+
 /** A pulled envelope breaks SPEC.md section 8.7 (`invalid_envelope`). */
 export class InvalidEnvelopeError extends Error {
   readonly code = "invalid_envelope";

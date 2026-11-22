@@ -22,6 +22,7 @@ import {
 import {
   FormatTooNewError,
   SyncNotConfiguredError,
+  SyncNotStartedError,
 } from "@/services/sync/errors";
 import {
   SYNC_FORMAT_VERSION,
@@ -112,10 +113,12 @@ export const readSyncState = async (database: DatabaseCapability) => {
   });
   if (!row?.device_id) throw new SyncNotConfiguredError("device id");
   if (!row.token) throw new SyncNotConfiguredError("token");
+  // The cursor is NULL until Start or Join sets it to "0": the started marker.
+  if (row.cursor === null) throw new SyncNotStartedError();
   return {
     deviceId: row.device_id,
     auth: { token: row.token, serverUrl: row.server_url },
-    cursor: row.cursor ?? "0",
+    cursor: row.cursor,
   };
 };
 

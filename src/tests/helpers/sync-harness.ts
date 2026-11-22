@@ -156,13 +156,15 @@ const createClient = async (
   server: TestServer,
   name: string,
   closers: Array<() => void>,
+  fresh = false,
 ): Promise<SyncHarnessClient> => {
   const { database, close } = createCapabilityDatabase();
   closers.push(close);
   const device = await server.enrolDevice("harness-user", name);
 
   // Shared seed ids: an engine write (sync_rev bump), so rows stay clean.
-  for (const table of PORTABLE_TABLES) {
+  // A fresh client keeps its `legacy:` ids and is enrolled but not started.
+  for (const table of fresh ? [] : PORTABLE_TABLES) {
     await database.execute({
       sql: `UPDATE ${table}
         SET public_id = '00000000-0000-4000-8000-' || substr('000000000000' || id, -12),
@@ -173,7 +175,9 @@ const createClient = async (
     });
   }
   await database.execute({
-    sql: "UPDATE sync_state SET device_id = ?, token = ?, server_url = ?, cursor = '0', enabled = 1 WHERE id = 1",
+    sql: fresh
+      ? "UPDATE sync_state SET device_id = ?, token = ?, server_url = ? WHERE id = 1"
+      : "UPDATE sync_state SET device_id = ?, token = ?, server_url = ?, cursor = '0', enabled = 1 WHERE id = 1",
     params: [device.deviceId, device.token, "https://sync.test"],
   });
 
@@ -297,9 +301,15 @@ const createClient = async (
 /**
  * Creates the server and `clients` clients (names default to A, B, C...),
  * all enrolled for one user. `pageSize` sets the server's pull page size.
+ * `fresh` clients are enrolled only: `legacy:` ids kept and sync not started
+ * (cursor NULL, disabled), as before Start (SY-031).
  */
 export const createSyncHarness = async (
-  options: { clients?: number | string[]; pageSize?: number } = {},
+  options: {
+    clients?: number | string[];
+    pageSize?: number;
+    fresh?: boolean;
+  } = {},
 ): Promise<SyncHarness> => {
   const server = await createTestServer(
     options.pageSize === undefined ? {} : { pageSize: options.pageSize },
@@ -313,7 +323,7 @@ export const createSyncHarness = async (
   const closers: Array<() => void> = [() => server.db.close()];
   const clients: SyncHarnessClient[] = [];
   for (const name of names) {
-    clients.push(await createClient(server, name, closers));
+    clients.push(await createClient(server, name, closers, options.fresh));
   }
   return {
     server,

@@ -4,6 +4,7 @@
 // Row <-> payload conversion itself lives in ./codec.ts.
 
 import type { PortableTable } from "@/services/portable-data";
+import { InvalidOutgoingEnvelopeError } from "@/services/sync/errors";
 import { HLC_PATTERN, parseHlc } from "@/services/sync/hlc";
 
 /** The sync format version this engine speaks (SPEC.md section 4). */
@@ -297,5 +298,11 @@ export const toOutgoingEnvelope = (
     if (wall === undefined) throw new Error(`Invalid HLC: ${hlc}`);
     consistent.deletedAt = toTimestamp(wall);
   }
-  return { tbl, publicId: payload.publicId, hlc, deleted, payload: consistent };
+  const envelope = { tbl, publicId: payload.publicId, hlc, deleted, payload: consistent };
+  // Push guard: send nothing a receiver would refuse as `invalid_envelope`.
+  const problem = envelopeProblem(envelope);
+  if (problem !== null) {
+    throw new InvalidOutgoingEnvelopeError(tbl, payload.publicId ?? null, problem);
+  }
+  return envelope;
 };

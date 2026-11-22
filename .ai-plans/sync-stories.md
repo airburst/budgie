@@ -583,7 +583,7 @@ Acceptance:
 - [int] Start refuses when the server already has data for the user
   (`hasData`), pointing to Join instead.
 - [int] An interrupted first upload resumes and completes.
-Status: todo
+Status: done
 
 ### SY-032 Join sync on a later app
 As a user, connecting another app replaces its data with my synced books.
