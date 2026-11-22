@@ -1,0 +1,15 @@
+{
+  "name": "budgie-sync-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Budgie sync server: a Cloudflare Worker with D1 and R2.",
+  "scripts": {
+    "dev": "celld dev wrangler.local.jsonc --port 8787 --no-watch",
+    "add-user": "bun run scripts/add-user.ts",
+    "new-invite": "bun run scripts/new-invite.ts"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

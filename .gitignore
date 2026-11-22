@@ -31,3 +31,7 @@ test.db
 
 # exported real data (scripts/export-portable.ts)
 budgie-export*.json
+
+# sync server local state
+sync-server/.celld
+sync-server/.wrangler

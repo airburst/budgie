@@ -204,7 +204,12 @@ Acceptance:
 - [manual] The server starts on the local stack chosen in SY-004.
 - [manual] Root `bun run lint`, `bun run check-types` and `bun run test`
   cover `sync-server/`; CI (`web-platform.yml`) runs them.
-Status: todo
+Status: done. Layout and decisions in `sync-server/README.md`. [manual] check
+  run: celld 0.6.3 served `/v1/health` on a free port from `wrangler.local.jsonc`
+  (celld reads `.jsonc`, not `.toml`). Root lint, types and tests cover
+  `sync-server/` (vitest project `sync-server`, eslint node globals); CI already
+  runs them. The `(user_id, seq)` index is `(user_id, seq, tbl, public_id)` per
+  plan section 3.
 
 ### SY-011 Create users and invites
 As the operator, I can create a user and hand them a one-time invite code.

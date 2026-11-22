@@ -1,0 +1,18 @@
+// Local config for celld (and `wrangler dev`). Same bindings as wrangler.jsonc
+// but without `jurisdiction` and `workers_dev`, which celld refuses.
+{
+  "name": "budgie-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "budgie-sync-local",
+      "database_id": "local",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    { "binding": "SNAPSHOTS", "bucket_name": "budgie-sync-snapshots-local" },
+  ],
+}

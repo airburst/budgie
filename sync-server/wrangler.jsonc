@@ -1,0 +1,47 @@
+// Deployed config (production and staging). celld refuses `jurisdiction` and
+// `workers_dev`, so local runs use wrangler.local.jsonc.
+{
+  "name": "budgie-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-01",
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "budgie-sync",
+      // PLACEHOLDER: replace with the id printed by `wrangler d1 create budgie-sync --jurisdiction eu`.
+      // Never commit a real id.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SNAPSHOTS",
+      "bucket_name": "budgie-sync-snapshots",
+      "jurisdiction": "eu",
+    },
+  ],
+  "env": {
+    "staging": {
+      "name": "budgie-sync-staging",
+      "workers_dev": true,
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "budgie-sync-staging",
+          // PLACEHOLDER: replace with the staging database id. Never commit a real id.
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "budgie-sync-snapshots-staging",
+          "jurisdiction": "eu",
+        },
+      ],
+    },
+  },
+}

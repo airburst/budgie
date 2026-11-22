@@ -40,6 +40,12 @@ const eslintConfig = [
     },
   },
   {
+    files: ["sync-server/**/*.ts"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+  },
+  {
     files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
     languageOptions: {
       parser: tsParser,

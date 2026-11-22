@@ -30,6 +30,15 @@ export default defineConfig({
           setupFiles: ["src/tests/integration/setup.ts"],
         },
       },
+      {
+        // Sync server (Cloudflare Worker): handlers run on in-memory better-sqlite3
+        test: {
+          name: "sync-server",
+          environment: "node",
+          globals: false,
+          include: ["sync-server/test/**/*.test.ts"],
+        },
+      },
     ],
   },
 });
