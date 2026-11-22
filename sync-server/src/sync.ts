@@ -1,6 +1,7 @@
 import { authenticate } from "./auth";
 import { ApiError } from "./errors";
 import type { SqlExecutor } from "./executor";
+import type { LogContext } from "./log";
 import { parseJson } from "./http";
 import { rawPushPayloads } from "./json-ranges";
 
@@ -24,6 +25,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const HLC =
   /^[0-9]{15}:[0-9]{5}:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
+export const MAX_ENVELOPES = 500;
 export const DRIFT_LIMIT_MS = 300_000;
 export const DEFAULT_PAGE_SIZE = 500;
 
@@ -31,6 +33,7 @@ export interface SyncDeps {
   executor: SqlExecutor;
   now: () => number;
   pageSize?: number;
+  ctx?: LogContext;
 }
 
 interface PushEnvelope {
@@ -96,6 +99,7 @@ function parseRequest(text: string): {
   ) {
     throw new ApiError("bad_request");
   }
+  if (push.length > MAX_ENVELOPES) throw new ApiError("too_many_envelopes");
   const parsedCursor = parseCursor(cursor);
   const raw = rawPushPayloads(text);
   const seen = new Set<string>();
@@ -146,7 +150,7 @@ export async function handleSync(
 
   // SPEC 2.4 order: schema, then token, then endpoint rules.
   const req = parseRequest(text);
-  const auth = await authenticate(executor, request);
+  const auth = await authenticate(executor, request, deps.now(), deps.ctx);
 
   if (req.formatVersion < auth.maxFormatVersion) {
     throw new ApiError("format_too_old", {
@@ -232,6 +236,16 @@ export async function handleSync(
     more && last
       ? `${auth.dataEpoch}:${Number(last.seq)}:${last.tbl as string}:${last.public_id as string}`
       : `${auth.dataEpoch}:${userSeq}`;
+
+  if (deps.ctx) {
+    deps.ctx.counts = {
+      pushed: req.push.length,
+      accepted: stored.size,
+      stale: rejected.filter((r) => r.reason === "stale").length,
+      drift: rejected.filter((r) => r.reason === "drift").length,
+      pulled: rows.length,
+    };
+  }
 
   // Payloads are spliced in as stored text so they come back unchanged.
   const pull = rows

@@ -237,11 +237,11 @@ Acceptance:
   nothing.
 - [unit] Attempts are rate-limited per IP and per user; codes never appear in
   logs.
-Status: done, with two deviations from the story text. Rate limiting is per IP
-only (failed attempts, 10 per 15 minutes, counted in D1 table `rate_limits`),
-because SPEC 2.5 limits `POST /v1/enrol` per IP and a failed code has no user
-to count against. The device-code half of enrol is SY-015. Logging beyond
-"codes never appear in logs" is SY-018.
+Status: done. Rate limiting is per IP only (failed attempts, 10 per 15 minutes,
+counted in D1 table `rate_limits`): the spec wins over the story text (SPEC 2.5
+limits `POST /v1/enrol` per IP, and a failed code has no user to count
+against). Maintainer accepted this deviation. Device codes use the same
+endpoint (SY-015); logging rules are SY-018.
 
 ### SY-013 Push changes
 As a device, I send my changed rows and the server keeps the newest version
@@ -294,7 +294,10 @@ Acceptance:
 - [unit] An expired, used or wrong code fails with the same error as SY-012
   and is rate-limited the same way.
 - [unit] A revoked device cannot request a code.
-Status: todo
+Status: done. Device codes share `enrol_codes` (kind `device`, 8 characters,
+10 minutes, single use); issuing is limited to 5 per user per 10 minutes
+(counted in `rate_limits`); failed attempts count in the same per-IP bucket as
+invites.
 
 ### SY-016 List and revoke devices
 As a user, I can see which apps are connected and disconnect any of them.
@@ -306,7 +309,9 @@ Acceptance:
   token stops working at once; another user's device id returns not found.
 - [unit] A device can revoke itself (used by "Sign out").
 - [unit] `revoke-device` admin script does the same.
-Status: todo
+Status: done. `last_seen_at` is updated by a conditional UPDATE batched with the
+token lookup (a write at most once an hour per device, no extra write on
+other requests). `revoke-device <deviceId>` takes a device id.
 
 ### SY-017 Delete a user's cloud data
 As a user, I can remove everything the server holds about my finances.
@@ -320,7 +325,13 @@ Acceptance:
   the user and devices.
 - [doc] The response and the spec state that D1 Time Travel may retain data
   for up to 7 days.
-Status: todo
+Status: done. Same code as `DELETE /v1/data` (SPEC 9.7): one batch deletes the
+user's `changes`, bumps `data_epoch` (cursor-0 Start still works, older cursors
+get `data_reset`, `users.seq` never reset), then each snapshot is deleted from
+R2 and its index row; rerunning finishes after an R2 failure. Run on celld
+(701 rows, 1 snapshot). Response states the 7-day Time Travel retention.
+`delete-user-data <user> [--remove-user]` uses wrangler for D1 and R2 and has
+not been run against a remote database.
 
 ### SY-018 Limits, CORS and logging
 As the operator, the server refuses abuse and never logs financial data.
@@ -336,7 +347,11 @@ Acceptance:
 - [unit] A per-IP request limit is enforced inside the Worker on every
   route (there is no Cloudflare zone to hold a rate-limit rule); over the
   limit returns a distinct retryable error. The README records the limits.
-Status: todo
+Status: done. Per-IP limit is 120 requests per minute held in Worker memory (no
+D1 write; per isolate, so approximate; see README). The D1 daily-quota error
+text is not documented by Cloudflare, so `daily_limit` matches the message
+conservatively and is UNVERIFIED against the real error. CORS, body cap,
+envelope cap and logging are tested on better-sqlite3 only.
 
 ### SY-019 Daily snapshots to R2
 As a user, a copy of my data from each of the last 30 days exists, so a bad
@@ -355,7 +370,17 @@ Acceptance:
   with no changes since the last snapshot still gets one.
 - [unit] One user's failure does not stop the others; failures are logged
   without payloads.
-Status: todo
+Status: done. Built inside D1 (`json_group_array` over stored payload text in
+300-row chunks, `json_set` adds the two null pending-reconcile fields); the
+Worker concatenates, parses once, stringifies once and hashes. The checksum
+cannot be computed without a parse because portable-data.ts hashes
+`JSON.stringify(JSON.parse(doc))` and stored client payloads may not be
+canonical (`1.0`, `\u00e9`), so CPU is linear in data size: UNMEASURED against
+the 10 ms free-plan limit, to be measured on staging (plan section 12). An index
+table `snapshots` in D1 lists snapshots so scripts need no R2 listing. [int]
+test imports through the real `importPortableData`. Run on celld 0.6.3 with
+local R2 via the DEV_MODE route (701 rows, 2 chunks). The cron itself was not
+fired.
 
 ### SY-020 Fetch a snapshot
 As the operator, I can list a user's snapshots and download one as a file
@@ -365,7 +390,10 @@ Acceptance:
 - [unit] `list-snapshots <user>` prints dates and sizes.
 - [unit] `get-snapshot <user> <date>` writes the JSON file unchanged.
 - [manual] A downloaded snapshot imports in the web app.
-Status: todo
+Status: done except the [manual] import check in the web app (not run). The
+scripts read the D1 snapshot index and fetch objects with `wrangler r2 object
+get`; tested through the functions on in-memory stores, not against a real R2
+bucket. `--local` reads wrangler's local R2, not celld's.
 
 ### SY-021 Deploy a staging server
 As the maintainer, the server runs on Cloudflare as `budgie-sync-staging`

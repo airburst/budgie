@@ -65,6 +65,71 @@ is per isolate. Values live in `src/rate-limit.ts`:
 
 - `POST /v1/enrol`: 10 failed attempts per IP per 15 minutes, then `429`.
   A successful enrol is not counted. The IP is `CF-Connecting-IP`.
+- `POST /v1/devices/code`: 5 codes per user per 10 minutes.
+- Every route, per IP: 120 requests per minute (`MemoryIpLimiter` in
+  `src/limits.ts`). It lives in Worker memory, so it costs no D1 write (the
+  free plan allows 100k row writes a day). Each isolate counts separately, so
+  the effective ceiling is 120 times the number of live isolates and the
+  counter resets when an isolate is recycled: a best-effort brake on a runaway
+  client, not an exact quota. The failed-enrol and device-code limits above
+  are exact because they live in D1.
+- Expired `rate_limits` rows are overwritten on the next failure for the same
+  bucket; they are never swept (a few bytes per IP that ever failed).
 
-Expired rows in `rate_limits` are overwritten on the next failure for the same
-bucket; they are never swept (a few bytes per IP that ever failed).
+## Other limits and behaviour
+
+- Body cap 1 MiB (checked from `Content-Length` and while streaming) and at
+  most 500 envelopes per push.
+- CORS: only the origin in the `ALLOWED_ORIGIN` var (production
+  `https://budget.fairhursts.net`) gets headers; `DEV_MODE` adds
+  `http://localhost:3000` and `http://127.0.0.1:3000`.
+- Logs: one JSON line per request with route label, method, status, user id,
+  device id, counts and a reason. Never bodies, tokens, codes, query strings
+  or error messages.
+- `daily_limit`: Cloudflare does not document the exact error text for the D1
+  free-plan daily quota. `isDailyLimitError` matches messages containing
+  "daily read/write/limit/quota", "exceeded ... daily" or "free tier limit".
+  This is unverified; check the real message when it first happens and adjust.
+  It returns `503 daily_limit` with `retryAfter` to the next 00:00 UTC.
+
+## Deploy checklist (SY-021)
+
+- Create the D1 database and R2 bucket in the EU jurisdiction, put the real
+  ids only in a local copy of `wrangler.jsonc`.
+- Apply `migrations/` with `wrangler d1 migrations apply`.
+- Confirm `DEV_MODE` is not set. After deploying staging, verify
+  `POST /dev/admin/add-user` returns `404 not_found` and that `/v1/health` is
+  `200`.
+
+## Snapshots
+
+A cron trigger (03:00 UTC) runs `runSnapshots` (`src/snapshot.ts`): for every
+user with rows it writes `snapshots/<user>/<date>.json` to R2, records it in
+the D1 table `snapshots` (the admin scripts list from there, because wrangler
+cannot list R2 objects) and removes snapshots older than 30 days.
+
+- The package is a portable data package, format 1. D1 builds each
+  collection's JSON (`json_group_array` over the stored payload text, 300 rows
+  per chunk, `json_set` adds the two null pending-reconcile fields to
+  accounts). The Worker concatenates, parses once, stringifies once and
+  hashes: `portable-data.ts` verifies SHA-256 of
+  `JSON.stringify(JSON.parse(document))`, and stored payloads are client bytes
+  that may not be canonical, so the checksum cannot be computed without a
+  parse. CPU is linear in data size and is not yet measured against the 10 ms
+  free-plan limit; measure on staging.
+- Free plan: 50 D1 queries per Worker invocation. The job uses about three
+  per user plus one per pruned snapshot, which is fine for a few users.
+- A snapshot built just before `DELETE /v1/data` can land after it; it
+  disappears at retention or on the next delete.
+- celld cannot fire a cron. In dev (`DEV_MODE`) `POST /dev/admin/run-snapshots`
+  runs the same job.
+
+More admin scripts (same `--remote` / `--env staging` flags; `--local` means
+wrangler's local D1 and R2, not celld's):
+
+```
+bun run revoke-device <deviceId>
+bun run delete-user-data <user> [--remove-user]
+bun run list-snapshots <user>
+bun run get-snapshot <user> <YYYY-MM-DD> [--out file]
+```

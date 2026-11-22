@@ -7,7 +7,11 @@
   "scripts": {
     "dev": "celld dev wrangler.local.jsonc --port 8787 --no-watch",
     "add-user": "bun run scripts/add-user.ts",
-    "new-invite": "bun run scripts/new-invite.ts"
+    "new-invite": "bun run scripts/new-invite.ts",
+    "revoke-device": "bun run scripts/revoke-device.ts",
+    "delete-user-data": "bun run scripts/delete-user-data.ts",
+    "list-snapshots": "bun run scripts/list-snapshots.ts",
+    "get-snapshot": "bun run scripts/get-snapshot.ts"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

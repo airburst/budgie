@@ -6,6 +6,10 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-01-01",
   "workers_dev": true,
+  // CORS: the only origin that gets CORS headers (SPEC 2.3).
+  "vars": { "ALLOWED_ORIGIN": "https://budget.fairhursts.net" },
+  // Daily snapshots at 03:00 UTC.
+  "triggers": { "crons": ["0 3 * * *"] },
   "rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
   "d1_databases": [
     {
@@ -28,6 +32,9 @@
     "staging": {
       "name": "budgie-sync-staging",
       "workers_dev": true,
+      // PLACEHOLDER: set to the staging web app origin. vars are not inherited.
+      "vars": { "ALLOWED_ORIGIN": "https://budget.fairhursts.net" },
+      "triggers": { "crons": ["0 3 * * *"] },
       "d1_databases": [
         {
           "binding": "DB",

@@ -58,3 +58,13 @@ CREATE TABLE rate_limits (
   window_start INTEGER NOT NULL,
   count INTEGER NOT NULL
 );
+
+-- Index of the daily R2 snapshots (R2 itself is not listed by the admin
+-- scripts, which can only get and delete objects through wrangler).
+CREATE TABLE snapshots (
+  user_id TEXT NOT NULL REFERENCES users (id),
+  snapshot_date TEXT NOT NULL,
+  size INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, snapshot_date)
+) WITHOUT ROWID;
