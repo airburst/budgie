@@ -12,6 +12,7 @@ import type {
   DatabaseTransaction,
 } from "@/platform/database";
 import { type PortableTable, PORTABLE_TABLES } from "@/services/portable-data";
+import { defaultAfterApplyHooks } from "@/services/sync/after-apply";
 import {
   acknowledgePush,
   applyPull,
@@ -73,6 +74,7 @@ export type SyncEngineDeps = {
   transport: SyncTransport;
   /** Clock in milliseconds since the Unix epoch (seal fallback, engine edits). */
   now: () => number;
+  /** Defaults to `defaultAfterApplyHooks` (after-apply.ts). */
   afterApply?: readonly AfterApplyHook[];
   /** Defaults to SYNC_FORMAT_VERSION. */
   formatVersion?: number;
@@ -198,7 +200,7 @@ export const runSyncRound = async (
       deviceId: state.deviceId,
       nowMs,
     });
-    for (const hook of deps.afterApply ?? []) {
+    for (const hook of deps.afterApply ?? defaultAfterApplyHooks) {
       await hook(transaction, { deviceId: state.deviceId, nowMs, applied: rows });
     }
     await acknowledgePush(transaction, outgoing, rejected);

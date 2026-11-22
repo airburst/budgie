@@ -10,6 +10,7 @@ import {
 import { encodeSyncRow } from "@/services/sync/codec";
 import { EnvelopeTooLargeError } from "@/services/sync/errors";
 import { sealHlcFromUpdatedAt } from "@/services/sync/hlc";
+import { pairTransferLegs } from "@/services/sync/transfers";
 import {
   toOutgoingEnvelope,
   type SyncEnvelope,
@@ -117,11 +118,11 @@ export const collectDirtyEnvelopes = async (
 };
 
 /**
- * Envelopes that must travel in the same request. Each envelope is its own
- * unit for now; SY-027 groups the two legs of a transfer here (SPEC.md 8.8).
+ * Envelopes that must travel in the same request: the two legs of a transfer
+ * (SPEC.md 8.8, see transfers.ts). Every other envelope is its own unit.
  */
 export const groupPushUnits = (envelopes: SyncEnvelope[]): SyncEnvelope[][] =>
-  envelopes.map((envelope) => [envelope]);
+  pairTransferLegs(envelopes);
 
 const encoder = new TextEncoder();
 const byteLength = (value: unknown) =>

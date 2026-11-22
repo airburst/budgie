@@ -1,0 +1,228 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "id": "transfer-one-leg-deleted-remotely",
+  "description": "The other device deleted one leg of a transfer (a delete there also cleared the link on both legs, but only this leg reaches us). After apply the local leg is live while its partner is deleted, so the engine deletes it as a local edit (SPEC.md 8.8): deletedAt and updatedAt are the engine clock, dirty, sealed now, pushed by the next round. Its link is left as it was. Nothing is pushed in this round.",
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "given": [
+    {
+      "tbl": "accounts",
+      "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-22 10:13:20",
+        "deletedAt": null,
+        "name": "Current account",
+        "number": null,
+        "type": "bank",
+        "balance": 1500,
+        "currency": "GBP",
+        "notes": null,
+        "interestRate": null,
+        "creditLimit": null,
+        "deleted": false
+      },
+      "local": {
+        "pendingReconcileBalance": null,
+        "pendingReconcileDate": null
+      }
+    },
+    {
+      "tbl": "accounts",
+      "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "5c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-22 10:13:20",
+        "deletedAt": null,
+        "name": "Savings account",
+        "number": null,
+        "type": "bank",
+        "balance": 1500,
+        "currency": "GBP",
+        "notes": null,
+        "interestRate": null,
+        "creditLimit": null,
+        "deleted": false
+      },
+      "local": {
+        "pendingReconcileBalance": null,
+        "pendingReconcileDate": null
+      }
+    },
+    {
+      "tbl": "transactions",
+      "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1",
+        "createdAt": "2026-11-20 09:00:00",
+        "updatedAt": "2026-11-22 10:13:20",
+        "deletedAt": null,
+        "accountPublicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "categoryPublicId": null,
+        "date": "2026-11-20",
+        "payee": "Transfer",
+        "amount": -50,
+        "notes": null,
+        "cleared": false,
+        "reconciled": false,
+        "transferTransactionPublicId": "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2"
+      }
+    },
+    {
+      "tbl": "transactions",
+      "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2",
+        "createdAt": "2026-11-20 09:00:00",
+        "updatedAt": "2026-11-22 10:13:20",
+        "deletedAt": null,
+        "accountPublicId": "5c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+        "categoryPublicId": null,
+        "date": "2026-11-20",
+        "payee": "Transfer",
+        "amount": 50,
+        "notes": null,
+        "cleared": false,
+        "reconciled": false,
+        "transferTransactionPublicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1"
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "transactions",
+        "publicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": true,
+        "payload": {
+          "publicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1",
+          "createdAt": "2026-11-20 09:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": "2026-11-22 10:15:30",
+          "accountPublicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "categoryPublicId": null,
+          "date": "2026-11-20",
+          "payee": "Transfer",
+          "amount": -50,
+          "notes": null,
+          "cleared": false,
+          "reconciled": false,
+          "transferTransactionPublicId": null
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [],
+    "rows": [
+      {
+        "tbl": "accounts",
+        "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:13:20",
+          "deletedAt": null,
+          "name": "Current account",
+          "number": null,
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": null,
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        },
+        "local": {
+          "pendingReconcileBalance": null,
+          "pendingReconcileDate": null
+        }
+      },
+      {
+        "tbl": "accounts",
+        "hlc": "001795342400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "5c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:13:20",
+          "deletedAt": null,
+          "name": "Savings account",
+          "number": null,
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": null,
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        },
+        "local": {
+          "pendingReconcileBalance": null,
+          "pendingReconcileDate": null
+        }
+      },
+      {
+        "tbl": "transactions",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1",
+          "createdAt": "2026-11-20 09:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": "2026-11-22 10:15:30",
+          "accountPublicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "categoryPublicId": null,
+          "date": "2026-11-20",
+          "payee": "Transfer",
+          "amount": -50,
+          "notes": null,
+          "cleared": false,
+          "reconciled": false,
+          "transferTransactionPublicId": null
+        }
+      },
+      {
+        "tbl": "transactions",
+        "hlc": "001795343400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": true,
+        "unsealed": false,
+        "payload": {
+          "publicId": "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2",
+          "createdAt": "2026-11-20 09:00:00",
+          "updatedAt": "2026-11-22 10:30:00",
+          "deletedAt": "2026-11-22 10:30:00",
+          "accountPublicId": "5c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e5f",
+          "categoryPublicId": null,
+          "date": "2026-11-20",
+          "payee": "Transfer",
+          "amount": 50,
+          "notes": null,
+          "cleared": false,
+          "reconciled": false,
+          "transferTransactionPublicId": "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1"
+        }
+      }
+    ],
+    "error": null
+  }
+}

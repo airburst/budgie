@@ -520,7 +520,7 @@ Acceptance:
 - [int] One device deletes a transfer while another edits one leg: after
   sync both devices agree, and no leg is left without its partner.
 - [unit] A fixture covers "one leg deleted remotely".
-Status: todo
+Status: done
 
 ### SY-028 Auto-post the same occurrence once
 As a user, two devices that both auto-post a scheduled payment end up with
