@@ -3,6 +3,7 @@ import { getSyncApi } from "@/platform/sync-api";
 import type { SyncStatusView } from "@/services/sync/api-types";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { DownloadBackupButton } from "./DownloadBackupButton";
 import { SyncDangerZone } from "./SyncDangerZone";
 import { SyncDevices } from "./SyncDevices";
 import {
@@ -94,6 +95,7 @@ export function SyncStatusPanel({ status }: { status: SyncStatusView }) {
       )}
       <SyncDevices />
       <SyncDangerZone status={status} />
+      <DownloadBackupButton />
     </div>
   );
 }

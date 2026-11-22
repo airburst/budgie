@@ -8,6 +8,10 @@ vi.mock("@/components/header", () => ({
   default: () => <div>Header</div>,
 }));
 
+vi.mock("@/components/ReconciliationReviewNotice", () => ({
+  ReconciliationReviewNotice: () => null,
+}));
+
 vi.mock("@/hooks/usePreferences", () => ({
   usePreferences: () => ({
     preferences: {

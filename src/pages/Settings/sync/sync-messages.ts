@@ -1,10 +1,7 @@
 // Wording for sync outcomes. The engine's `message` is English text for logs;
 // the UI picks its own plain wording per stable reason or state.
 
-import type {
-  SyncFailure,
-  SyncStatusView,
-} from "@/services/sync/api-types";
+import type { SyncFailure, SyncStatusView } from "@/services/sync/api-types";
 import type { SyncState } from "@/services/sync/status";
 
 const waitText = (seconds: number | null): string => {
@@ -86,4 +83,62 @@ export function formatSyncTime(value: string | null): string {
   if (!value) return "Never";
   const date = new Date(`${value.replace(" ", "T")}Z`);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+// SY-042 and SY-043: wording for the import warning and the sync notices.
+
+/** `YYYY-MM-DD HH:MM:SS` (UTC) as a local time of day, or null. */
+const formatRetryTime = (retryAt: string | null): string | null => {
+  if (!retryAt) return null;
+  const date = new Date(`${retryAt.replace(" ", "T")}Z`);
+  return Number.isNaN(date.getTime())
+    ? null
+    : date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+};
+
+/** The states that raise a toast (SY-043). */
+export type SyncNoticeState =
+  "clock_ahead" | "update_needed" | "disconnected" | "daily_limit";
+
+export const isSyncNoticeState = (state: SyncState): state is SyncNoticeState =>
+  state === "clock_ahead" ||
+  state === "update_needed" ||
+  state === "disconnected" ||
+  state === "daily_limit";
+
+/** Needs the user to act: shown again after a reload while it still holds. */
+export const syncNoticeNeedsAction = (state: SyncNoticeState): boolean =>
+  state === "update_needed" || state === "disconnected";
+
+export function syncNoticeText(
+  state: SyncNoticeState,
+  retryAt: string | null,
+): string {
+  switch (state) {
+    case "clock_ahead":
+      return "This device's clock is too far ahead, so some changes were not synced. Correct the date and time on this device, then sync again.";
+    case "update_needed":
+      return "This version of Budgie is too old to sync. Reload the app to update it.";
+    case "disconnected":
+      return "This device was disconnected from sync. Connect it again with a new code in Settings.";
+    case "daily_limit": {
+      const time = formatRetryTime(retryAt);
+      return `The sync service has reached its daily limit. Budgie will try again ${time ? `at ${time}` : "later"}.`;
+    }
+  }
+}
+
+/** An import the sync engine refused: nothing was changed. */
+export function describeImportError(error: unknown): string {
+  if (error instanceof Error && error.name === "InvalidOutgoingEnvelopeError") {
+    const { table, publicId } = error as Error & {
+      table?: string;
+      publicId?: string | null;
+    };
+    const row = table
+      ? ` (${table}${publicId ? `, row ${publicId}` : ""})`
+      : "";
+    return `This file can't be synced${row}. Your data has not been changed. Turn sync off to import it, or use a different file.`;
+  }
+  return error instanceof Error ? error.message : "Import failed";
 }

@@ -38,7 +38,16 @@ export type SyncMock = {
   /** Delay every sync answer, to see progress. */
   delayMs: number;
   /** Answer sync with this error instead (`status`, `error`), or null. */
-  failSync: { status: number; error: string } | null;
+  failSync: {
+    status: number;
+    error: string;
+    /** Seconds, for 429 and 503 (sent in the body). */
+    retryAfter?: number;
+    /** Extra body fields, e.g. `formatVersion` of `format_too_old`. */
+    extra?: Record<string, unknown>;
+  } | null;
+  /** Reject every pushed envelope with this reason (e.g. "drift"), or null. */
+  rejectPush: "drift" | "stale" | null;
   /** Make every request fail as if offline. */
   offline: boolean;
   /** Number of pushed envelopes seen, over all syncs. */
@@ -129,6 +138,7 @@ export async function mockSyncServer(
     },
     delayMs: 0,
     failSync: null,
+    rejectPush: null,
     offline: false,
     pushed: 0,
     devices: [],
@@ -235,12 +245,15 @@ export async function mockSyncServer(
         await new Promise((resolve) => setTimeout(resolve, mock.delayMs));
       }
       if (mock.failSync) {
-        return json(route, mock.failSync.status, {
-          error: mock.failSync.error,
+        const { status, error, retryAfter, extra } = mock.failSync;
+        return json(route, status, {
+          error,
+          ...(retryAfter === undefined ? {} : { retryAfter }),
+          ...extra,
         });
       }
       const body = request.postDataJSON() as {
-        push?: unknown[];
+        push?: { tbl: string; publicId: string }[];
         cursor?: string;
       };
       // Like the server: a cursor from before a delete is refused, "0" is not.
@@ -253,12 +266,20 @@ export async function mockSyncServer(
         body.cursor === "0"
           ? [...state.seeded, ...state.stored.values(), ...state.pull]
           : state.pull;
-      const pushed = (body.push ?? []) as MockEntry[];
+      const all = (body.push ?? []) as MockEntry[];
+      const rejected = mock.rejectPush
+        ? all.map(({ tbl, publicId }) => ({
+            tbl,
+            publicId,
+            reason: mock.rejectPush,
+          }))
+        : [];
+      const pushed = mock.rejectPush ? [] : all;
       mock.pushed += pushed.length;
       for (const entry of pushed) {
         state.stored.set(`${entry.tbl}/${entry.publicId}`, entry);
       }
-      if (pushed.length) mock.hasData = true;
+      if (all.length) mock.hasData = true;
       state.pull = [];
       state.seq += 1;
       return json(route, 200, {
@@ -266,7 +287,7 @@ export async function mockSyncServer(
         cursor: `${state.epoch}:${state.seq}`,
         more: false,
         pull: entries,
-        rejected: [],
+        rejected,
       });
     }
 

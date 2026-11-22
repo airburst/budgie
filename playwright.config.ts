@@ -17,7 +17,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /sync-(origin|ui|devices)\.spec\.ts/,
+      testIgnore: /sync-(origin|ui|devices|notices)\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:4173", ...devices["Desktop Chrome"] },
     },
     {
@@ -25,7 +25,7 @@ export default defineConfig({
       // e2e/sync-origin.spec.ts starts itself (port 4599). e2e/sync-ui.spec.ts
       // runs here too, with the sync server mocked by page.route.
       name: "sync-origin",
-      testMatch: /sync-(origin|ui|devices)\.spec\.ts/,
+      testMatch: /sync-(origin|ui|devices|notices)\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:4174", ...devices["Desktop Chrome"] },
     },
   ],

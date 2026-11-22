@@ -787,7 +787,7 @@ Acceptance:
   while synced.
 - [e2e] Portable import while synced warns that it will overwrite all
   devices before proceeding.
-Status: todo
+Status: done
 
 ### SY-043 Tell me about sync problems
 As a user, I am told when sync needs my attention.
@@ -798,7 +798,7 @@ Acceptance:
   appears once per occurrence, not on every cycle.
 - [e2e] An account whose reconciliation no longer adds up after a sync shows
   a "review reconciliation" notice linking to that account.
-Status: todo
+Status: done
 
 ### SY-044 End-to-end test against a local server
 As the maintainer, CI proves the web app syncs through a real server.

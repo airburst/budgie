@@ -1,4 +1,5 @@
 import RouterContent from "@/components/RouterContent";
+import { SyncNotices } from "@/components/SyncNotices";
 import { Toaster } from "@/components/ui/sonner";
 import { usePlatform } from "@/hooks/usePlatform";
 import { useSyncRefresh } from "@/hooks/useSyncRefresh";
@@ -118,6 +119,7 @@ function App() {
         <ThemeApplier />
         <UpdateListener />
         <SyncRefresher />
+        <SyncNotices />
         <RouterContent />
       </HashRouter>
       <Toaster position="bottom-right" />

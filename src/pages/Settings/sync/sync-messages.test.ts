@@ -1,6 +1,13 @@
 import type { SyncFailure, SyncStatusView } from "@/services/sync/api-types";
 import { describe, expect, it } from "vitest";
-import { describeSyncFailure, syncIndicator } from "./sync-messages";
+import { InvalidOutgoingEnvelopeError } from "@/services/sync/errors";
+import {
+  describeImportError,
+  describeSyncFailure,
+  syncIndicator,
+  syncNoticeNeedsAction,
+  syncNoticeText,
+} from "./sync-messages";
 
 const status = (patch: Partial<SyncStatusView>): SyncStatusView => ({
   enabled: true,
@@ -65,5 +72,30 @@ describe("describeSyncFailure", () => {
       describeSyncFailure(failure({ reason: "rate_limited", retryAfter: 30 })),
     ).toContain("30 seconds");
     expect(describeSyncFailure(failure({}))).toBe("boom");
+  });
+});
+
+describe("sync notices and import errors", () => {
+  it("says when a daily limit will be retried, or just later", () => {
+    expect(syncNoticeText("daily_limit", null)).toContain("try again later");
+    expect(syncNoticeText("daily_limit", "2026-03-08 00:00:00")).toMatch(
+      /try again at \d\d:\d\d/,
+    );
+  });
+
+  it("asks only for stopped states to be shown again after a reload", () => {
+    expect(syncNoticeNeedsAction("update_needed")).toBe(true);
+    expect(syncNoticeNeedsAction("disconnected")).toBe(true);
+    expect(syncNoticeNeedsAction("clock_ahead")).toBe(false);
+    expect(syncNoticeNeedsAction("daily_limit")).toBe(false);
+  });
+
+  it("reports an unsyncable import file by table and row", () => {
+    const error = new InvalidOutgoingEnvelopeError("payees", "abc", "bad");
+    expect(describeImportError(error)).toContain("This file can't be synced");
+    expect(describeImportError(error)).toContain("payees, row abc");
+    expect(describeImportError(new Error("Invalid checksum"))).toBe(
+      "Invalid checksum",
+    );
   });
 });
