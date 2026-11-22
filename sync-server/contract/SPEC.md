@@ -71,7 +71,11 @@ HTTPS only. Clients MUST NOT follow redirects to another origin.
   server resolves the user and device from the token only; any user or device
   id in a body is ignored.
 - **Body cap: 1 MiB (1,048,576 bytes)** for every request. Larger requests are
-  refused with `413 body_too_large` before the body is parsed.
+  refused with `413 body_too_large` before the body is parsed. A sync request
+  under the cap can still get `413 body_too_large` when its payloads are
+  mostly quotes or backslashes: the server stores each payload as JSON text
+  inside JSON, which can nearly double it. Clients that chunk pushes by size
+  SHOULD leave room for this.
 - Timestamps in API responses (not in row payloads) are ISO 8601 UTC with
   milliseconds, for example `"2026-11-22T10:25:00.000Z"`.
 - Unknown fields in request bodies are ignored by the server. Unknown fields in
@@ -127,6 +131,10 @@ body size, route, JSON and schema (`bad_request`, `too_many_envelopes`), token
 `data_reset`, `not_found` for a device id). Clients MUST NOT depend on this
 order.
 
+`revoked`, `format_too_old` and `data_reset` are checked again as part of the
+write itself, so a sync that races a revoke, a newer app's first sync or
+"Delete my cloud data" gets the error and stores nothing.
+
 Transport failures (no network, DNS, TLS, timeout) are retryable and mean
 "offline" to the client.
 
@@ -136,7 +144,9 @@ There is no Cloudflare zone in front of the Worker, so all limits are enforced
 inside the Worker. Exceeding any of them returns `429 rate_limited`.
 
 - A per-IP request limit on every route.
-- `POST /v1/enrol`: failed attempts are limited per IP.
+- `POST /v1/enrol`: failed attempts are limited per IP. The count is
+  approximate (it is kept per server instance), so a few more attempts than
+  the limit may be answered before `429`.
 - `POST /v1/devices/code`: limited per user.
 
 The values are server configuration and are recorded in `sync-server/README.md`.
@@ -1245,7 +1255,12 @@ screen.
 1. Enrol with an invite code (or, after a data reset, use the existing token).
    Start is only allowed when the server has no data for the user: `hasData`
    is `false` from enrol, or, with an existing token, a sync with cursor `"0"`
-   and an empty push returns no rows and `more: false`.
+   and an empty push returns no rows and `more: false`. That probe never
+   returns the caller's own writes (section 9.3), so it shows only whether
+   another device has data; a device that already pushed must not use it to
+   decide the server is empty. A client that has not started has no cursor
+   at all (not `"0"`) and MUST NOT run a sync cycle until Start or Join has
+   set one.
 2. In one local transaction, rewrite every public id that is not a canonical
    lowercase UUID (section 3.1) to a fresh random UUID, keeping every foreign
    key and transfer link intact, and mark every row in the ten tables dirty and

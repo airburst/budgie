@@ -147,6 +147,7 @@ Numbers compare by value (`1500` equals `1500.0`). Strings compare exactly.
 | `remote-delete.json`                                    | SY-007 | Remote delete applies `deletedAt` and the `deleted` flag.                                                   |
 | `remote-undelete-beats-older-delete.json`               | SY-007 | Undelete with a higher HLC revives; with a lower one, skipped.                                              |
 | `local-dirty-sealed-and-pushed.json`                    | SY-007 | Seal rule on new, re-edited and already sealed rows; ack.                                                   |
+| `transfer-one-leg-deleted-remotely.json`                | SY-028 | A remote delete of one transfer leg deletes the other leg locally, to be pushed in the next round.          |
 | `ids.json`                                              | SY-008 | Deterministic auto-post id vectors (kind `ids`).                                                            |
 | `payee-collision-local-keeps-key.json`                  | SY-009 | payees.name: local row has the lowest id and newest content; remote row deleted.                            |
 | `payee-collision-remote-keeps-key.json`                 | SY-009 | payees.name: remote row keeps the key, takes the local content; local row deleted.                          |
