@@ -8,6 +8,10 @@ built from this document alone, plus `tables.json` and the conformance
 fixtures, must interoperate with the others. Where this document and any
 implementation disagree, this document wins until it is changed.
 
+Contract version: see `VERSION` (section 4.1). Conformance fixtures are in
+`fixtures/`, described by `fixtures/README.md` and validated by
+`fixture.schema.json`; both engines MUST pass every fixture.
+
 The key words MUST, MUST NOT, SHOULD and MAY are used in their usual sense.
 
 Contents:
@@ -234,6 +238,20 @@ change what is stored in or read from a payload.
 The sync format version is separate from `PORTABLE_FORMAT_VERSION` in
 `src/services/portable-data.ts` (also 1). The two are expected to move together
 when a payload field changes, but neither implies the other.
+
+### 4.1 Contract version
+
+`contract/VERSION` holds the **contract version**: a positive integer on one
+line, followed by a newline. It identifies the whole contract directory
+(`SPEC.md`, `tables.json`, `fixture.schema.json` and `fixtures/`), not the wire
+format. BudgieMac's fixture copy script records it, so a stale copy fails a
+test, and `GET /v1/health` returns it.
+
+- The server's `CONTRACT_VERSION` constant (`sync-server/src/version.ts`) MUST
+  equal it; a Budgie unit test checks this.
+- It is `1` until BudgieMac first copies the contract. From then on, every
+  change under `contract/` merged to `main` adds one to it, whether or not the
+  format version changes.
 
 ## 5. Row payloads
 
@@ -692,10 +710,71 @@ point at each other.
 
 ### 8.9 Deterministic ids for auto-posted transactions
 
-> **Placeholder: defined by story SY-008.** The function from schedule public
-> id, due date and transfer leg marker to a transaction public id goes here,
-> with test vectors in `fixtures/ids.json`. Until then engines MUST NOT
-> assume any particular id for auto-posted rows.
+When a device auto-posts an occurrence of a scheduled transaction, the posted
+transaction's public id is computed, not random. Two devices that post the
+same occurrence offline then create the same row, and last-write-wins merges
+them into one.
+
+**Inputs**
+
+| Input              | Value                                                                                                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schedulePublicId` | The `scheduled_transactions` row's public id, canonical lowercase UUID (section 3.1).                                                                                                            |
+| `dueDate`          | The occurrence's due date, `YYYY-MM-DD`, a real calendar date. This is the `nextDueDate` the occurrence was posted for, which is also the posted transaction's `date`.                           |
+| `leg`              | `account` for the transaction on the schedule's `accountPublicId` (every auto-posted occurrence has one); `transfer` for the second leg of a scheduled transfer, on `transferToAccountPublicId`. |
+
+Any other input is refused with an error. A schedule whose public id is not
+yet a canonical UUID (an app that has never run Start, section 11.1) posts
+with an ordinary random id instead; such rows are rewritten by Start like any
+other.
+
+Before creating an auto-posted transaction, the client looks up the computed
+id. If a row with that id already exists locally, live or deleted, the
+occurrence has already been posted (here or on another device): the client
+MUST NOT create or change it, and only advances the schedule's `nextDueDate`.
+
+**Algorithm**
+
+1. Build the ASCII string
+
+   ```
+   budgie:auto-post:v1:<schedulePublicId>:<dueDate>:<leg>
+   ```
+
+   with no spaces, no trailing newline, and the inputs exactly as above.
+   Example: `budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2026-11-22:account`.
+
+2. Hash its UTF-8 bytes (all ASCII) with SHA-256, giving 32 bytes.
+3. Keep the first 16 bytes, `b[0]` to `b[15]`.
+4. Set the version: `b[6] = (b[6] & 0x0F) | 0x80` (UUID version 8).
+5. Set the variant: `b[8] = (b[8] & 0x3F) | 0x80` (RFC 9562 variant `10`).
+6. Write the 16 bytes as lowercase hex in the `8-4-4-4-12` form.
+
+For the example input, SHA-256 is
+`7551869f10e3da7bcc3967d1541af2e30bee66050a2fda2c24386c4b3dd2a488` and the id
+is `7551869f-10e3-8a7b-8c39-67d1541af2e3`.
+
+The result is a canonical UUID (section 3.1), always version 8, and the two
+legs of one transfer occurrence always differ. In Swift this is
+`SHA256.hash(data: Data(input.utf8))` from CryptoKit, then the same two bit
+operations; in TypeScript, `crypto.subtle.digest("SHA-256", ...)`.
+
+**Vectors.** `fixtures/ids.json` holds valid vectors (inputs, the exact input
+string, its SHA-256 in hex, and the id) and invalid inputs that must be
+refused. Both engines run all of them.
+
+**Notes**
+
+- The id is used when the transaction is first created. Editing the posted
+  transaction later (amount, date, anything) keeps its id.
+- The two legs of a scheduled transfer link to each other by
+  `transferTransactionPublicId` as usual (section 8.8).
+- If a user deletes an auto-posted transaction and another device later posts
+  the same occurrence, the other device's insert has the same public id. Which
+  version survives is ordinary last-write-wins on that row (section 8.1).
+- Changing the input string, hash or bit layout is a format version bump
+  (section 4). The `v1` in the input string names this version of the
+  function, not the format version.
 
 ### 8.10 Natural-key collisions
 
@@ -741,8 +820,8 @@ Response `200`:
 ```
 
 - `formatVersion`: the highest format version this server build knows.
-- `contractVersion`: the contents of `contract/VERSION` that the server was
-  built with (the file is added by story SY-007).
+- `contractVersion`: the contract version the server was built with
+  (section 4.1), as a string.
 
 ### 9.2 `POST /v1/enrol`
 
@@ -1183,3 +1262,10 @@ These were decided while writing this contract and are open to review.
     API metadata timestamps are ISO 8601.
 18. **Start with an existing token** (after a data reset) checks emptiness with
     a cursor-`"0"` sync instead of a new endpoint.
+19. **Contract version** stays `1` until BudgieMac first copies the contract,
+    then goes up by one on every merged change under `contract/` (section 4.1).
+20. **Auto-post ids** are UUID version 8 from SHA-256 over
+    `budgie:auto-post:v1:<schedule>:<date>:<leg>`, with legs `account` and
+    `transfer`; schedules without a canonical id post with random ids; an
+    existing row with the computed id (live or deleted) is never recreated
+    (section 8.9).
