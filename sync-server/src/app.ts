@@ -4,6 +4,7 @@ import {
   handleListDevices,
   handleRevokeDevice,
 } from "./devices";
+import { handleDeleteData } from "./data";
 import { handleEnrol } from "./enrol";
 import { ApiError, errorResponse, jsonResponse } from "./errors";
 import type { SqlExecutor } from "./executor";
@@ -55,6 +56,7 @@ const KNOWN_ROUTES = new Set([
   "GET /v1/devices",
   "POST /v1/devices/code",
   "POST /v1/sync",
+  "DELETE /v1/data",
 ]);
 
 /** A log-safe route label: never contains ids, tokens or arbitrary paths. */
@@ -86,6 +88,8 @@ async function route(request: Request, deps: HandlerDeps): Promise<Response> {
       return handleDeviceCode(request, deps);
     case "POST /v1/sync":
       return handleSync(request, deps);
+    case "DELETE /v1/data":
+      return handleDeleteData(request, deps);
   }
 
   const revoke = /^\/v1\/devices\/([^/]+)$/.exec(pathname);

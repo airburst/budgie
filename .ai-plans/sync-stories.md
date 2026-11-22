@@ -325,7 +325,13 @@ Acceptance:
   the user and devices.
 - [doc] The response and the spec state that D1 Time Travel may retain data
   for up to 7 days.
-Status: todo
+Status: done. Same code as `DELETE /v1/data` (SPEC 9.7): one batch deletes the
+user's `changes`, bumps `data_epoch` (cursor-0 Start still works, older cursors
+get `data_reset`, `users.seq` never reset), then each snapshot is deleted from
+R2 and its index row; rerunning finishes after an R2 failure. Run on celld
+(701 rows, 1 snapshot). Response states the 7-day Time Travel retention.
+`delete-user-data <user> [--remove-user]` uses wrangler for D1 and R2 and has
+not been run against a remote database.
 
 ### SY-018 Limits, CORS and logging
 As the operator, the server refuses abuse and never logs financial data.
