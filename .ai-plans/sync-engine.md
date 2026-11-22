@@ -47,7 +47,8 @@ Security and enrolment:
 
 Hosting and repo:
 
-- Cloudflare Worker at `sync.fairhursts.net`. Server code in `sync-server/`.
+- Cloudflare Worker on its `workers.dev` address (section 2). Server code in
+  `sync-server/`.
 - The contract (spec + conformance fixtures) lives beside the server code.
 - Repos stay separate. This repo owns the server, the contract and the TS
   engine. `budgie-mac` owns the Swift engine and copies the fixtures into
@@ -86,16 +87,15 @@ Deferred on purpose:
   in the Worker does. So the snapshot job builds its JSON inside D1
   (`json_group_array`) where it can, and its CPU time is measured on staging
   with a realistic data set (section 12).
-- **Hostname is not settled.** `fairhursts.net` uses GoDaddy's name servers,
-  and a Worker custom domain needs the domain to be a Cloudflare zone. See
-  Unresolved questions. Until then the plan's `sync.fairhursts.net` is a
-  placeholder; staging would be `sync-staging.fairhursts.net`.
-- Free tier covers 3 users: D1 allows 5M rows read and 100k rows written per
-  day. Exceeding a daily limit makes queries fail until 00:00 UTC, so clients
-  treat that as a retryable error.
-- Measured cost: a push bills 2 row writes per accepted row (the row plus the
-  pull index), so one day's free allowance is about 50,000 pushed rows. A
-  first sync larger than that must be able to resume the next day.
+- **Hostname: the Worker's `workers.dev` address** (decided 2026-11-22).
+  `fairhursts.net` stays on GoDaddy's name servers, and a Worker custom
+  domain needs a Cloudflare zone, so there is no `sync.fairhursts.net` for
+  now. Worker names: `budgie-sync` (production) and `budgie-sync-staging`,
+  giving `https://<worker>.<account>.workers.dev`. Consequences:
+  - the server URL is build configuration in both apps, never hard-coded, so
+    a custom domain can be added later without a data change;
+  - there is no Cloudflare rate-limit rule (that needs a zone), so all rate
+    limiting is done inside the Worker.
 - TLS from Cloudflare; D1 and R2 are encrypted at rest by Cloudflare.
 - `sync-server/` has its own `package.json` and wrangler config.
 - The request handler is written against a tiny SQL-executor interface so the
@@ -450,7 +450,7 @@ choice, and a second app must prove it belongs to the same person.
 - Before Start or Join, a consent screen states:
   - what is uploaded (all accounts, transactions, schedules, payees, budget
     data; not preferences);
-  - where it goes (Cloudflare, `sync.fairhursts.net`) and that daily
+  - where it goes (Cloudflare, the Worker's `workers.dev` address) and that daily
     snapshots are kept for 30 days;
   - that it is not end-to-end encrypted, so the operator can read it;
   - how to stop and how to delete.
@@ -505,12 +505,6 @@ choice, and a second app must prove it belongs to the same person.
   Check that `build.sh` always signs with a stable identity, or every rebuild
   will prompt for Keychain access.
 
-- Hostname for the sync server. `fairhursts.net` is on GoDaddy's name
-  servers, so a Worker cannot be bound to `sync.fairhursts.net` today, and
-  the planned Cloudflare rate-limit rule needs a zone too. Choices: move the
-  domain's DNS to Cloudflare (free; every existing record must be copied
-  first), or serve from the `workers.dev` address and rate-limit inside the
-  Worker. Blocks the rate-limit rule and the staging deploy stories.
 - BudgieMac change tracking: save hook or SwiftData history. (Spike.)
 - BudgieMac lifecycle rules: Start, Join with existing data, backup restore.
 - Natural-key collision rule: confirm the re-key proposal in the spec.

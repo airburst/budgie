@@ -100,13 +100,13 @@ Acceptance:
 - [doc] Confirmed: `sync.fairhursts.net` can be bound to the Worker, and a
   staging hostname is chosen.
 - [doc] Anything that does not fit is raised as a change to the plan.
-Status: done except the hostname, which needs a decision. Confirmed on the
+Status: done (2026-11-22). Hostname decided: the Worker's `workers.dev`
+address, because the domain's DNS stays at GoDaddy (plan §2). Confirmed on the
 free plan: D1 in the EU jurisdiction (region EEUR); an R2 bucket in the EU
 jurisdiction, used from a Worker binding; R2 allowance of 10 GB, 1 million
 writes and 10 million reads a month; 5 cron triggers per account; Time Travel
 keeps 7 days. Raised as changes to the plan: `fairhursts.net` is not a
-Cloudflare zone, so `sync.fairhursts.net` cannot be bound yet (plan,
-Unresolved questions); the free plan allows 10 ms of CPU per request, which
+Cloudflare zone, so `sync.fairhursts.net` cannot be bound; the free plan allows 10 ms of CPU per request, which
 the snapshot job must be measured against; celld needs its own config without
 `jurisdiction` and `workers_dev`.
 
@@ -316,8 +316,9 @@ Acceptance:
 - [unit] Log lines hold user id, device id, counts and reasons; a test
   asserts no payload, token or code text appears in them.
 - [unit] A D1 daily-limit failure is returned as a distinct retryable error.
-- [manual] A Cloudflare rate-limit rule is set on the hostname and recorded
-  in the server README.
+- [unit] A per-IP request limit is enforced inside the Worker on every
+  route (there is no Cloudflare zone to hold a rate-limit rule); over the
+  limit returns a distinct retryable error. The README records the limits.
 Status: todo
 
 ### SY-019 Daily snapshots to R2
@@ -350,7 +351,8 @@ Acceptance:
 Status: todo
 
 ### SY-021 Deploy a staging server
-As the maintainer, the server runs on Cloudflare at a staging hostname.
+As the maintainer, the server runs on Cloudflare as `budgie-sync-staging`
+on its `workers.dev` address.
 Depends: SY-013, SY-014, SY-018, SY-019
 Acceptance:
 - [manual] Staging Worker, D1 database and R2 bucket exist in the EU
@@ -359,8 +361,8 @@ Acceptance:
   staging with a test user.
 - [doc] `sync-server/README.md` covers local run, tests, deploy, migrations,
   admin scripts and restoring from Time Travel.
-- [doc] Production (`sync.fairhursts.net`) is not created here; that is
-  go-live (step 8).
+- [doc] Production (`budgie-sync`) is not created here; that is go-live
+  (step 8).
 Status: todo
 
 ## M5 Web engine (step 5)
