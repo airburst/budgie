@@ -645,7 +645,16 @@ Acceptance:
   import removed are pushed as deleted.
 - [int] A second device ends with exactly the imported data after sync.
 - [int] Importing a server snapshot (SY-019) while synced works the same way.
-Status: todo
+Status: done. `importPortableData` moved to `portable-import.ts` (it now uses
+the engine). Package rows are written as user writes that keep the package's
+`updated_at` (second pass included; also with sync off). While synced: rows
+the import removes, and synced rows already deleted (store included), are
+re-marked deleted and dirty; rows never synced and deleted (Join leftovers)
+are left alone; dirty rows are normalised and validated as Start does
+(`sync/normalise.ts`, shared); every unsealed row is sealed in the import
+transaction with the import time as its edit time, so it beats versions
+from before the import even when not yet pulled. Tests:
+`sync-import.test.ts`.
 
 ## M6 Web wiring and UI (step 6)
 
@@ -734,7 +743,13 @@ Acceptance:
   server does not block startup; offline, auto-post runs as today.
 - [unit] A tab without the instance lock never syncs.
 - [e2e] An edit shows as "pending 1", then "synced" without user action.
-Status: todo
+Status: done except the [e2e] criterion (pending the UI). Scheduler in
+`src/services/sync/scheduler.ts`; local writes detected by
+`src/services/sync/write-observer.ts` (wraps the database the services use;
+the sync engine keeps the raw one, so engine writes never notify). Backoff
+30 s, 1 m, 2 m, 4 m, 8 m, then 15 m cap; `retryAfter` honoured; no auto-retry
+for stopped states or `clock_ahead`. Startup sync (3 s timeout) runs before
+auto-post in `runtime.ts`.
 
 ### SY-040 Add and manage devices
 As a user, I can connect another app and disconnect ones I no longer use.

@@ -550,6 +550,12 @@ and `edit`, the wall time in milliseconds of the row's latest local edit.
 3. Edits made by the engine itself (section 8.10) set `updatedAt` to the
    current clock truncated to the second, and `edit` is that value on every
    client.
+4. A portable import (or any bulk replacement of local data) while sync is on
+   is a local edit of every row it writes or deletes, made at the moment of
+   the import: `edit` is the clock reading at the import, in milliseconds,
+   not the row's `updatedAt` from the package. The client seals these rows
+   as part of the import. Otherwise an old backup would lose to an edit made
+   on another device that this device has not pulled yet.
 
 Then:
 

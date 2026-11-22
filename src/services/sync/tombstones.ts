@@ -5,7 +5,7 @@
 
 import type { DatabaseTransaction } from "@/platform/database";
 import type { PortableTable } from "@/services/portable-data";
-import { sealHlcFromUpdatedAt } from "@/services/sync/hlc";
+import { sealHlc, sealHlcFromUpdatedAt } from "@/services/sync/hlc";
 import {
   toOutgoingEnvelope,
   type SyncEnvelope,
@@ -18,20 +18,27 @@ import {
   type StoredTombstone,
 } from "@/services/tombstone-store";
 
-/** Seals one stored row (SPEC.md 7.3) and returns its new HLC. */
+/**
+ * Seals one stored row (SPEC.md 7.3) and returns its new HLC. `editMs` as
+ * for `sealRow` (push.ts).
+ */
 export const sealTombstone = async (
   transaction: DatabaseTransaction,
   tombstone: StoredTombstone,
   deviceId: string,
   nowMs: number,
+  editMs?: number,
 ): Promise<string> => {
   const updatedAt = tombstone.payload.updatedAt;
-  const hlc = sealHlcFromUpdatedAt(
-    tombstone.hlc,
-    deviceId,
-    typeof updatedAt === "string" ? updatedAt : null,
-    nowMs,
-  );
+  const hlc =
+    editMs === undefined
+      ? sealHlcFromUpdatedAt(
+          tombstone.hlc,
+          deviceId,
+          typeof updatedAt === "string" ? updatedAt : null,
+          nowMs,
+        )
+      : sealHlc(tombstone.hlc, deviceId, editMs);
   await transaction.execute({
     sql: `UPDATE sync_tombstones SET hlc = ?, unsealed = 0
       WHERE tbl = ? AND public_id = ? AND unsealed = 1`,
@@ -45,13 +52,14 @@ export const sealDirtyTombstones = async (
   transaction: DatabaseTransaction,
   deviceId: string,
   nowMs: number,
+  editMs?: number,
 ): Promise<number> => {
   let sealed = 0;
   for (const table of NATURAL_KEY_TABLES) {
     for (const tombstone of await readTombstones(transaction, table, {
       unsealed: true,
     })) {
-      await sealTombstone(transaction, tombstone, deviceId, nowMs);
+      await sealTombstone(transaction, tombstone, deviceId, nowMs, editMs);
       sealed++;
     }
   }
