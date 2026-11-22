@@ -3,7 +3,7 @@ import { ApiError } from "./errors";
 import type { SqlExecutor } from "./executor";
 import type { LogContext } from "./log";
 import { parseJson } from "./http";
-import { rawPushPayloads } from "./json-ranges";
+import { rawPushPayloads, ScanError } from "./json-ranges";
 
 // POST /v1/sync (SPEC 9.3, section 12).
 
@@ -101,9 +101,8 @@ function parseRequest(text: string): {
   }
   if (push.length > MAX_ENVELOPES) throw new ApiError("too_many_envelopes");
   const parsedCursor = parseCursor(cursor);
-  const raw = rawPushPayloads(text);
   const seen = new Set<string>();
-  const envelopes = push.map((item: unknown, i): PushEnvelope => {
+  const envelopes = push.map((item: unknown): PushEnvelope => {
     if (typeof item !== "object" || item === null || Array.isArray(item)) {
       throw new ApiError("bad_request");
     }
@@ -130,10 +129,25 @@ function parseRequest(text: string): {
       publicId: e.publicId,
       hlc: e.hlc,
       deleted: e.deleted,
-      payload: raw[i] as string,
+      payload: "", // the exact text is attached after authentication
     };
   });
   return { formatVersion, cursor: parsedCursor, push: envelopes };
+}
+
+/** Fill in each envelope's exact payload text from the request body. */
+function attachRawPayloads(text: string, push: PushEnvelope[]): void {
+  let raw: string[];
+  try {
+    raw = rawPushPayloads(text);
+  } catch (error) {
+    if (error instanceof ScanError) throw new ApiError("bad_request");
+    throw error;
+  }
+  if (raw.length !== push.length) throw new ApiError("bad_request");
+  push.forEach((e, i) => {
+    e.payload = raw[i] as string;
+  });
 }
 
 function hlcWall(hlc: string): number {
@@ -160,6 +174,9 @@ export async function handleSync(
   if (req.cursor.epoch !== null && req.cursor.epoch !== auth.dataEpoch) {
     throw new ApiError("data_reset");
   }
+
+  // Authenticated: only now do the O(n) raw-text scan and the re-encoding.
+  attachRawPayloads(text, req.push);
 
   const nowMs = deps.now();
   const maxWall = nowMs + DRIFT_LIMIT_MS;
