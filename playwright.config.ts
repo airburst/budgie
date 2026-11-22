@@ -17,14 +17,15 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /sync-origin\.spec\.ts/,
+      testIgnore: /sync-(origin|ui)\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:4173", ...devices["Desktop Chrome"] },
     },
     {
       // SY-036: a second build with a sync URL pointing at a local stub that
-      // e2e/sync-origin.spec.ts starts itself (port 4599).
+      // e2e/sync-origin.spec.ts starts itself (port 4599). e2e/sync-ui.spec.ts
+      // runs here too, with the sync server mocked by page.route.
       name: "sync-origin",
-      testMatch: /sync-origin\.spec\.ts/,
+      testMatch: /sync-(origin|ui)\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:4174", ...devices["Desktop Chrome"] },
     },
   ],

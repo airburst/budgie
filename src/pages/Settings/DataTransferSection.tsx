@@ -2,6 +2,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download, Upload, XCircle } from "lucide-react";
 import { useRef, useState } from "react";
+import { downloadPortableExport } from "./export-backup";
 
 type TransferStatus = "idle" | "busy" | "success" | "error";
 
@@ -15,15 +16,7 @@ export function DataTransferSection() {
     setStatus("busy");
     setMessage("");
     try {
-      const dataDocument = await window.api.exportPortableData();
-      const url = URL.createObjectURL(
-        new Blob([dataDocument], { type: "application/json;charset=utf-8" }),
-      );
-      const anchor = window.document.createElement("a");
-      anchor.href = url;
-      anchor.download = `budgie-export-${new Date().toISOString().slice(0, 10)}.json`;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      await downloadPortableExport();
       setStatus("success");
       setMessage("Data exported");
     } catch (error) {

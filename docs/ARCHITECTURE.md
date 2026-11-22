@@ -11,8 +11,16 @@ native Mac app (`../budgie-mac`).
 IPC). It gets no new features, no releases and no sync. Its code and tests stay
 in the repo, and existing IPC channels keep parity with the web API.
 
-Both run the same UI and the same domain services. Local-first: there is no
-server and no sync; data lives on the device (portable export/import moves it).
+Both run the same UI and the same domain services. Local-first: data lives on
+the device and the app works fully offline. Sync is optional and off by
+default. It is available in the web PWA only, and only in a build that sets
+`VITE_SYNC_SERVER_URL`. The user turns it on in Settings > Sync after a consent
+screen (what is uploaded, Cloudflare EU, 30-day daily snapshots, that the server
+operator can read the data, how to stop or delete). Until then the app makes no
+request to the sync server. Portable export/import still moves data by hand.
+The UI reaches sync only through `getSyncApi()` (`src/platform/sync-api.ts`),
+which answers "unsupported" on Electron. See `.ai-plans/sync-engine.md` for the
+design and `sync-server/contract/SPEC.md` for the protocol.
 
 ---
 

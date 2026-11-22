@@ -1,6 +1,6 @@
 # Budgie
 
-Personal finance app for the web (offline-first PWA at https://budget.fairhursts.net). The supported apps are the web PWA and BudgieMac (a separate native Mac app). The Electron desktop app is frozen: no new features, no releases and no sync. React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device.
+Personal finance app for the web (offline-first PWA at https://budget.fairhursts.net). The supported apps are the web PWA and BudgieMac (a separate native Mac app). The Electron desktop app is frozen: no new features, no releases and no sync. React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device unless you turn on the optional sync (off by default, web only).
 
 ## Features
 

@@ -29,6 +29,7 @@ import { useNavigate } from "react-router";
 import Layout from "../layout";
 import { DataTransferSection } from "./DataTransferSection";
 import { ShortcutsTab } from "./ShortcutsTab";
+import { SyncSection } from "./sync/SyncSection";
 
 const STATIC_ROUTES: { value: string; label: string }[] = [
   { value: "/", label: "Dashboard" },
@@ -281,6 +282,8 @@ export default function SettingsPage() {
                   amount. Payee autocomplete is always available.
                 </p>
               </div>
+
+              <SyncSection />
             </div>
           </TabsContent>
 

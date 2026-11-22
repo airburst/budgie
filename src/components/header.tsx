@@ -15,6 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { usePageChrome } from "@/components/page-chrome";
+import { SyncIndicator } from "@/components/SyncIndicator";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { usePlatform } from "@/hooks/usePlatform";
 import { cn } from "@/lib/utils";
@@ -211,6 +212,7 @@ const Header = () => {
           </Sheet>
           <span className="truncate text-lg font-semibold">{title}</span>
         </div>
+        <SyncIndicator className="md:hidden" />
         {/* Phone-only slot for the page's primary action (see HeaderAction). */}
         <div
           ref={pageChrome?.setSlot}
@@ -242,9 +244,10 @@ const Header = () => {
         </nav>
 
         <div
-          className="hidden justify-self-end md:block"
+          className="hidden items-center gap-2 justify-self-end md:flex"
           style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
         >
+          <SyncIndicator />
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
