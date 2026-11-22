@@ -27,6 +27,15 @@ Collapse this to a single `typescript@7` dependency once typescript-eslint suppo
 
 ---
 
+## Electron is deprecated
+
+Electron is frozen: no releases, no sync, no new features. Its code and tests
+stay. IPC parity is still required for existing channels, but new features need
+no Electron wiring (no IPC handler, preload or `electron.d.ts` entry). Supported
+apps are the web PWA and BudgieMac. (The full rules cleanup comes later.)
+
+---
+
 ## Platforms and releases
 
 Budgie ships as Electron **and** a web PWA from one codebase (see

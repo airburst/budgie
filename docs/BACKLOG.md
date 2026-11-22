@@ -14,16 +14,16 @@ Not scheduled. Pick items up deliberately; each needs its own change.
 
 ## Release and operations
 
-- **Desktop auto-update fails on the private repo** (anonymous release feed
+- **Won't do (Electron is frozen):** desktop auto-update fails on the private repo** (anonymous release feed
   returns 404, errors swallowed). Options: make the repo public (audit history
   for secrets/real data first), host the update feed publicly with the `generic`
   provider (e.g. R2 on a custom domain), or keep updates manual and surface a
   visible error plus a Releases link in About. Installed pre-fix apps keep the
   GitHub feed and need one manual install regardless.
-- Electron export version is hard-coded: `portable:export` in
+- **Won't do (Electron is frozen):** Electron export version is hard-coded: `portable:export` in
   `public/ipc/shared-services.js` stamps `applicationVersion: "0.16.3"`.
-- Release workflow publishes only after mac and Windows both build; consider
-  building both on a pre-tag dry run.
+- **Won't do (Electron is frozen):** release workflow publishes only after mac
+  and Windows both build; consider building both on a pre-tag dry run.
 
 ## Quality
 

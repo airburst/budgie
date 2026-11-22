@@ -1,9 +1,11 @@
 name: Release
 
+# Electron is frozen and no longer released (see .ai-plans/sync-engine.md).
+# A `v*` tag now only deploys the web app, via web-deploy.yml. This workflow is
+# kept as a manual escape hatch only: run it against an existing `v*` tag
+# (choose the tag in "Use workflow from"); it reads github.ref_name as the tag.
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
