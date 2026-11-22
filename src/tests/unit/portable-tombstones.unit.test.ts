@@ -4,10 +4,10 @@
 // store is exported with its table so nothing is lost.
 import {
   createPortableData,
-  importPortableData,
   sealPortableData,
   type PortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import { readTombstones } from "@/services/tombstone-store";
 import {
   createCapabilityDatabase,

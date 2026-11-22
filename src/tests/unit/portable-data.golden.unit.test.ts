@@ -7,9 +7,9 @@
 import {
   type PortableData,
   createPortableData,
-  importPortableData,
   serializePortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import {
   PORTABLE_FIXTURE_OPTIONS,
   buildPortableFixtureDatabase,
@@ -29,24 +29,17 @@ const check = (path: string, actual: string) => {
 // Seeded categories get their timestamps from SQLite's clock at migration and
 // tombstone time, which varies per run. Blank them (and the checksum, which
 // covers them) so the rest of the export is compared byte for byte.
-//
-// The import also bumps updatedAt on rows that go through the second pass
-// (category parents, transfer links) because the sync-metadata UPDATE trigger
-// fires when a row is rewritten with an unchanged updated_at. That time is
-// run-dependent too, so `second pass` rows are blanked after an import.
-const stable = (data: PortableData, afterImport = false) =>
+// Import keeps every updatedAt the package gives, including on rows that go
+// through the second pass (category parents, transfer links; SY-034), so
+// nothing else is blanked.
+const stable = (data: PortableData) =>
   JSON.stringify({
     ...data,
     categories: data.categories.map((row) =>
       row.publicId.startsWith("legacy:")
         ? { ...row, createdAt: null, updatedAt: null, deletedAt: null }
-        : afterImport
-          ? { ...row, updatedAt: null }
-          : row,
+        : row,
     ),
-    transactions: afterImport
-      ? data.transactions.map((row) => ({ ...row, updatedAt: null }))
-      : data.transactions,
     manifest: { ...data.manifest, checksum: "" },
   });
 
@@ -76,7 +69,8 @@ describe("portable export golden", () => {
       target.database,
       PORTABLE_FIXTURE_OPTIONS,
     );
-    check(importGolden, stable(again, true));
+    check(importGolden, stable(again));
+    expect(stable(again)).toBe(stable(exported));
     target.close();
   });
 });

@@ -1,10 +1,10 @@
 import type { DatabaseCapability } from "@/platform/database";
 import {
   createPortableData,
-  importPortableData,
   sealPortableData,
   type PortableData,
 } from "@/services/portable-data";
+import { importPortableData } from "@/services/portable-import";
 import {
   PORTABLE_FIXTURE_OPTIONS,
   buildPortableFixtureDatabase,

@@ -9,7 +9,7 @@ import {
 } from "@/services/portable-data";
 import { encodeSyncRow } from "@/services/sync/codec";
 import { EnvelopeTooLargeError } from "@/services/sync/errors";
-import { sealHlcFromUpdatedAt } from "@/services/sync/hlc";
+import { sealHlc, sealHlcFromUpdatedAt } from "@/services/sync/hlc";
 import { pairTransferLegs } from "@/services/sync/transfers";
 import {
   toOutgoingEnvelope,
@@ -35,7 +35,9 @@ type SealCandidate = DatabaseRow & {
 
 /**
  * Seals one row (SPEC.md 7.3) and returns its new HLC. The engine-write
- * marker keeps the triggers from treating this as an edit.
+ * marker keeps the triggers from treating this as an edit. `editMs`, when
+ * given, is the edit time to seal with instead of the row's `updated_at`:
+ * a portable import seals what it wrote with the time of the import.
  */
 export const sealRow = async (
   transaction: DatabaseTransaction,
@@ -43,8 +45,12 @@ export const sealRow = async (
   row: SealCandidate,
   deviceId: string,
   nowMs: number,
+  editMs?: number,
 ): Promise<string> => {
-  const hlc = sealHlcFromUpdatedAt(row.hlc, deviceId, row.updated_at, nowMs);
+  const hlc =
+    editMs === undefined
+      ? sealHlcFromUpdatedAt(row.hlc, deviceId, row.updated_at, nowMs)
+      : sealHlc(row.hlc, deviceId, editMs);
   await transaction.execute({
     sql: `UPDATE ${table} SET hlc = ?, sync_unsealed = 0, sync_rev = sync_rev + 1
       WHERE id = ? AND sync_unsealed = 1`,
@@ -55,12 +61,13 @@ export const sealRow = async (
 
 /**
  * Seals every unsealed (and therefore dirty) row of every synced table,
- * including the tombstone store.
+ * including the tombstone store. `editMs` as for `sealRow`.
  */
 export const sealDirtyRows = async (
   transaction: DatabaseTransaction,
   deviceId: string,
   nowMs: number,
+  editMs?: number,
 ): Promise<number> => {
   let sealed = 0;
   for (const table of PORTABLE_TABLES) {
@@ -68,11 +75,13 @@ export const sealDirtyRows = async (
       sql: `SELECT id, hlc, updated_at FROM ${table} WHERE sync_unsealed = 1 ORDER BY id`,
     });
     for (const row of rows) {
-      await sealRow(transaction, table, row, deviceId, nowMs);
+      await sealRow(transaction, table, row, deviceId, nowMs, editMs);
       sealed++;
     }
   }
-  return sealed + (await sealDirtyTombstones(transaction, deviceId, nowMs));
+  return (
+    sealed + (await sealDirtyTombstones(transaction, deviceId, nowMs, editMs))
+  );
 };
 
 /** Categories with their parents first (SPEC.md 10.2), stable otherwise. */

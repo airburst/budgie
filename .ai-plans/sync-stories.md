@@ -645,7 +645,16 @@ Acceptance:
   import removed are pushed as deleted.
 - [int] A second device ends with exactly the imported data after sync.
 - [int] Importing a server snapshot (SY-019) while synced works the same way.
-Status: todo
+Status: done. `importPortableData` moved to `portable-import.ts` (it now uses
+the engine). Package rows are written as user writes that keep the package's
+`updated_at` (second pass included; also with sync off). While synced: rows
+the import removes, and synced rows already deleted (store included), are
+re-marked deleted and dirty; rows never synced and deleted (Join leftovers)
+are left alone; dirty rows are normalised and validated as Start does
+(`sync/normalise.ts`, shared); every unsealed row is sealed in the import
+transaction with the import time as its edit time, so it beats versions
+from before the import even when not yet pulled. Tests:
+`sync-import.test.ts`.
 
 ## M6 Web wiring and UI (step 6)
 

@@ -4,7 +4,7 @@ import {
   normaliseMonth,
   normaliseRow,
   normaliseTimestamp,
-} from "@/services/sync/start";
+} from "@/services/sync/normalise";
 import { describe, expect, it } from "vitest";
 
 describe("normaliseTimestamp", () => {
