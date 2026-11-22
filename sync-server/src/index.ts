@@ -1,30 +1,24 @@
-import type { D1DatabaseLike } from "./d1-executor";
-import { CONTRACT_VERSION } from "./version";
+import { handleRequest } from "./app";
+import { createD1Executor, type D1DatabaseLike } from "./d1-executor";
 
 export interface Env {
   DB: D1DatabaseLike;
+  /** "1" only in wrangler.local.jsonc. Never set in the deployed config. */
+  DEV_MODE?: string;
 }
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-export function handleRequest(request: Request): Response {
-  const url = new URL(request.url);
-  if (url.pathname === "/v1/health") {
-    if (request.method !== "GET") {
-      return json({ error: "method_not_allowed" }, 405);
-    }
-    return json({ ok: true, contractVersion: CONTRACT_VERSION });
-  }
-  return json({ error: "not_found" }, 404);
-}
+let devSchemaReady: Promise<void> | undefined;
 
 export default {
-  fetch(request: Request, _env: Env): Response {
-    return handleRequest(request);
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const executor = createD1Executor(env.DB);
+    const devMode = env.DEV_MODE === "1";
+    if (devMode) {
+      // Loaded lazily so the deployed bundle path never runs it.
+      const { ensureDevSchema } = await import("./dev-bootstrap");
+      devSchemaReady ??= ensureDevSchema(executor);
+      await devSchemaReady;
+    }
+    return handleRequest(request, { executor, now: Date.now, devMode });
   },
 };

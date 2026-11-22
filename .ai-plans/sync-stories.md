@@ -237,7 +237,11 @@ Acceptance:
   nothing.
 - [unit] Attempts are rate-limited per IP and per user; codes never appear in
   logs.
-Status: todo
+Status: done, with two deviations from the story text. Rate limiting is per IP
+only (failed attempts, 10 per 15 minutes, counted in D1 table `rate_limits`),
+because SPEC 2.5 limits `POST /v1/enrol` per IP and a failed code has no user
+to count against. The device-code half of enrol is SY-015. Logging beyond
+"codes never appear in logs" is SY-018.
 
 ### SY-013 Push changes
 As a device, I send my changed rows and the server keeps the newest version
@@ -257,7 +261,11 @@ Acceptance:
 - [unit] Each accepted row gets a `seq` higher than any earlier row for that
   user; the payload is stored byte for byte.
 - [unit] A newer `formatVersion` in the request is accepted.
-Status: todo
+Status: done. The handler runs the whole four-statement batch, including the
+pull page (tested under SY-014). Not covered: body cap and 500-envelope limit
+(SY-018), `last_seen_at` update (SY-016). The batch was also run on celld
+0.6.3 (650-row push, `json_each` upsert with `RETURNING`, row-value cursor
+paging); not yet on real D1 or staging.
 
 ### SY-014 Pull changes
 As a device, I receive every row other devices changed since my cursor.
@@ -271,7 +279,9 @@ Acceptance:
 - [unit] A row changed between two pages is not lost.
 - [unit] Cursor 0 returns the user's whole data set (used by Join).
 - [unit] A push and a pull in the same request work together.
-Status: todo
+Status: done. Tested on better-sqlite3 with small page sizes; paging, cursor
+forms and `data_reset` were also run on celld 0.6.3 (650 rows over two pages).
+The cursor is `<epoch>:<seq>` or `<epoch>:<seq>:<tbl>:<publicId>` (SPEC 12).
 
 ### SY-015 Add a device from an enrolled one
 As a user, I connect a second app by entering a short code shown on my first.

@@ -1,13 +1,8 @@
 import Database from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  addUser,
-  hashCode,
-  INVITE_TTL_MS,
-  newInvite,
-  normaliseCode,
-} from "../src/admin";
+import { addUser, INVITE_TTL_MS, newInvite } from "../src/admin";
+import { hashCode, normaliseCode } from "../src/crypto";
 import type { SqlExecutor } from "../src/executor";
 import { applyMigration } from "../src/migrate";
 import { createSqliteExecutor } from "../src/sqlite-executor";
@@ -29,12 +24,14 @@ beforeEach(async () => {
 });
 
 const invites = () =>
-  db.prepare("SELECT * FROM invites").all() as Record<string, unknown>[];
+  db.prepare("SELECT * FROM enrol_codes").all() as Record<string, unknown>[];
 
 describe("add-user", () => {
   it("creates the user and returns a code; only the hash is stored, with expiry", async () => {
     const r = await addUser(executor, "alice", { now: () => NOW });
-    expect(r.code).toMatch(/^([2-9A-HJKMNP-Z]{4}-){3}[2-9A-HJKMNP-Z]{4}$/);
+    expect(r.code).toMatch(
+      /^([0-9A-HJKMNP-TV-Z]{4}-){2}[0-9A-HJKMNP-TV-Z]{4}$/,
+    );
     const rows = invites();
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
@@ -46,7 +43,7 @@ describe("add-user", () => {
     // The plain code appears nowhere in the database.
     const dump = JSON.stringify([
       db.prepare("SELECT * FROM users").all(),
-      db.prepare("SELECT * FROM invites").all(),
+      db.prepare("SELECT * FROM enrol_codes").all(),
     ]);
     expect(dump).not.toContain(normaliseCode(r.code));
     expect(dump).not.toContain(r.code);
@@ -62,14 +59,14 @@ describe("add-user", () => {
 
   it("never returns a code that is already stored", async () => {
     const first = await addUser(executor, "alice", {
-      generateCode: () => "AAAA-AAAA-AAAA-AAAA",
+      generateCode: () => "AAAA-AAAA-AAAA",
     });
-    const codes = ["AAAA-AAAA-AAAA-AAAA", "BBBB-BBBB-BBBB-BBBB"];
+    const codes = ["AAAA-AAAA-AAAA", "BBBB-BBBB-BBBB"];
     const second = await addUser(executor, "bob", {
       generateCode: () => codes.shift()!,
     });
-    expect(first.code).toBe("AAAA-AAAA-AAAA-AAAA");
-    expect(second.code).toBe("BBBB-BBBB-BBBB-BBBB");
+    expect(first.code).toBe("AAAA-AAAA-AAAA");
+    expect(second.code).toBe("BBBB-BBBB-BBBB");
     expect(invites()).toHaveLength(2);
     expect(db.prepare("SELECT count(*) n FROM users").get()).toEqual({ n: 2 });
   });
@@ -92,13 +89,13 @@ describe("new-invite", () => {
 
   it("never returns a code that is already stored", async () => {
     await addUser(executor, "alice", {
-      generateCode: () => "AAAA-AAAA-AAAA-AAAA",
+      generateCode: () => "AAAA-AAAA-AAAA",
     });
-    const codes = ["AAAA-AAAA-AAAA-AAAA", "CCCC-CCCC-CCCC-CCCC"];
+    const codes = ["AAAA-AAAA-AAAA", "CCCC-CCCC-CCCC"];
     const r = await newInvite(executor, "alice", {
       generateCode: () => codes.shift()!,
     });
-    expect(r.code).toBe("CCCC-CCCC-CCCC-CCCC");
+    expect(r.code).toBe("CCCC-CCCC-CCCC");
     expect(invites()).toHaveLength(2);
   });
 });
@@ -114,7 +111,7 @@ describe("code properties", () => {
     expect(row.used_at).toBeNull();
     // Marking used is a conditional update that succeeds once.
     const sql =
-      "UPDATE invites SET used_at = ? WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?";
+      "UPDATE enrol_codes SET used_at = ? WHERE code_hash = ? AND used_at IS NULL AND expires_at > ?";
     const [one] = await executor.batch([{ sql, params: [NOW, hash, NOW] }]);
     const [two] = await executor.batch([{ sql, params: [NOW, hash, NOW] }]);
     expect(one?.changes).toBe(1);
@@ -129,5 +126,12 @@ describe("wrangler executor SQL inlining", () => {
     ).toBe("VALUES ('o''brien', 5, NULL)");
     expect(() => inlineParams({ sql: "?", params: [] })).toThrow();
     expect(() => inlineParams({ sql: "x", params: [1] })).toThrow();
+  });
+});
+
+describe("code format (SPEC 3.4)", () => {
+  it("normalises case, separators and look-alike letters", () => {
+    expect(normaliseCode("h4tw-8pzr 3n6c")).toBe("H4TW8PZR3N6C");
+    expect(normaliseCode("OIL0-1lio")).toBe("01101110");
   });
 });

@@ -1,9 +1,12 @@
 -- Statements end with a semicolon at the end of a line, so the same file runs
 -- through D1 (wrangler) and through better-sqlite3 (see src/migrate.ts).
+-- Tables follow sync-server/contract/SPEC.md section 12.
 CREATE TABLE users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   seq INTEGER NOT NULL DEFAULT 0,
+  max_format_version INTEGER NOT NULL DEFAULT 1,
+  data_epoch INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL
 );
 
@@ -33,14 +36,25 @@ CREATE TABLE changes (
 
 CREATE INDEX changes_cursor_idx ON changes (user_id, seq, tbl, public_id);
 
--- Invite codes and (SY-015) device codes: only the SHA-256 of a code is stored.
-CREATE TABLE invites (
+-- Invite codes and device codes: only the SHA-256 (hex) of the normalised code
+-- is stored. kind is 'invite' or 'device'. used_by_device is the device created
+-- when the code was consumed (it lets the consume and the device insert happen
+-- in one batch without a read in between).
+CREATE TABLE enrol_codes (
   code_hash TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users (id),
-  kind TEXT NOT NULL DEFAULT 'invite',
-  created_at INTEGER NOT NULL,
+  kind TEXT NOT NULL,
   expires_at INTEGER NOT NULL,
-  used_at INTEGER
+  used_at INTEGER,
+  used_by_device TEXT,
+  created_at INTEGER NOT NULL
 );
 
-CREATE INDEX invites_user_idx ON invites (user_id);
+CREATE INDEX enrol_codes_user_idx ON enrol_codes (user_id);
+
+-- Fixed-window counters for the in-Worker rate limits (failed enrolments per IP).
+CREATE TABLE rate_limits (
+  bucket TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  count INTEGER NOT NULL
+);
