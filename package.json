@@ -2,7 +2,7 @@
   "name": "budgie",
   "version": "1.0.2",
   "private": true,
-  "packageManager": "bun@1.4.4",
+  "packageManager": "bun@1.4.5",
   "main": "public/electron.js",
   "description": "A simple home finance app built with Electron and React.",
   "author": "Mark Fairhurst",
