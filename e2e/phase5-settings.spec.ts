@@ -123,3 +123,12 @@ test.describe("settings on desktop", () => {
     expect(await overflow(page)).toBeLessThanOrEqual(1);
   });
 });
+
+test("the Sync section is absent in a build without a sync server", async ({
+  page,
+}) => {
+  await page.goto("/#/settings");
+  await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.getByText("Turn on sync")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Sync" })).toHaveCount(0);
+});

@@ -12,6 +12,7 @@ const eslintConfig = [
       ".vinxi/**",
       ".next/**",
       "node_modules/**",
+      ".claude/**",
       "**/*.js",
       "**/*.mjs",
     ],
@@ -37,6 +38,12 @@ const eslintConfig = [
       globals: {
         ...globals.node,
       },
+    },
+  },
+  {
+    files: ["sync-server/**/*.ts"],
+    languageOptions: {
+      globals: { ...globals.node },
     },
   },
   {

@@ -1,0 +1,214 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "id": "local-dirty-sealed-and-pushed",
+  "description": "Dirty rows are sealed and pushed; clean rows are not. A new row's HLC comes from its updatedAt. A row edited in the same second as its current HLC gets the counter incremented. A dirty row that is already sealed (an earlier drift rejection) is pushed with its existing HLC. The server stores everything, so every pushed row ends clean and sealed.",
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "given": [
+    {
+      "tbl": "payees",
+      "hlc": null,
+      "dirty": true,
+      "unsealed": true,
+      "payload": {
+        "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+        "createdAt": "2026-11-22 10:15:30",
+        "updatedAt": "2026-11-22 10:15:30",
+        "deletedAt": null,
+        "name": "Tesco",
+        "categoryPublicId": null,
+        "amount": null
+      }
+    },
+    {
+      "tbl": "envelopes",
+      "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": true,
+      "unsealed": true,
+      "payload": {
+        "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+        "createdAt": "2026-11-01 08:05:00",
+        "updatedAt": "2026-11-22 10:15:30",
+        "deletedAt": null,
+        "name": "Food and drink",
+        "active": true,
+        "sortOrder": 0
+      }
+    },
+    {
+      "tbl": "accounts",
+      "hlc": "001795342600000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": true,
+      "unsealed": false,
+      "payload": {
+        "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-22 10:16:40",
+        "deletedAt": null,
+        "name": "Current account",
+        "number": "12345678",
+        "type": "bank",
+        "balance": 1500,
+        "currency": "GBP",
+        "notes": "Sealed earlier, rejected for drift, not edited since",
+        "interestRate": null,
+        "creditLimit": null,
+        "deleted": false
+      },
+      "local": {
+        "pendingReconcileBalance": 1234.56,
+        "pendingReconcileDate": "2026-11-21"
+      }
+    },
+    {
+      "tbl": "envelopes",
+      "hlc": "001795197600000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "7a8b9c0d-1e2f-4a3b-9c4d-5e6f7a8b9c0d",
+        "createdAt": "2026-11-01 08:05:00",
+        "updatedAt": "2026-11-20 18:00:00",
+        "deletedAt": null,
+        "name": "Holidays",
+        "active": true,
+        "sortOrder": 1
+      }
+    }
+  ],
+  "response": {
+    "pull": [],
+    "rejected": []
+  },
+  "expect": {
+    "push": [
+      {
+        "tbl": "accounts",
+        "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "hlc": "001795342600000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "deleted": false,
+        "payload": {
+          "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:16:40",
+          "deletedAt": null,
+          "name": "Current account",
+          "number": "12345678",
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": "Sealed earlier, rejected for drift, not edited since",
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        }
+      },
+      {
+        "tbl": "envelopes",
+        "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+        "hlc": "001795342530000:00001:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "deleted": false,
+        "payload": {
+          "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+          "createdAt": "2026-11-01 08:05:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Food and drink",
+          "active": true,
+          "sortOrder": 0
+        }
+      },
+      {
+        "tbl": "payees",
+        "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+        "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "deleted": false,
+        "payload": {
+          "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+          "createdAt": "2026-11-22 10:15:30",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": null
+        }
+      }
+    ],
+    "rows": [
+      {
+        "tbl": "payees",
+        "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "c4d5e6f7-0a1b-4c2d-8e3f-9a0b1c2d3e4f",
+          "createdAt": "2026-11-22 10:15:30",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": null
+        }
+      },
+      {
+        "tbl": "envelopes",
+        "hlc": "001795342530000:00001:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+          "createdAt": "2026-11-01 08:05:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Food and drink",
+          "active": true,
+          "sortOrder": 0
+        }
+      },
+      {
+        "tbl": "accounts",
+        "hlc": "001795342600000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:16:40",
+          "deletedAt": null,
+          "name": "Current account",
+          "number": "12345678",
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": "Sealed earlier, rejected for drift, not edited since",
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        },
+        "local": {
+          "pendingReconcileBalance": 1234.56,
+          "pendingReconcileDate": "2026-11-21"
+        }
+      },
+      {
+        "tbl": "envelopes",
+        "hlc": "001795197600000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "7a8b9c0d-1e2f-4a3b-9c4d-5e6f7a8b9c0d",
+          "createdAt": "2026-11-01 08:05:00",
+          "updatedAt": "2026-11-20 18:00:00",
+          "deletedAt": null,
+          "name": "Holidays",
+          "active": true,
+          "sortOrder": 1
+        }
+      }
+    ],
+    "error": null
+  }
+}

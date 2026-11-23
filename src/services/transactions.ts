@@ -72,6 +72,10 @@ const mapTransaction = (row: TransactionRow): Transaction => ({
 export const createTransaction = async (
   database: DatabaseCapability,
   data: TransactionCreate,
+  /** Fixed public ids (auto-post, SPEC 8.9): `account` for the row on
+   * `data.accountId`, `transfer` for a transfer's counter leg. Omitted = the
+   * insert trigger assigns a random id. */
+  publicIds: { account?: string; transfer?: string } = {},
 ): Promise<Transaction[]> => {
   const category = data.categoryId
     ? (
@@ -89,8 +93,8 @@ export const createTransaction = async (
   ) {
     const rows = await database.query<TransactionRow>({
       sql: `INSERT INTO transactions
-        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL) RETURNING *`,
+        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id, public_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?) RETURNING *`,
       params: [
         data.accountId,
         data.categoryId,
@@ -99,6 +103,7 @@ export const createTransaction = async (
         data.amount,
         data.notes,
         data.cleared ? 1 : 0,
+        publicIds.account ?? null,
       ],
     });
     return rows.map(mapTransaction);
@@ -117,8 +122,8 @@ export const createTransaction = async (
   if (!targetAccount[0] || !sourceAccount[0]) {
     const rows = await database.query<TransactionRow>({
       sql: `INSERT INTO transactions
-        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL) RETURNING *`,
+        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id, public_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?) RETURNING *`,
       params: [
         data.accountId,
         data.categoryId,
@@ -127,6 +132,7 @@ export const createTransaction = async (
         data.amount,
         data.notes,
         data.cleared ? 1 : 0,
+        publicIds.account ?? null,
       ],
     });
     return rows.map(mapTransaction);
@@ -134,15 +140,15 @@ export const createTransaction = async (
   const target = targetAccount[0];
 
   const counterCategory = await database.query<{ id: number }>({
-    sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? LIMIT 1",
+    sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? AND deleted = 0 AND deleted_at IS NULL LIMIT 1",
     params: [category.parent_id, sourceAccount[0].name],
   });
 
   return database.transaction(async (transaction) => {
     const primaryRows = await transaction.query<TransactionRow>({
       sql: `INSERT INTO transactions
-        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL) RETURNING *`,
+        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id, public_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, NULL, ?) RETURNING *`,
       params: [
         data.accountId,
         data.categoryId,
@@ -151,6 +157,7 @@ export const createTransaction = async (
         data.amount,
         data.notes,
         data.cleared ? 1 : 0,
+        publicIds.account ?? null,
       ],
     });
     const primary = primaryRows[0];
@@ -159,8 +166,8 @@ export const createTransaction = async (
 
     const counterRows = await transaction.query<TransactionRow>({
       sql: `INSERT INTO transactions
-        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?) RETURNING *`,
+        (account_id, category_id, date, payee, amount, notes, cleared, reconciled, transfer_transaction_id, public_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?) RETURNING *`,
       params: [
         target.id,
         counterCategory[0]?.id ?? null,
@@ -170,6 +177,7 @@ export const createTransaction = async (
         data.notes,
         data.cleared ? 1 : 0,
         primary.id,
+        publicIds.transfer ?? null,
       ],
     });
     const counter = counterRows[0];
@@ -276,7 +284,7 @@ export const createTransactionService = (database: DatabaseCapability) => ({
         });
         if (!target[0] || !source[0]) return null;
         const counterCategory = await transaction.query<{ id: number }>({
-          sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? LIMIT 1",
+          sql: "SELECT id FROM categories WHERE parent_id = ? AND name = ? AND deleted = 0 AND deleted_at IS NULL LIMIT 1",
           params: [category.parent_id, source[0].name],
         });
         const rows = await transaction.query<TransactionRow>({

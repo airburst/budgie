@@ -6,6 +6,25 @@ PowerSync recommendation in `docs/SYNC_ENGINE_PLAN.md`.
 Clients: **BudgieMac** (`../budgie-mac`, SwiftUI + SwiftData, the daily driver)
 and the **web PWA** on mobile. The Electron app is frozen and gets no sync.
 
+> **The contract is now the source of truth for wire and merge rules:**
+> `sync-server/contract/SPEC.md` (SY-006). Where this plan and the spec
+> differ, the spec wins. Points where the spec changed or tightened the plan:
+>
+> - The web app's 0013 triggers create 32-hex public ids, not UUIDs.
+>   Migration 0014 must make new ids canonical UUIDs, and Start rewrites every
+>   non-UUID id, not only `legacy:*`.
+> - `sync_dirty = 1` cannot tell that a row was edited again while its push
+>   was in flight (a local edit does not change `hlc`). 0014 must record
+>   "edited since sealed" separately, for example as a change counter.
+> - A delete carries the full row, so BudgieMac's `Tombstone` must keep the
+>   last payload, not only `(table, uuid, hlc, dirty)`.
+> - "Delete my cloud data" bumps a per-user data epoch carried in the cursor;
+>   other devices get `data_reset` and stop syncing.
+> - The server tracks the highest format version per user and refuses older
+>   clients with `format_too_old`.
+> - Server tables gain `users.max_format_version`, `users.data_epoch`,
+>   `devices.last_seen_at` and an `enrol_codes` table.
+
 ## 1. Decisions already made
 
 Scope and platforms:
@@ -47,7 +66,8 @@ Security and enrolment:
 
 Hosting and repo:
 
-- Cloudflare Worker at `sync.fairhursts.net`. Server code in `sync-server/`.
+- Cloudflare Worker on its `workers.dev` address (section 2). Server code in
+  `sync-server/`.
 - The contract (spec + conformance fixtures) lives beside the server code.
 - Repos stay separate. This repo owns the server, the contract and the TS
   engine. `budgie-mac` owns the Swift engine and copies the fixtures into
@@ -72,20 +92,52 @@ Deferred on purpose:
 ## 2. Hosting and local development
 
 - One Worker, one D1 database, one R2 bucket. No hardware.
-- Free tier covers 3 users: D1 allows 5M rows read and 100k rows written per
-  day. Exceeding a daily limit makes queries fail until 00:00 UTC, so clients
-  treat that as a retryable error.
+- **D1, not a Durable Object** (spike SY-003, 2026-11-22): the whole sync
+  request runs as one `batch()` on a real EU-jurisdiction D1 database.
+- **R2 in the EU works on the free plan** (spike SY-005, 2026-11-22): a
+  bucket created with `--jurisdiction eu` landed in EEUR, and a Worker whose
+  binding sets `"jurisdiction": "eu"` wrote, read, listed and deleted an
+  object. Free allowance each month: 10 GB stored, 1 million writes or lists,
+  10 million reads, no egress charge (Standard storage only). The pricing page
+  does not treat EU buckets differently.
+- Other free-plan facts: 5 cron triggers per account (we use 1); D1 Time
+  Travel keeps 7 days; **10 ms of CPU per request and per cron run**. Time
+  spent waiting on D1 or R2 does not count, but building a large JSON snapshot
+  in the Worker does. So the snapshot job builds its JSON inside D1
+  (`json_group_array`) where it can, and its CPU time is measured on staging
+  with a realistic data set (section 12).
+- **Hostname: the Worker's `workers.dev` address** (decided 2026-11-22).
+  `fairhursts.net` stays on GoDaddy's name servers, and a Worker custom
+  domain needs a Cloudflare zone, so there is no `sync.fairhursts.net` for
+  now. Worker names: `budgie-sync` (production) and `budgie-sync-staging`,
+  giving `https://<worker>.<account>.workers.dev`. Consequences:
+  - the server URL is build configuration in both apps, never hard-coded, so
+    a custom domain can be added later without a data change;
+  - there is no Cloudflare rate-limit rule (that needs a zone), so all rate
+    limiting is done inside the Worker.
 - TLS from Cloudflare; D1 and R2 are encrypted at rest by Cloudflare.
 - `sync-server/` has its own `package.json` and wrangler config.
 - The request handler is written against a tiny SQL-executor interface so the
   same code runs on D1 and on in-memory better-sqlite3 in Vitest. The
   interface is **batch-shaped**: D1 has no read-then-write transactions, only
   `batch()` (a list of statements run as one transaction).
-- Local full stack for dev and e2e: **celld**, which reads the same wrangler
-  config and provides D1, R2 and cron triggers locally. It is a separate
-  implementation from Cloudflare's runtime, so anything that depends on exact
-  D1 behaviour (the push batch, limits) is also proven on a staging Worker.
-  Fallback: `wrangler dev`.
+- Local full stack for dev and e2e: **celld** (spike SY-004, celld 0.6.3). It
+  ran the spike Worker unchanged from the same wrangler config, with local D1
+  and R2, and every sync check passed. How to use it:
+  - start: `celld dev <project> --port <port> --no-watch`, with `esbuild` on
+    `PATH`; add `--clean` for an empty database (state otherwise persists in
+    `<project>/.celld/dev`);
+  - cron handlers fire on their real schedule only. There is no way to fire
+    one by hand, so the snapshot job is tested by calling its function
+    directly, and the dev build exposes it on a dev-only route for e2e.
+- Where celld differs from Cloudflare (so these are proven on staging):
+  - `meta.rows_read` / `rows_written` are not Cloudflare's billed counts;
+  - a string over 2.2 MB is refused (Cloudflare accepted 2.6 MB);
+  - no Time Travel;
+  - it refuses to start if the config has an R2 `jurisdiction` or a
+    `workers_dev` key. So `sync-server/` keeps a separate local config for
+    celld without them, and the deployed config carries the EU setting.
+- Fallback if celld causes trouble: `wrangler dev`, which ran the same spike.
 
 ## 3. Server
 
@@ -95,13 +147,18 @@ Deferred on purpose:
 users(id, name, seq, created_at)
 devices(id, user_id, name, token_hash, created_at, revoked_at)
 changes(user_id, tbl, public_id, hlc, deleted, payload, device_id, seq,
-        PRIMARY KEY (user_id, tbl, public_id))
--- index (user_id, seq)
+        PRIMARY KEY (user_id, tbl, public_id)) WITHOUT ROWID
+-- index (user_id, seq, tbl, public_id)
 ```
 
+- `WITHOUT ROWID` matters for cost: with a rowid table each accepted row
+  billed 3 writes instead of 2.
+
 - One entry per row, upserted. No log growth, no compaction job.
-- `users.seq` is the per-user monotonic counter; `changes.seq` is used only as
-  the pull cursor.
+- `users.seq` is the per-user monotonic counter, bumped once per request. All
+  rows accepted in one push share that `seq`.
+- The pull cursor is therefore compound: `(seq, tbl, public_id)`. Clients
+  treat it as an opaque value.
 - `payload` is an opaque JSON string. The sync endpoint never parses it; only
   the snapshot job does (section 9).
 
@@ -115,20 +172,31 @@ response: { cursor, pull: [envelope], more, rejected: [{tbl, publicId, reason}] 
 envelope: { tbl, publicId, hlc, deleted, payload }
 ```
 
-One D1 batch per request:
+Resolve `user_id` and `device_id` from the token hash (never from the body),
+then run one D1 batch of four statements:
 
-1. Resolve `user_id` and `device_id` from the token hash. Never from the body.
-2. Bump `users.seq`, then upsert the pushed envelopes from `json_each` in one
-   statement. An envelope is written only if both hold:
+1. Bump `users.seq`.
+2. Upsert the pushed envelopes from `json_each` over a single JSON parameter,
+   `RETURNING` the accepted keys. An envelope is written only if both hold:
    - `hlc` is greater than the stored `hlc`;
    - `hlc` wall time is no more than 5 min ahead of server time.
-3. Return entries with `seq > cursor` written by other devices, paged.
+3. Select entries after the cursor written by other devices, ordered by
+   `(seq, tbl, public_id)`, one more than the page size to detect `more`.
+4. Read back `users.seq`, used as the cursor when there is no further page.
+
+`rejected` is the pushed envelopes minus the accepted keys, computed in the
+Worker (`drift` if the wall time is too far ahead, otherwise `stale`).
+
+Measured on real D1: a 500-row push with typical rows is about 160 KB and
+runs in a few milliseconds; a 2.6 MB JSON parameter still worked and 10 MB
+failed. The body cap is set well below that, at 1 MB.
 
 Other rules:
 
 - `formatVersion` newer than the server knows: accept. Clients do the version
   guard.
-- Body size cap, chunked pushes (about 500 rows), Cloudflare rate-limit rule.
+- Body size cap, chunked pushes (about 500 rows), rate limiting inside the
+  Worker (section 2).
 - CORS: allow `https://budget.fairhursts.net` only. BudgieMac is a native
   client, so CORS does not apply to it.
 - Logs carry user id, device id, counts and reasons. Never payloads.
@@ -215,12 +283,15 @@ can drive it with `createTestDb()`.
   transfers), so two devices posting the same occurrence merge into one row.
   The function is defined in the spec and implemented in TS and Swift.
 - **Natural-key collisions** (`payees.name`, `envelope_categories.category_id`,
-  `budget_allocations(envelope_id, month)`): two rows with different public
-  ids claim one key. Proposed rule: the higher `hlc` keeps the key; the local
-  row is re-keyed to the winner's public id and takes its payload; a delete
-  envelope is pushed for the losing id if it was ever pushed. A deleted row
-  still occupies the inline unique constraint, so the loser cannot simply be
-  kept as a tombstone. To be fixed in the spec with fixtures.
+  `budget_allocations(envelope_id, month)`): decided in SY-009, contract
+  SPEC.md section 8.10, with fixtures. Deleted rows never hold a key; among
+  live rows claiming one key the lowest public id keeps it, the highest
+  `hlc` supplies the content, and every other claimant is deleted and pushed.
+  The earlier "higher `hlc` keeps the key, re-key the local row" proposal was
+  replaced: a clock-based winner lets two devices delete different rows and
+  leave none. The web keeps its plain `UNIQUE` constraints (two are inline
+  and cannot change without a table rebuild) and instead stores a deleted
+  row that would block a key in a tombstone store; SY-029 adds it.
 - **Reconciliation.** After apply, compare each account's reconciled total with
   its last `account_reconciliations` balance. On mismatch show a "review
   reconciliation" notice. No automatic repair.
@@ -385,6 +456,9 @@ Stories for steps 1 to 6 are in `.ai-plans/sync-stories.md`.
   the Mac's own backups hold them.
 - celld is a young, separate implementation; behaviour proven only there is
   not proven for Cloudflare.
+- The free plan's 10 ms of CPU per request may be too little to build a full
+  snapshot. If staging shows that, the fix is the paid Workers plan (about $5
+  a month) or snapshotting one table per run.
 - Accepted: without end-to-end encryption, the server admin can read users 2
   and 3's data.
 
@@ -399,7 +473,7 @@ choice, and a second app must prove it belongs to the same person.
 - Before Start or Join, a consent screen states:
   - what is uploaded (all accounts, transactions, schedules, payees, budget
     data; not preferences);
-  - where it goes (Cloudflare, `sync.fairhursts.net`) and that daily
+  - where it goes (Cloudflare, the Worker's `workers.dev` address) and that daily
     snapshots are kept for 30 days;
   - that it is not end-to-end encrypted, so the operator can read it;
   - how to stop and how to delete.
@@ -454,11 +528,14 @@ choice, and a second app must prove it belongs to the same person.
   Check that `build.sh` always signs with a stable identity, or every rebuild
   will prompt for Keychain access.
 
-- D1 push batch: can one batch do the `seq` bump, conditional upsert and
-  paged pull? If not, use a Durable Object per user. (Spike.)
 - BudgieMac change tracking: save hook or SwiftData history. (Spike.)
 - BudgieMac lifecycle rules: Start, Join with existing data, backup restore.
-- Natural-key collision rule: confirm the re-key proposal in the spec.
+- ~~Natural-key collision rule~~: settled in SY-009 (section 6, SPEC.md
+  section 8.10).
 - Payee uniqueness on the Mac. (Deferred.)
-- `budget_allocations` and `payees` inserts may fail today when a deleted row
-  holds the same key. Not confirmed; check before the collision work.
+- ~~`budget_allocations` and `payees` inserts may fail today when a deleted
+  row holds the same key~~: confirmed and fixed in SY-009. `payees.create`
+  and `budgets.upsertAllocation` failed with a UNIQUE error, `payees.upsert`
+  left the payee deleted, and quick fill skipped a month whose allocation was
+  deleted. All now revive the deleted row (same public id), as
+  `envelopes.createCategory` already did.

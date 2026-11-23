@@ -31,7 +31,7 @@ Acceptance:
 - [manual] `web-deploy.yml` is unchanged and still deploys production on a
   `v*` tag after its own checks.
 - [doc] `docs/RELEASE_RUNBOOK.md` describes a web-only release.
-Status: todo
+Status: done
 
 ### SY-002 Mark Electron as deprecated
 As a reader of the repo, I can see that Electron is frozen, gets no new
@@ -45,7 +45,7 @@ Acceptance:
 - [doc] `CLAUDE.md` gets a short note: Electron code and its tests stay, IPC
   parity is still required for existing channels, new features need no
   Electron wiring. (The full rules cleanup is step 9.)
-Status: todo
+Status: done
 
 ## M2 Spikes (step 2)
 
@@ -67,7 +67,11 @@ Acceptance:
   same `seq`, the cursor must page by more than `seq` alone.
 - [doc] Decision written into plan §2 and §3: D1, or Durable Object, with the
   reason. "Unresolved questions" updated.
-Status: todo
+Status: done (2026-11-22). D1. All checks passed on a real EU D1 database and
+on local `wrangler dev`: one four-statement batch; rejected rows derived from
+`RETURNING`; compound cursor `(seq, tbl, public_id)`; `WITHOUT ROWID` cuts
+billed writes from 3 to 2 per row; 500 typical rows is about 160 KB, a 2.6 MB
+parameter worked, 10 MB failed. The throwaway Worker and database are deleted.
 
 ### SY-004 Spike: celld as the local stack
 As the maintainer, I know whether dev and e2e run the server on celld or on
@@ -80,7 +84,10 @@ Acceptance:
 - [doc] Recorded: how to start it headless for Playwright, and how to reset
   its data between runs.
 - [doc] Decision written into plan §2: celld or `wrangler dev`.
-Status: todo
+Status: done (2026-11-22). celld 0.6.3. The SY-003 Worker ran unchanged with
+local D1 and R2 and passed every check; a cron handler fired on schedule.
+Differences and usage are in plan §2. Not checked: an R2 binding that sets
+`jurisdiction`, because R2 is not enabled on the account yet.
 
 ### SY-005 Spike: Cloudflare account facts
 As the maintainer, I know the hosting choices in the plan fit the free plan
@@ -93,7 +100,15 @@ Acceptance:
 - [doc] Confirmed: `sync.fairhursts.net` can be bound to the Worker, and a
   staging hostname is chosen.
 - [doc] Anything that does not fit is raised as a change to the plan.
-Status: todo
+Status: done (2026-11-22). Hostname decided: the Worker's `workers.dev`
+address, because the domain's DNS stays at GoDaddy (plan §2). Confirmed on the
+free plan: D1 in the EU jurisdiction (region EEUR); an R2 bucket in the EU
+jurisdiction, used from a Worker binding; R2 allowance of 10 GB, 1 million
+writes and 10 million reads a month; 5 cron triggers per account; Time Travel
+keeps 7 days. Raised as changes to the plan: `fairhursts.net` is not a
+Cloudflare zone, so `sync.fairhursts.net` cannot be bound; the free plan allows 10 ms of CPU per request, which
+the snapshot job must be measured against; celld needs its own config without
+`jurisdiction` and `workers_dev`.
 
 ## M3 Contract (step 3)
 
@@ -118,7 +133,7 @@ Acceptance:
 - [unit] A test checks that every `Portable*` row type in
   `src/services/portable-data.ts` matches the spec's field list for its table,
   so the two cannot drift silently.
-Status: todo
+Status: done
 
 ### SY-007 Define the conformance fixture format
 As the author of either engine, I can run the same merge cases and get a
@@ -134,7 +149,7 @@ Acceptance:
   local dirty row sealed and pushed.
 - [doc] `contract/VERSION` holds the contract version that BudgieMac's copy
   script will record.
-Status: todo
+Status: done
 
 ### SY-008 Deterministic ids for auto-posted transactions
 As a user with two devices, a scheduled payment that both devices post
@@ -147,7 +162,7 @@ Acceptance:
   at least 10 input and output vectors and the test runs them all.
 - [unit] Output is a valid lowercase UUID and differs between the two legs of
   a transfer.
-Status: todo
+Status: done
 
 ### SY-009 Decide the natural-key collision rule
 As the author of either engine, I know exactly what happens when two devices
@@ -167,7 +182,7 @@ Acceptance:
   wins; where remote wins; where the losing row was already pushed; where the
   key is held by a deleted row.
 - [doc] Plan §6 and "Unresolved questions" updated.
-Status: todo
+Status: done
 
 ## M4 Server (step 4)
 
@@ -189,7 +204,12 @@ Acceptance:
 - [manual] The server starts on the local stack chosen in SY-004.
 - [manual] Root `bun run lint`, `bun run check-types` and `bun run test`
   cover `sync-server/`; CI (`web-platform.yml`) runs them.
-Status: todo
+Status: done. Layout and decisions in `sync-server/README.md`. [manual] check
+  run: celld 0.6.3 served `/v1/health` on a free port from `wrangler.local.jsonc`
+  (celld reads `.jsonc`, not `.toml`). Root lint, types and tests cover
+  `sync-server/` (vitest project `sync-server`, eslint node globals); CI already
+  runs them. The `(user_id, seq)` index is `(user_id, seq, tbl, public_id)` per
+  plan section 3.
 
 ### SY-011 Create users and invites
 As the operator, I can create a user and hand them a one-time invite code.
@@ -201,7 +221,9 @@ Acceptance:
 - [unit] Codes are single use and expire; the script never prints a code
   that is already stored.
 - [manual] Both scripts work against the local stack and a remote database.
-Status: todo
+Status: done except the remote half of the [manual] check, which was not run
+(no Cloudflare access). Both scripts were run against wrangler's local D1;
+they cannot reach the D1 of a running `celld dev` (see `sync-server/README.md`).
 
 ### SY-012 Enrol the first app with an invite
 As a user, I enter my invite code and my app is connected to my account.
@@ -215,7 +237,11 @@ Acceptance:
   nothing.
 - [unit] Attempts are rate-limited per IP and per user; codes never appear in
   logs.
-Status: todo
+Status: done. Rate limiting is per IP only (failed attempts, 10 per 15 minutes,
+counted in D1 table `rate_limits`): the spec wins over the story text (SPEC 2.5
+limits `POST /v1/enrol` per IP, and a failed code has no user to count
+against). Maintainer accepted this deviation. Device codes use the same
+endpoint (SY-015); logging rules are SY-018.
 
 ### SY-013 Push changes
 As a device, I send my changed rows and the server keeps the newest version
@@ -235,7 +261,11 @@ Acceptance:
 - [unit] Each accepted row gets a `seq` higher than any earlier row for that
   user; the payload is stored byte for byte.
 - [unit] A newer `formatVersion` in the request is accepted.
-Status: todo
+Status: done. The handler runs the whole four-statement batch, including the
+pull page (tested under SY-014). Not covered: body cap and 500-envelope limit
+(SY-018), `last_seen_at` update (SY-016). The batch was also run on celld
+0.6.3 (650-row push, `json_each` upsert with `RETURNING`, row-value cursor
+paging); not yet on real D1 or staging.
 
 ### SY-014 Pull changes
 As a device, I receive every row other devices changed since my cursor.
@@ -249,7 +279,9 @@ Acceptance:
 - [unit] A row changed between two pages is not lost.
 - [unit] Cursor 0 returns the user's whole data set (used by Join).
 - [unit] A push and a pull in the same request work together.
-Status: todo
+Status: done. Tested on better-sqlite3 with small page sizes; paging, cursor
+forms and `data_reset` were also run on celld 0.6.3 (650 rows over two pages).
+The cursor is `<epoch>:<seq>` or `<epoch>:<seq>:<tbl>:<publicId>` (SPEC 12).
 
 ### SY-015 Add a device from an enrolled one
 As a user, I connect a second app by entering a short code shown on my first.
@@ -262,7 +294,10 @@ Acceptance:
 - [unit] An expired, used or wrong code fails with the same error as SY-012
   and is rate-limited the same way.
 - [unit] A revoked device cannot request a code.
-Status: todo
+Status: done. Device codes share `enrol_codes` (kind `device`, 8 characters,
+10 minutes, single use); issuing is limited to 5 per user per 10 minutes
+(counted in `rate_limits`); failed attempts count in the same per-IP bucket as
+invites.
 
 ### SY-016 List and revoke devices
 As a user, I can see which apps are connected and disconnect any of them.
@@ -274,7 +309,9 @@ Acceptance:
   token stops working at once; another user's device id returns not found.
 - [unit] A device can revoke itself (used by "Sign out").
 - [unit] `revoke-device` admin script does the same.
-Status: todo
+Status: done. `last_seen_at` is updated by a conditional UPDATE batched with the
+token lookup (a write at most once an hour per device, no extra write on
+other requests). `revoke-device <deviceId>` takes a device id.
 
 ### SY-017 Delete a user's cloud data
 As a user, I can remove everything the server holds about my finances.
@@ -288,7 +325,13 @@ Acceptance:
   the user and devices.
 - [doc] The response and the spec state that D1 Time Travel may retain data
   for up to 7 days.
-Status: todo
+Status: done. Same code as `DELETE /v1/data` (SPEC 9.7): one batch deletes the
+user's `changes`, bumps `data_epoch` (cursor-0 Start still works, older cursors
+get `data_reset`, `users.seq` never reset), then each snapshot is deleted from
+R2 and its index row; rerunning finishes after an R2 failure. Run on celld
+(701 rows, 1 snapshot). Response states the 7-day Time Travel retention.
+`delete-user-data <user> [--remove-user]` uses wrangler for D1 and R2 and has
+not been run against a remote database.
 
 ### SY-018 Limits, CORS and logging
 As the operator, the server refuses abuse and never logs financial data.
@@ -301,9 +344,14 @@ Acceptance:
 - [unit] Log lines hold user id, device id, counts and reasons; a test
   asserts no payload, token or code text appears in them.
 - [unit] A D1 daily-limit failure is returned as a distinct retryable error.
-- [manual] A Cloudflare rate-limit rule is set on the hostname and recorded
-  in the server README.
-Status: todo
+- [unit] A per-IP request limit is enforced inside the Worker on every
+  route (there is no Cloudflare zone to hold a rate-limit rule); over the
+  limit returns a distinct retryable error. The README records the limits.
+Status: done. Per-IP limit is 120 requests per minute held in Worker memory (no
+D1 write; per isolate, so approximate; see README). The D1 daily-quota error
+text is not documented by Cloudflare, so `daily_limit` matches the message
+conservatively and is UNVERIFIED against the real error. CORS, body cap,
+envelope cap and logging are tested on better-sqlite3 only.
 
 ### SY-019 Daily snapshots to R2
 As a user, a copy of my data from each of the last 30 days exists, so a bad
@@ -322,7 +370,17 @@ Acceptance:
   with no changes since the last snapshot still gets one.
 - [unit] One user's failure does not stop the others; failures are logged
   without payloads.
-Status: todo
+Status: done. Built inside D1 (`json_group_array` over stored payload text in
+300-row chunks, `json_set` adds the two null pending-reconcile fields); the
+Worker concatenates, parses once, stringifies once and hashes. The checksum
+cannot be computed without a parse because portable-data.ts hashes
+`JSON.stringify(JSON.parse(doc))` and stored client payloads may not be
+canonical (`1.0`, `\u00e9`), so CPU is linear in data size: UNMEASURED against
+the 10 ms free-plan limit, to be measured on staging (plan section 12). An index
+table `snapshots` in D1 lists snapshots so scripts need no R2 listing. [int]
+test imports through the real `importPortableData`. Run on celld 0.6.3 with
+local R2 via the DEV_MODE route (701 rows, 2 chunks). The cron itself was not
+fired.
 
 ### SY-020 Fetch a snapshot
 As the operator, I can list a user's snapshots and download one as a file
@@ -332,10 +390,14 @@ Acceptance:
 - [unit] `list-snapshots <user>` prints dates and sizes.
 - [unit] `get-snapshot <user> <date>` writes the JSON file unchanged.
 - [manual] A downloaded snapshot imports in the web app.
-Status: todo
+Status: done except the [manual] import check in the web app (not run). The
+scripts read the D1 snapshot index and fetch objects with `wrangler r2 object
+get`; tested through the functions on in-memory stores, not against a real R2
+bucket. `--local` reads wrangler's local R2, not celld's.
 
 ### SY-021 Deploy a staging server
-As the maintainer, the server runs on Cloudflare at a staging hostname.
+As the maintainer, the server runs on Cloudflare as `budgie-sync-staging`
+on its `workers.dev` address.
 Depends: SY-013, SY-014, SY-018, SY-019
 Acceptance:
 - [manual] Staging Worker, D1 database and R2 bucket exist in the EU
@@ -344,9 +406,12 @@ Acceptance:
   staging with a test user.
 - [doc] `sync-server/README.md` covers local run, tests, deploy, migrations,
   admin scripts and restoring from Time Travel.
-- [doc] Production (`sync.fairhursts.net`) is not created here; that is
-  go-live (step 8).
-Status: todo
+- [doc] Production (`budgie-sync`) is not created here; that is go-live
+  (step 8).
+Status: done (2026-11-22). Snapshot tested by a temporary every-minute cron,
+not a hand-fired one. CPU is over the free plan's 10 ms for 500-row pushes
+and for snapshots (297 ms at 20,100 rows); not enforced so far. See
+"Measured on staging" in `sync-server/README.md`.
 
 ## M5 Web engine (step 5)
 
@@ -369,11 +434,23 @@ Acceptance:
   dirtiness; ack (`sync_dirty = 0`) sticks; a remote apply leaves
   `sync_dirty = 0` and the payload's `updated_at`, including when it equals
   the old value.
+- [int] New rows get a canonical lowercase UUID public id (the 0013 triggers
+  create 32 hex digits without hyphens); existing ids are left for Start.
+- [int] "Edited since sealed" is recorded separately from dirty (for example
+  a change counter), so an edit made while a push is in flight is not
+  acknowledged away (SPEC.md §8.3).
 - [int] Runs on a fresh database and on one upgraded from 0013 with data;
   the web migration bundle includes it.
 - [manual] Manual migration checklist followed (journal, snapshot, rebuild
   `public/db.js`, fresh-DB test).
-Status: todo
+Status: done. `0014_sync_state.sql` adds `hlc`, `sync_dirty`, `sync_unsealed`
+and `sync_rev` (a per-row write counter). Every engine UPDATE sets
+`sync_rev = sync_rev + 1`, which is how the triggers tell it from a user edit;
+every engine INSERT supplies `hlc`. Ack is `... WHERE hlc = :pushed AND
+sync_dirty = 1 AND sync_unsealed = 0`. The exact seal, ack, apply, Start and
+Join statements are in the migration header. Existing rows start clean with no
+`hlc`. `sync_state` is seeded with its single row (id 1). Tests:
+`src/tests/integration/sync-state-migration.test.ts`.
 
 ### SY-023 Hybrid logical clock
 As the engine, I can order two versions of a row from different devices.
@@ -386,7 +463,7 @@ Acceptance:
   always gets a higher `hlc` than the applied one.
 - [unit] Ties in the same second on two devices are broken by counter, then
   device id.
-Status: todo
+Status: done
 
 ### SY-024 One row codec for export, import and sync
 As the maintainer, portable export, portable import and sync all read and
@@ -403,7 +480,7 @@ Acceptance:
   `bankText`).
 - [unit] Applying a row whose referenced parent is missing fails with a named
   error rather than writing a broken link.
-Status: todo
+Status: done
 
 ### SY-025 Importing a snapshot keeps my preferences
 As a user, restoring from a server snapshot does not reset my settings.
@@ -413,7 +490,7 @@ Acceptance:
   row unchanged; with non-empty preferences it behaves as today.
 - [int] Account shortcuts that no longer resolve after such an import are
   dropped, the rest remapped by public id.
-Status: todo
+Status: done
 
 ### SY-026 Run one sync cycle
 As a user with sync enabled, my changes reach the server and other devices'
@@ -434,7 +511,7 @@ Acceptance:
   lost rows; a failed apply rolls back and leaves the cursor unchanged.
 - [unit] The engine runs every fixture in `sync-server/contract/fixtures/`.
 - [int] The cycle returns counts per table of rows applied and pushed.
-Status: todo
+Status: done
 
 ### SY-027 Keep transfer pairs whole
 As a user, a transfer never ends up with one side missing after a sync.
@@ -446,7 +523,7 @@ Acceptance:
 - [int] One device deletes a transfer while another edits one leg: after
   sync both devices agree, and no leg is left without its partner.
 - [unit] A fixture covers "one leg deleted remotely".
-Status: todo
+Status: done
 
 ### SY-028 Auto-post the same occurrence once
 As a user, two devices that both auto-post a scheduled payment end up with
@@ -461,7 +538,7 @@ Acceptance:
 - [int] A user who deleted an auto-posted transaction does not get it back
   when another device posts the same occurrence with an older `hlc`.
 - [int] Existing auto-post tests still pass.
-Status: todo
+Status: done
 
 ### SY-029 Resolve natural-key collisions
 As a user, creating the same payee or budget entry on two devices offline
@@ -474,7 +551,24 @@ Acceptance:
   order, and end with one live payee and identical rows.
 - [int] The same for an envelope category and for a monthly allocation.
 - [int] An apply never aborts on a unique constraint.
-Status: todo
+- [int] Rule and storage per SPEC.md §8.10: the lowest live public id keeps
+  the key; a deleted row that would block a key is held in a tombstone store
+  (the unique constraints stay as they are; no table rebuild), is still
+  pushed, pulled and undeleted like any row, and appears in exports.
+- [int] Portable import of a package holding a deleted and a live row with
+  the same natural key (a server snapshot can) succeeds.
+Status: done. Migration `0015_sync_tombstones.sql` adds the store
+`sync_tombstones(tbl, public_id, hlc, dirty, unsealed, payload)` and lets a
+natural-key row leave its table only once the store holds it. Rule: live rows
+always live in their table; a deleted row stays in its table unless another
+row holds its key when it is written, or a live row needs the key later, and
+then lives in the store until it is live again. `placePortableRow`
+(`portable-data.ts`) is the only writer that moves rows; resolution is in
+`sync/natural-keys.ts`, store sealing, push and ack in `sync/tombstones.ts`.
+Export appends stored rows after their table's rows (unchanged output when the
+store is empty); import places natural-key rows the same way. Tests:
+`sync-natural-keys.test.ts`, `portable-tombstones.unit.test.ts`,
+`sync-tombstones-migration.test.ts`, and all twelve fixtures.
 
 ### SY-030 Flag reconciliations that no longer add up
 As a user, I am told when a sync changed transactions I had already
@@ -488,13 +582,14 @@ Acceptance:
   offline: after sync the account is flagged on both.
 - [int] Nothing is repaired automatically; a flag clears when the totals
   agree again.
-Status: todo
+Status: done
 
 ### SY-031 Start sync on the first app
 As a user, turning sync on uploads all my data.
 Depends: SY-026
 Acceptance:
-- [int] Start rewrites every `legacy:*` public id to a fresh UUID in one
+- [int] Start rewrites every public id that is not a canonical UUID
+  (`legacy:*` and the 32-hex ids from 0013) to a fresh UUID in one
   transaction, keeping every foreign key and transfer link intact, then marks
   every row dirty.
 - [int] After the first cycle the server holds every row, including deleted
@@ -502,7 +597,7 @@ Acceptance:
 - [int] Start refuses when the server already has data for the user
   (`hasData`), pointing to Join instead.
 - [int] An interrupted first upload resumes and completes.
-Status: todo
+Status: done
 
 ### SY-032 Join sync on a later app
 As a user, connecting another app replaces its data with my synced books.
@@ -517,7 +612,13 @@ Acceptance:
 - [int] Account shortcuts are remapped by public id; ones that do not
   resolve are dropped. Other preferences are kept.
 - [int] A failed join leaves the device's data as it was.
-Status: todo
+Status: done. `sync/join.ts` exports `joinSync(database, deps)` (enrolment
+already done). It pulls everything from cursor `"0"` with empty pushes into
+memory first, then in one transaction marks every row deleted (clean, no
+HLC, store rows included), applies the pull with the after-apply hooks,
+remaps account shortcuts by public id and stores the cursor; any failure
+leaves the data untouched. The joining device keeps its old rows as clean
+deleted rows that are never pushed. Tests: `sync-join.test.ts`.
 
 ### SY-033 Handle sync errors
 As a user, a failed sync tells me what is wrong and loses nothing.
@@ -532,7 +633,7 @@ Acceptance:
 - [int] Drift rejection and the daily-limit error each produce their own
   status; a drift-rejected row stays dirty.
 - [int] `last_error` and `last_synced_at` in `sync_state` reflect each case.
-Status: todo
+Status: done
 
 ### SY-034 Portable import while synced
 As a user, importing a data file while sync is on updates my other devices
@@ -544,7 +645,16 @@ Acceptance:
   import removed are pushed as deleted.
 - [int] A second device ends with exactly the imported data after sync.
 - [int] Importing a server snapshot (SY-019) while synced works the same way.
-Status: todo
+Status: done. `importPortableData` moved to `portable-import.ts` (it now uses
+the engine). Package rows are written as user writes that keep the package's
+`updated_at` (second pass included; also with sync off). While synced: rows
+the import removes, and synced rows already deleted (store included), are
+re-marked deleted and dirty; rows never synced and deleted (Join leftovers)
+are left alone; dirty rows are normalised and validated as Start does
+(`sync/normalise.ts`, shared); every unsealed row is sealed in the import
+transaction with the import time as its edit time, so it beats versions
+from before the import even when not yet pulled. Tests:
+`sync-import.test.ts`.
 
 ## M6 Web wiring and UI (step 6)
 
@@ -564,7 +674,15 @@ Acceptance:
 - [unit] Electron reports sync as unsupported; no IPC channels are added.
 - [unit] Only the tab holding the instance lock can call the mutating
   methods.
-Status: todo
+Status: done. Controller `createSyncApi` in `src/services/sync/api.ts`
+(types in `api-types.ts`), wired in `src/platform/browser-api.ts` (flat methods
+on `ApplicationAPI`: `getSyncStatus`, `enrolSync`, `startSync`, `joinSync`,
+`syncNow`, `disableSync`, `enableSync`, `signOutSync`, `deleteSyncCloudData`,
+`listSyncDevices`, `revokeSyncDevice`, `createSyncDeviceCode`, `onSyncChange`).
+Results are `{ ok: true, ... } | { ok: false, reason, message, retryAfter }`.
+Electron: `getSyncApi()` in `src/platform/sync-api.ts` answers "unsupported".
+Sign out and delete offline: refused, nothing changed (sign out has
+`force`). Tests: `src/tests/integration/sync-api.test.ts`.
 
 ### SY-036 Let the web app reach the sync server
 As the web app, my requests to the sync server are allowed and never cached.
@@ -575,7 +693,11 @@ Acceptance:
 - [e2e] `sw.js` does not intercept or cache requests to the sync origin.
 - [manual] A request from `budget.fairhursts.net` preview to staging passes
   CORS and CSP.
-Status: todo
+Status: done except the [manual] staging check (staging does not exist yet).
+Setting: `VITE_SYNC_SERVER_URL`, read in `src/services/sync/config.ts`
+(`SYNC_SERVER_URL`, null when unset); parsing in `vite.sync-origin.ts`.
+`sw.js` returns early for the sync origin before any other rule. E2E:
+`e2e/sync-origin.spec.ts` (second build on port 4174, stub on 4599).
 
 ### SY-037 Turn sync on, with consent
 As a user, I choose to send my data to the cloud knowing what that means,
@@ -594,7 +716,7 @@ Acceptance:
 - [int] Consent date and app version are stored in `sync_state`.
 - [doc] In-app wording and `docs/ARCHITECTURE.md` no longer claim there is
   no server.
-Status: todo
+Status: done. Sync card in Settings (`src/pages/Settings/sync/`); [int] consent_at and app version covered by `sync-api.test.ts` ("stores device id, token, consent date and app version"); e2e in `e2e/sync-ui.spec.ts` with a mocked server (`e2e/helpers/sync-mock.ts`).
 
 ### SY-038 Sync now and see the status
 As a user, I can sync on demand and see whether I am up to date.
@@ -607,7 +729,7 @@ Acceptance:
 - [e2e] After a sync that applied rows, open pages show the new data without
   a reload.
 - [e2e] Works at phone width.
-Status: todo
+Status: done. Status panel, "Sync now", header `SyncIndicator`; e2e in `e2e/sync-ui.spec.ts`.
 
 ### SY-039 Sync in the background
 As a user, my devices stay up to date without me pressing anything.
@@ -621,7 +743,15 @@ Acceptance:
   server does not block startup; offline, auto-post runs as today.
 - [unit] A tab without the instance lock never syncs.
 - [e2e] An edit shows as "pending 1", then "synced" without user action.
-Status: todo
+Status: done. The [e2e] criterion is covered by "an edit shows as pending,
+then synced without user action" in `e2e/sync-ui.spec.ts` (mocked server)
+and, against the real server, by `e2e/sync-real.spec.ts` (SY-044). Scheduler in
+`src/services/sync/scheduler.ts`; local writes detected by
+`src/services/sync/write-observer.ts` (wraps the database the services use;
+the sync engine keeps the raw one, so engine writes never notify). Backoff
+30 s, 1 m, 2 m, 4 m, 8 m, then 15 m cap; `retryAfter` honoured; no auto-retry
+for stopped states or `clock_ahead`. Startup sync (3 s timeout) runs before
+auto-post in `runtime.ts`.
 
 ### SY-040 Add and manage devices
 As a user, I can connect another app and disconnect ones I no longer use.
@@ -631,7 +761,7 @@ Acceptance:
 - [e2e] The device list shows each app's name, when it was added and last
   seen, and marks this one; any other can be revoked after confirmation.
 - [e2e] A second browser context enrols with the code and joins.
-Status: todo
+Status: done
 
 ### SY-041 Stop, sign out, or delete my cloud data
 As a user, I can stop syncing, disconnect this app, or erase the cloud copy,
@@ -647,7 +777,7 @@ Acceptance:
   device, and says other devices will stop syncing and that copies may
   persist for up to 7 days.
 - [int] After delete, Start sync from any device works again.
-Status: todo
+Status: done
 
 ### SY-042 Download a backup
 As a user, I can save a full copy of my data to a file at any time.
@@ -659,7 +789,7 @@ Acceptance:
   while synced.
 - [e2e] Portable import while synced warns that it will overwrite all
   devices before proceeding.
-Status: todo
+Status: done
 
 ### SY-043 Tell me about sync problems
 As a user, I am told when sync needs my attention.
@@ -670,7 +800,7 @@ Acceptance:
   appears once per occurrence, not on every cycle.
 - [e2e] An account whose reconciliation no longer adds up after a sync shows
   a "review reconciliation" notice linking to that account.
-Status: todo
+Status: done
 
 ### SY-044 End-to-end test against a local server
 As the maintainer, CI proves the web app syncs through a real server.
@@ -682,7 +812,15 @@ Acceptance:
   enrol with a device code, Join, see the transaction, edit it. A sees the
   edit after a sync. Reloading either keeps the state.
 - [e2e] The run is part of `bun run test:e2e` and CI.
-Status: todo
+Status: done (2026-11-22). `e2e/sync-real.spec.ts` in the Playwright project
+`sync-real`: a third build (port 4175) whose sync URL is the Worker on celld
+0.6.3 (port 4600), started by `scripts/e2e-sync-server.ts` as a `webServer`
+from a fresh temp copy of `sync-server/` (empty database every run; never
+reused). The spec seeds its user and invite through `/dev/admin/add-user`;
+no network mocks. CI installs a pinned, checksummed celld. Found and fixed:
+the server rate-limited CORS preflights, so a limited browser saw "could not
+reach the sync server" instead of `429` with `retryAfter`; preflights now
+answer `204` first and are not counted (SPEC 2.3).
 
 ### SY-045 Seed the PWA from a BudgieMac export
 As the maintainer, I can test sync on my phone with real data before the Mac

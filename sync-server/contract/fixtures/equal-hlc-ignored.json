@@ -1,0 +1,68 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "id": "equal-hlc-ignored",
+  "description": "A remote version with an HLC equal to the local row's is skipped, even if its payload differs. Only a strictly greater HLC wins.",
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "given": [
+    {
+      "tbl": "envelopes",
+      "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+        "createdAt": "2026-11-01 08:05:00",
+        "updatedAt": "2026-11-22 10:15:30",
+        "deletedAt": null,
+        "name": "Groceries",
+        "active": true,
+        "sortOrder": 0
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "envelopes",
+        "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+          "createdAt": "2026-11-01 08:05:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Food",
+          "active": true,
+          "sortOrder": 3
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [],
+    "rows": [
+      {
+        "tbl": "envelopes",
+        "hlc": "001795342530000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b",
+          "createdAt": "2026-11-01 08:05:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Groceries",
+          "active": true,
+          "sortOrder": 0
+        }
+      }
+    ],
+    "error": null
+  }
+}

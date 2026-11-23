@@ -1,5 +1,7 @@
 import { access, readFile, stat } from "node:fs/promises";
 import { extname, join } from "node:path";
+import process from "node:process";
+import { parseSyncServerUrl, syncConnectOrigin } from "../vite.sync-origin";
 
 const buildDirectory = join(import.meta.dir, "..", "build");
 const requiredFiles = [
@@ -13,6 +15,10 @@ const requiredFiles = [
 
 for (const file of requiredFiles) await access(join(buildDirectory, file));
 
+const serviceWorkerSource = await readFile(
+  join(buildDirectory, "sw.js"),
+  "utf8",
+);
 const headers = await readFile(join(buildDirectory, "_headers"), "utf8");
 for (const header of [
   "Cross-Origin-Opener-Policy: same-origin",
@@ -26,6 +32,24 @@ for (const header of [
   if (!headers.includes(`  ${header}`))
     throw new Error(`Missing Cloudflare header: ${header}`);
 }
+
+// SY-036: the sync origin is in connect-src exactly when the build sets it,
+// and no other origin ever is.
+const syncOrigin = syncConnectOrigin(
+  parseSyncServerUrl(process.env.VITE_SYNC_SERVER_URL),
+);
+const connectSrc = /connect-src ([^;\n]*)/.exec(headers)?.[1];
+const expectedConnectSrc = syncOrigin ? `'self' ${syncOrigin}` : "'self'";
+if (connectSrc !== expectedConnectSrc)
+  throw new Error(
+    `connect-src is "${connectSrc}", expected "${expectedConnectSrc}"`,
+  );
+if (
+  !serviceWorkerSource.includes(
+    `const SYNC_ORIGIN = ${JSON.stringify(syncOrigin)};`,
+  )
+)
+  throw new Error("The service worker does not carry the sync origin");
 
 if (
   !headers.includes(

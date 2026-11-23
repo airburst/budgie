@@ -1,0 +1,311 @@
+{
+  "manifest": {
+    "formatVersion": 1,
+    "applicationVersion": "0.16.3",
+    "exportedAt": "2026-10-27T12:34:56.000Z",
+    "minimumReaderVersion": "0.16.3",
+    "checksum": "90eac4221d4a462392663ff375637bc0d91a6a412c05c899a8c21cd676df5e42"
+  },
+  "preferences": {
+    "hideReconciled": true,
+    "hideCleared": false,
+    "autofillPayees": true,
+    "theme": "dark",
+    "startupPage": "/accounts",
+    "accountShortcuts": [
+      {
+        "key": "1",
+        "ctrl": false,
+        "accountPublicId": "b0000000-0000-4000-8000-000000000002"
+      },
+      {
+        "key": "2",
+        "ctrl": true,
+        "accountPublicId": "b0000000-0000-4000-8000-000000000001"
+      }
+    ],
+    "accountOrder": [
+      "b0000000-0000-4000-8000-000000000002",
+      "b0000000-0000-4000-8000-000000000001"
+    ]
+  },
+  "accounts": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000001",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Current",
+      "number": "12345678",
+      "type": "bank",
+      "balance": 1000.5,
+      "currency": "GBP",
+      "notes": null,
+      "interestRate": null,
+      "creditLimit": null,
+      "deleted": false,
+      "pendingReconcileBalance": 1180.25,
+      "pendingReconcileDate": "2026-10-26"
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000002",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Savings",
+      "number": null,
+      "type": "investment",
+      "balance": 5000,
+      "currency": "GBP",
+      "notes": null,
+      "interestRate": 4.1,
+      "creditLimit": null,
+      "deleted": false,
+      "pendingReconcileBalance": null,
+      "pendingReconcileDate": null
+    }
+  ],
+  "categories": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000010",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "parentPublicId": null,
+      "name": "Bills",
+      "expenseType": "expense",
+      "deleted": false
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000011",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "parentPublicId": "b0000000-0000-4000-8000-000000000010",
+      "name": "Electricity",
+      "expenseType": "expense",
+      "deleted": false
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000012",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "parentPublicId": null,
+      "name": "Salary",
+      "expenseType": "income",
+      "deleted": false
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000013",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "parentPublicId": null,
+      "name": "Transfers",
+      "expenseType": "transfer",
+      "deleted": false
+    }
+  ],
+  "transactions": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000020",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000001",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000012",
+      "date": "2026-10-01",
+      "payee": "Employer Ltd",
+      "amount": 2500,
+      "notes": null,
+      "cleared": true,
+      "reconciled": true,
+      "transferTransactionPublicId": null,
+      "bankText": "FASTER PAYMENTS RECEIPT EMPLOYER LTD"
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000021",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000001",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000011",
+      "date": "2026-10-05",
+      "payee": "Octopus Energy",
+      "amount": -89.99,
+      "notes": "October bill",
+      "cleared": true,
+      "reconciled": false,
+      "transferTransactionPublicId": null,
+      "bankText": "DD OCTOPUS ENERGY 1234"
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000022",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000001",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000013",
+      "date": "2026-10-10",
+      "payee": "Savings",
+      "amount": -300,
+      "notes": null,
+      "cleared": false,
+      "reconciled": false,
+      "transferTransactionPublicId": "b0000000-0000-4000-8000-000000000023"
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000023",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000002",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000013",
+      "date": "2026-10-10",
+      "payee": "Current",
+      "amount": 300,
+      "notes": null,
+      "cleared": false,
+      "reconciled": false,
+      "transferTransactionPublicId": "b0000000-0000-4000-8000-000000000022"
+    }
+  ],
+  "accountReconciliations": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000030",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000001",
+      "date": "2026-10-01",
+      "balance": 3500.5,
+      "notes": "September statement"
+    }
+  ],
+  "scheduledTransactions": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000031",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "accountPublicId": "b0000000-0000-4000-8000-000000000001",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000013",
+      "payee": "Savings",
+      "amount": -200,
+      "rrule": "FREQ=MONTHLY;BYMONTHDAY=15",
+      "nextDueDate": "2026-11-15",
+      "autoPost": true,
+      "daysInAdvance": 2,
+      "notes": null,
+      "active": true,
+      "transferToAccountPublicId": "b0000000-0000-4000-8000-000000000002"
+    }
+  ],
+  "payees": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000035",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Octopus Energy",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000011",
+      "amount": 89.99
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000036",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Employer Ltd",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000012",
+      "amount": null
+    }
+  ],
+  "envelopes": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000040",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Food",
+      "active": true,
+      "sortOrder": 0
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000041",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "name": "Fun",
+      "active": true,
+      "sortOrder": 1
+    }
+  ],
+  "envelopeCategories": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000042",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "envelopePublicId": "b0000000-0000-4000-8000-000000000040",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000010"
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000043",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "envelopePublicId": "b0000000-0000-4000-8000-000000000041",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000011"
+    }
+  ],
+  "budgetAllocations": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000044",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "envelopePublicId": "b0000000-0000-4000-8000-000000000040",
+      "month": "2026-10",
+      "assigned": 400
+    },
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000045",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "envelopePublicId": "b0000000-0000-4000-8000-000000000041",
+      "month": "2026-10",
+      "assigned": 120.5
+    }
+  ],
+  "budgetTransfers": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000046",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": "2026-10-27 12:34:56",
+      "deletedAt": null,
+      "fromEnvelopePublicId": "b0000000-0000-4000-8000-000000000040",
+      "toEnvelopePublicId": "b0000000-0000-4000-8000-000000000041",
+      "month": "2026-10",
+      "amount": 25,
+      "notes": "Treat"
+    }
+  ],
+  "budgieMacImportRules": [
+    {
+      "publicId": "b0000000-0000-4000-8000-000000000050",
+      "createdAt": "2026-10-27 12:34:56",
+      "updatedAt": null,
+      "deletedAt": null,
+      "bankText": "DD OCTOPUS ENERGY 1234",
+      "isDeposit": false,
+      "payee": "Octopus Energy",
+      "categoryPublicId": "b0000000-0000-4000-8000-000000000011",
+      "count": 3,
+      "amounts": ["-89.99", "-91.2"],
+      "lastUsed": "2026-10-05 00:00:00"
+    }
+  ]
+}

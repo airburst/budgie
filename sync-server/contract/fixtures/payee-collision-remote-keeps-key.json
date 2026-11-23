@@ -1,0 +1,99 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "id": "payee-collision-remote-keeps-key",
+  "description": "Two devices create the same payees.name offline. The incoming row has the lower public id, so it keeps the key; the local row has the higher HLC, so its content is copied into the incoming row (an engine edit, dirty, sealed now). The local row becomes deleted (dirty, sealed now). Its push in this round was stored, but its HLC has changed since, so it stays dirty.",
+  "given": [
+    {
+      "tbl": "payees",
+      "hlc": null,
+      "dirty": true,
+      "unsealed": true,
+      "payload": {
+        "publicId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        "createdAt": "2026-11-22 10:20:00",
+        "updatedAt": "2026-11-22 10:20:00",
+        "deletedAt": null,
+        "name": "Tesco",
+        "categoryPublicId": null,
+        "amount": 30
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "payees",
+        "publicId": "11111111-1111-4111-8111-111111111111",
+        "hlc": "001795342200000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "11111111-1111-4111-8111-111111111111",
+          "createdAt": "2026-11-22 10:10:00",
+          "updatedAt": "2026-11-22 10:10:00",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 25
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [
+      {
+        "tbl": "payees",
+        "publicId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        "hlc": "001795342800000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "deleted": false,
+        "payload": {
+          "publicId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          "createdAt": "2026-11-22 10:20:00",
+          "updatedAt": "2026-11-22 10:20:00",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 30
+        }
+      }
+    ],
+    "rows": [
+      {
+        "tbl": "payees",
+        "hlc": "001795343400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": true,
+        "unsealed": false,
+        "payload": {
+          "publicId": "11111111-1111-4111-8111-111111111111",
+          "createdAt": "2026-11-22 10:10:00",
+          "updatedAt": "2026-11-22 10:30:00",
+          "deletedAt": null,
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 30
+        }
+      },
+      {
+        "tbl": "payees",
+        "hlc": "001795343400000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": true,
+        "unsealed": false,
+        "payload": {
+          "publicId": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          "createdAt": "2026-11-22 10:20:00",
+          "updatedAt": "2026-11-22 10:30:00",
+          "deletedAt": "2026-11-22 10:30:00",
+          "name": "Tesco",
+          "categoryPublicId": null,
+          "amount": 30
+        }
+      }
+    ],
+    "error": null
+  }
+}

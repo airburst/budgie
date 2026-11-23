@@ -1,0 +1,94 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "id": "remote-older-ignored",
+  "description": "A remote version with a lower HLC than the local row is skipped; the local row is unchanged.",
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "given": [
+    {
+      "tbl": "accounts",
+      "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-22 10:15:30",
+        "deletedAt": null,
+        "name": "Mine",
+        "number": "12345678",
+        "type": "bank",
+        "balance": 1500,
+        "currency": "GBP",
+        "notes": null,
+        "interestRate": null,
+        "creditLimit": null,
+        "deleted": false
+      },
+      "local": {
+        "pendingReconcileBalance": 1234.56,
+        "pendingReconcileDate": "2026-11-21"
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "accounts",
+        "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+        "hlc": "001795342400000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:13:20",
+          "deletedAt": null,
+          "name": "Older remote name",
+          "number": "12345678",
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": null,
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [],
+    "rows": [
+      {
+        "tbl": "accounts",
+        "hlc": "001795342530000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "0b8e5d7c-1a2b-4c3d-9e8f-7a6b5c4d3e2f",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-22 10:15:30",
+          "deletedAt": null,
+          "name": "Mine",
+          "number": "12345678",
+          "type": "bank",
+          "balance": 1500,
+          "currency": "GBP",
+          "notes": null,
+          "interestRate": null,
+          "creditLimit": null,
+          "deleted": false
+        },
+        "local": {
+          "pendingReconcileBalance": 1234.56,
+          "pendingReconcileDate": "2026-11-21"
+        }
+      }
+    ],
+    "error": null
+  }
+}

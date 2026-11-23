@@ -1,0 +1,171 @@
+{
+  "kind": "merge",
+  "formatVersion": 1,
+  "device": {
+    "deviceId": "3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+    "now": 1795343400000
+  },
+  "id": "envelope-category-key-held-by-deleted-row",
+  "description": "A deleted local row has the same envelope_categories.categoryPublicId as an incoming live row. Deleted rows do not hold natural keys, so the incoming row is applied (clean) and the deleted row is unchanged, even though it has the lower public id. An engine whose unique index covers deleted rows stores the deleted row outside the table (section 8.10).",
+  "given": [
+    {
+      "tbl": "categories",
+      "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "c0c0c0c0-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-01 08:00:00",
+        "deletedAt": null,
+        "parentPublicId": null,
+        "name": "Groceries",
+        "expenseType": "expense",
+        "deleted": false
+      }
+    },
+    {
+      "tbl": "envelopes",
+      "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "e0e0e0e0-0000-4000-8000-000000000001",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-01 08:00:00",
+        "deletedAt": null,
+        "name": "Food",
+        "active": true,
+        "sortOrder": 0
+      }
+    },
+    {
+      "tbl": "envelopes",
+      "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "e0e0e0e0-0000-4000-8000-000000000002",
+        "createdAt": "2026-11-01 08:00:00",
+        "updatedAt": "2026-11-01 08:00:00",
+        "deletedAt": null,
+        "name": "Treats",
+        "active": true,
+        "sortOrder": 1
+      }
+    },
+    {
+      "tbl": "envelope_categories",
+      "hlc": "001795342500000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+      "dirty": false,
+      "unsealed": false,
+      "payload": {
+        "publicId": "22222222-2222-4222-8222-222222222222",
+        "createdAt": "2026-11-22 10:15:00",
+        "updatedAt": "2026-11-22 10:15:00",
+        "deletedAt": "2026-11-22 10:15:00",
+        "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+        "categoryPublicId": "c0c0c0c0-0000-4000-8000-000000000001"
+      }
+    }
+  ],
+  "response": {
+    "pull": [
+      {
+        "tbl": "envelope_categories",
+        "publicId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        "hlc": "001795343100000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "deleted": false,
+        "payload": {
+          "publicId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          "createdAt": "2026-11-22 10:25:00",
+          "updatedAt": "2026-11-22 10:25:00",
+          "deletedAt": null,
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000002",
+          "categoryPublicId": "c0c0c0c0-0000-4000-8000-000000000001"
+        }
+      }
+    ],
+    "rejected": []
+  },
+  "expect": {
+    "push": [],
+    "rows": [
+      {
+        "tbl": "categories",
+        "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "c0c0c0c0-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-01 08:00:00",
+          "deletedAt": null,
+          "parentPublicId": null,
+          "name": "Groceries",
+          "expenseType": "expense",
+          "deleted": false
+        }
+      },
+      {
+        "tbl": "envelopes",
+        "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-01 08:00:00",
+          "deletedAt": null,
+          "name": "Food",
+          "active": true,
+          "sortOrder": 0
+        }
+      },
+      {
+        "tbl": "envelopes",
+        "hlc": "001793520000000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "e0e0e0e0-0000-4000-8000-000000000002",
+          "createdAt": "2026-11-01 08:00:00",
+          "updatedAt": "2026-11-01 08:00:00",
+          "deletedAt": null,
+          "name": "Treats",
+          "active": true,
+          "sortOrder": 1
+        }
+      },
+      {
+        "tbl": "envelope_categories",
+        "hlc": "001795342500000:00000:3c9a1e52-7d4b-4f0e-9b6a-2e8d5c1f0a47",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "22222222-2222-4222-8222-222222222222",
+          "createdAt": "2026-11-22 10:15:00",
+          "updatedAt": "2026-11-22 10:15:00",
+          "deletedAt": "2026-11-22 10:15:00",
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000001",
+          "categoryPublicId": "c0c0c0c0-0000-4000-8000-000000000001"
+        }
+      },
+      {
+        "tbl": "envelope_categories",
+        "hlc": "001795343100000:00000:9d2f4b61-0c3e-4a5d-8f7a-6b1c2d3e4f50",
+        "dirty": false,
+        "unsealed": false,
+        "payload": {
+          "publicId": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          "createdAt": "2026-11-22 10:25:00",
+          "updatedAt": "2026-11-22 10:25:00",
+          "deletedAt": null,
+          "envelopePublicId": "e0e0e0e0-0000-4000-8000-000000000002",
+          "categoryPublicId": "c0c0c0c0-0000-4000-8000-000000000001"
+        }
+      }
+    ],
+    "error": null
+  }
+}

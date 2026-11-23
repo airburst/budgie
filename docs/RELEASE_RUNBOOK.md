@@ -13,16 +13,16 @@ or install from it.
 | Pull request                                 | Web Deploy   | Build + verify only (no deploy)                                               |
 | Manual (Actions → Web Deploy → Run workflow) | Web Deploy   | Build the selected branch, deploy preview alias (defaults to the branch name) |
 | `v*` tag                                     | Web Deploy   | Tag-on-main check, lint/types/unit/e2e, build + verify, **production** deploy |
-| `v*` tag                                     | Release      | Tag-on-main check, Electron mac/win builds + GitHub release (auto-update)     |
+| Manual (Release workflow)                    | Release      | Frozen Electron build; not part of releases, never runs on tags               |
 | PR / push to `main`                          | Web Platform | lint, types, unit, e2e                                                        |
 
 Rules enforced by the workflows:
 
-- A `v*` tag must be an ancestor of `origin/main`, for both Pages and Electron.
+- A `v*` tag must be an ancestor of `origin/main`, before production deploy.
 - Production Pages deploys only after lint, check-types, unit and e2e pass.
 - Manual preview refuses `project=budgie-web` with alias `main`.
-- The same tag drives both artifacts; the web build and Electron build read the
-  version from `package.json`.
+- Releases are web-only. Electron is frozen and no longer built or published on
+  tags; the web build reads the version from `package.json`.
 
 ## Cutting a release
 
@@ -30,30 +30,22 @@ Rules enforced by the workflows:
 2. On `main`: `bun run version` (consumes changesets), then commit
    `package.json`, `CHANGELOG.md`, `.changeset` as "Bump version" and push.
 3. `bun run release` tags `v<version>` and pushes it.
-4. Watch **Web Deploy** (checks → production) and **Release** (mac/win → publish).
+4. Watch **Web Deploy** (checks → production).
 5. Verify https://budget.fairhursts.net: response headers (COOP/COEP/CSP),
    offline reload, service-worker update prompt on the next release, install
    to home screen (see PHASE4_MANUAL_CHECKLIST.md "Home screen icon and name").
-6. Edit the GitHub release notes (they are created empty).
+6. No GitHub release is created; the tag and `CHANGELOG.md` are the record.
 
 ## Release history
 
 - `v1.0.0` (2026-10-18): web deployed; the Windows build failed (a Windows-only
   path bug in the web-artifact plugin), so the GitHub release was never
   published and was deleted. The tag remains.
-- `v1.0.1`: first complete release (web + macOS + Windows).
+- `v1.0.1`: first complete release (web + macOS + Windows). Later releases are
+  web-only.
 
-Before tagging, cheaply catch platform-only build failures: the Release
-workflow builds mac and Windows only on a tag, so a failure leaves a draft
-release and the web already live. Fix forward with the next patch tag.
-
-## Desktop auto-update
-
-The Electron updater reads GitHub Releases without credentials. While the
-repository is **private** it gets 404s and, because errors are swallowed,
-installed apps never see updates. Until that is resolved (see `docs/BACKLOG.md`)
-tell desktop users to install new versions from the Releases page. macOS builds
-are unsigned: updates only notify; Windows would auto-download.
+Electron releases stopped after the web-only switch; the last Electron build is
+the previous tagged release.
 
 ## Previews
 
@@ -73,8 +65,6 @@ the Web Deploy workflow for the previous tag.
 is safe only when the release being rolled back **added no migration**. If it
 did, fix forward instead. Clients pick up the rolled-back build through the
 normal service-worker update prompt.
-
-Electron has no remote rollback: publish a new patch release.
 
 ## Rehearsal (no tags)
 

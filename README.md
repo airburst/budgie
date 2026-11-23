@@ -1,6 +1,6 @@
 # Budgie
 
-Personal finance app for desktop (Electron) and the web (offline-first PWA at https://budget.fairhursts.net). React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device.
+Personal finance app for the web (offline-first PWA at https://budget.fairhursts.net). The supported apps are the web PWA and BudgieMac (a separate native Mac app). The Electron desktop app is frozen: no new features, no releases and no sync. React 19 + TypeScript + Tailwind v4 + SQLite (better-sqlite3 + Drizzle ORM on desktop, SQLite WASM on the web). One codebase, local-first: your data stays on your device unless you turn on the optional sync (off by default, web only).
 
 ## Features
 
@@ -55,12 +55,25 @@ the full release, rollback and rehearsal procedures.
   branch (optional `alias` and `project` inputs). There is no automatic
   deployment on push, pull request or merge.
 - Pushing a `v*` tag (which must be on `main`) runs lint, types, unit and e2e
-  checks and then deploys production using the `main` Pages branch, while the
-  Release workflow builds Electron from the same tag.
+  checks and then deploys production using the `main` Pages branch. The
+  Electron Release workflow no longer runs on tags (manual dispatch only).
 - Each deployment downloads the verified artifact from its workflow run;
   artifacts are retained for 30 days.
 
 Run `bun run verify:web` to build and verify the deployment artifact locally.
+
+### Sync server build setting
+
+`VITE_SYNC_SERVER_URL` (read at build time by `vite.config.ts` and
+`src/services/sync/config.ts`) is the sync server base URL, for example
+`https://<worker>.<account>.workers.dev`. It must be https (http only for
+localhost) with no credentials, query or fragment. When set, its origin is
+added to `connect-src` in the generated `_headers`, and the service worker is
+told to never intercept or cache requests to that origin. When unset (the
+default) the app has no sync origin: the CSP is unchanged and nothing can reach
+a server. `verify:web` checks the built `_headers` against the variable. The
+URL is never hard-coded so a custom domain can be added later. `web-deploy.yml`
+will need the variable set on its build step once the sync server is live.
 The build generates Cloudflare security/isolation headers and the offline
 precache. Keep preview access protection enabled in Cloudflare Access. Use a
 stable preview alias for device testing: browser databases are isolated by

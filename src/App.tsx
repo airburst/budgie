@@ -1,6 +1,8 @@
 import RouterContent from "@/components/RouterContent";
+import { SyncNotices } from "@/components/SyncNotices";
 import { Toaster } from "@/components/ui/sonner";
 import { usePlatform } from "@/hooks/usePlatform";
+import { useSyncRefresh } from "@/hooks/useSyncRefresh";
 import { usePreferences } from "@/hooks/usePreferences";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -36,6 +38,11 @@ function ThemeApplier() {
     return () => mq.removeEventListener("change", handler);
   }, [theme]);
 
+  return null;
+}
+
+function SyncRefresher() {
+  useSyncRefresh();
   return null;
 }
 
@@ -111,6 +118,8 @@ function App() {
       <HashRouter>
         <ThemeApplier />
         <UpdateListener />
+        <SyncRefresher />
+        <SyncNotices />
         <RouterContent />
       </HashRouter>
       <Toaster position="bottom-right" />

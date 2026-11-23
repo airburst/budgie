@@ -65,14 +65,16 @@ export const createBudgetService = (database: DatabaseCapability) => ({
     month: string,
     assigned: number,
   ) => {
+    // (envelope_id, month) is UNIQUE across deleted rows too, so a deleted
+    // allocation is revived (keeping its public id) rather than re-inserted.
     const existing = await database.query<{ id: number }>({
-      sql: "SELECT id FROM budget_allocations WHERE envelope_id = ? AND month = ? AND deleted_at IS NULL",
+      sql: "SELECT id FROM budget_allocations WHERE envelope_id = ? AND month = ?",
       params: [envelopeId, month],
     });
     if (existing[0])
       return (
         await database.query<AllocationRow>({
-          sql: "UPDATE budget_allocations SET assigned = ? WHERE id = ? RETURNING *",
+          sql: "UPDATE budget_allocations SET assigned = ?, deleted_at = NULL WHERE id = ? RETURNING *",
           params: [assigned, existing[0].id],
         })
       ).map(mapAllocation);
@@ -89,23 +91,39 @@ export const createBudgetService = (database: DatabaseCapability) => ({
         sql: "SELECT * FROM budget_allocations WHERE month = ? AND deleted_at IS NULL",
         params: [sourceMonth],
       });
-      const existing = await transaction.query<{ envelope_id: number }>({
-        sql: "SELECT envelope_id FROM budget_allocations WHERE month = ?",
+      const existing = await transaction.query<{
+        id: number;
+        envelope_id: number;
+        deleted_at: string | null;
+      }>({
+        sql: "SELECT id, envelope_id, deleted_at FROM budget_allocations WHERE month = ?",
         params: [targetMonth],
       });
       const active = await transaction.query<{ id: number }>({
         sql: "SELECT id FROM envelopes WHERE active = 1",
       });
-      const existingIds = new Set(existing.map((row) => row.envelope_id));
+      const existingRows = new Map(
+        existing.map((row) => [row.envelope_id, row]),
+      );
       const activeIds = new Set(active.map((row) => row.id));
       const inserted: BudgetAllocation[] = [];
       for (const row of source) {
-        if (!activeIds.has(row.envelope_id) || existingIds.has(row.envelope_id))
+        const current = existingRows.get(row.envelope_id);
+        if (!activeIds.has(row.envelope_id) || (current && !current.deleted_at))
           continue;
-        const rows = await transaction.query<AllocationRow>({
-          sql: "INSERT INTO budget_allocations (envelope_id, month, assigned) VALUES (?, ?, ?) RETURNING *",
-          params: [row.envelope_id, targetMonth, row.assigned],
-        });
+        // A deleted allocation still holds the UNIQUE (envelope_id, month)
+        // key: revive it instead of inserting.
+        const rows = await transaction.query<AllocationRow>(
+          current
+            ? {
+                sql: "UPDATE budget_allocations SET assigned = ?, deleted_at = NULL WHERE id = ? RETURNING *",
+                params: [row.assigned, current.id],
+              }
+            : {
+                sql: "INSERT INTO budget_allocations (envelope_id, month, assigned) VALUES (?, ?, ?) RETURNING *",
+                params: [row.envelope_id, targetMonth, row.assigned],
+              },
+        );
         if (rows[0]) inserted.push(mapAllocation(rows[0]));
       }
       return inserted;

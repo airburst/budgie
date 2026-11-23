@@ -1,0 +1,56 @@
+// Deployed config (production and staging). celld refuses `jurisdiction` and
+// `workers_dev`, so local runs use wrangler.local.jsonc.
+// Do not add DEV_MODE here: it enables an unauthenticated admin route.
+{
+  "name": "budgie-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-01",
+  "workers_dev": true,
+  // CORS: the only origin that gets CORS headers (SPEC 2.3).
+  "vars": { "ALLOWED_ORIGIN": "https://budget.fairhursts.net" },
+  // Daily snapshots at 03:00 UTC.
+  "triggers": { "crons": ["0 3 * * *"] },
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"] }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "budgie-sync",
+      // PLACEHOLDER: replace with the id printed by `wrangler d1 create budgie-sync --jurisdiction eu`.
+      // Never commit a real id.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SNAPSHOTS",
+      "bucket_name": "budgie-sync-snapshots",
+      "jurisdiction": "eu",
+    },
+  ],
+  "env": {
+    "staging": {
+      "name": "budgie-sync-staging",
+      "workers_dev": true,
+      // PLACEHOLDER: set to the staging web app origin. vars are not inherited.
+      "vars": { "ALLOWED_ORIGIN": "https://budget.fairhursts.net" },
+      "triggers": { "crons": ["0 3 * * *"] },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "budgie-sync-staging",
+          // PLACEHOLDER: replace with the staging database id. Never commit a real id.
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations",
+        },
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "budgie-sync-snapshots-staging",
+          "jurisdiction": "eu",
+        },
+      ],
+    },
+  },
+}

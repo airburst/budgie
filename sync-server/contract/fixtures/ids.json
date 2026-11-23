@@ -1,0 +1,148 @@
+{
+  "kind": "ids",
+  "formatVersion": 1,
+  "function": "autoPostTransactionId",
+  "description": "Test vectors for the deterministic auto-post transaction id (SPEC.md section 8.9). Each valid vector gives the inputs, the exact UTF-8 string hashed, its SHA-256 in hex, and the resulting id. Each invalid vector must be refused.",
+  "vectors": [
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-11-22",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2026-11-22:account",
+      "sha256": "7551869f10e3da7bcc3967d1541af2e30bee66050a2fda2c24386c4b3dd2a488",
+      "id": "7551869f-10e3-8a7b-8c39-67d1541af2e3"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-11-22",
+      "leg": "transfer",
+      "input": "budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2026-11-22:transfer",
+      "sha256": "32064412d4820d27f853fad24ad9c87beeecc7973890f3e575af36e0be41a8dd",
+      "id": "32064412-d482-8d27-b853-fad24ad9c87b"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-12-22",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2026-12-22:account",
+      "sha256": "231cfcb7739c0fbe78cb49f5248c1edd859a53cfb929e26f6f8043d1d86c389a",
+      "id": "231cfcb7-739c-8fbe-b8cb-49f5248c1edd"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-12-31",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2026-12-31:account",
+      "sha256": "f80ea40c831194678f4fe5c0619de71054e71edc529555834d3d7e08f806579a",
+      "id": "f80ea40c-8311-8467-8f4f-e5c0619de710"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2027-01-01",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b:2027-01-01:account",
+      "sha256": "9bbf597a0ee0ab20c126b99048af8a3b3e35244a4972e0b57a40a5cd722efbbc",
+      "id": "9bbf597a-0ee0-8b20-8126-b99048af8a3b"
+    },
+    {
+      "schedulePublicId": "e3b0c442-98fc-4c14-9afb-f4c8996fb924",
+      "dueDate": "2026-11-22",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:e3b0c442-98fc-4c14-9afb-f4c8996fb924:2026-11-22:account",
+      "sha256": "bb0863b452ed48e1f1490f6dc9c719cb9f64c11ac020c311ed526cbb14cf82ae",
+      "id": "bb0863b4-52ed-88e1-b149-0f6dc9c719cb"
+    },
+    {
+      "schedulePublicId": "e3b0c442-98fc-4c14-9afb-f4c8996fb924",
+      "dueDate": "2028-02-29",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:e3b0c442-98fc-4c14-9afb-f4c8996fb924:2028-02-29:account",
+      "sha256": "0620b1a8e898adb32ab6d79cd415d6f4260dd349127844e3a6521664a205895d",
+      "id": "0620b1a8-e898-8db3-aab6-d79cd415d6f4"
+    },
+    {
+      "schedulePublicId": "e3b0c442-98fc-4c14-9afb-f4c8996fb924",
+      "dueDate": "2028-02-29",
+      "leg": "transfer",
+      "input": "budgie:auto-post:v1:e3b0c442-98fc-4c14-9afb-f4c8996fb924:2028-02-29:transfer",
+      "sha256": "1f5b43f4f2c17b9a7630a76c336d5dc02343c6a913a1e57bdc72b5c71f70e113",
+      "id": "1f5b43f4-f2c1-8b9a-b630-a76c336d5dc0"
+    },
+    {
+      "schedulePublicId": "00000000-0000-4000-8000-000000000000",
+      "dueDate": "2026-01-01",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:00000000-0000-4000-8000-000000000000:2026-01-01:account",
+      "sha256": "bf1bab3c3bbf3d61dc439a6d58b77988e221d5d9c588b2cf7e9accb33eb808d1",
+      "id": "bf1bab3c-3bbf-8d61-9c43-9a6d58b77988"
+    },
+    {
+      "schedulePublicId": "00000000-0000-4000-8000-000000000000",
+      "dueDate": "2026-01-01",
+      "leg": "transfer",
+      "input": "budgie:auto-post:v1:00000000-0000-4000-8000-000000000000:2026-01-01:transfer",
+      "sha256": "538dd3b777497939931fb30ed5877a82ee6f2a06bebc91424c6adeb1094c6ac8",
+      "id": "538dd3b7-7749-8939-931f-b30ed5877a82"
+    },
+    {
+      "schedulePublicId": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "dueDate": "2099-12-31",
+      "leg": "account",
+      "input": "budgie:auto-post:v1:ffffffff-ffff-4fff-bfff-ffffffffffff:2099-12-31:account",
+      "sha256": "b112c8b815833bd65f7a516eb4c151f1412eeb0d041db9eefd61ec55e0ba467e",
+      "id": "b112c8b8-1583-8bd6-9f7a-516eb4c151f1"
+    },
+    {
+      "schedulePublicId": "ffffffff-ffff-4fff-bfff-ffffffffffff",
+      "dueDate": "1970-01-01",
+      "leg": "transfer",
+      "input": "budgie:auto-post:v1:ffffffff-ffff-4fff-bfff-ffffffffffff:1970-01-01:transfer",
+      "sha256": "bc197d791bef30dc4c30beacc17824c1ab8f59e4931eff5f5a2fd20be979c13e",
+      "id": "bc197d79-1bef-80dc-8c30-beacc17824c1"
+    }
+  ],
+  "invalid": [
+    {
+      "schedulePublicId": "2F6D8C1A-4B3E-4D5F-9A7B-8C9D0E1F2A3B",
+      "dueDate": "2026-11-22",
+      "leg": "account",
+      "reason": "schedule public id is not a canonical lowercase UUID"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a4b3e4d5f9a7b8c9d0e1f2a3b",
+      "dueDate": "2026-11-22",
+      "leg": "account",
+      "reason": "schedule public id is not a canonical lowercase UUID"
+    },
+    {
+      "schedulePublicId": "legacy:scheduled_transactions:4",
+      "dueDate": "2026-11-22",
+      "leg": "account",
+      "reason": "schedule public id is not a canonical lowercase UUID"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-2-3",
+      "leg": "account",
+      "reason": "due date is not YYYY-MM-DD"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-02-30",
+      "leg": "account",
+      "reason": "due date is not a calendar date"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-11-22T00:00:00Z",
+      "leg": "account",
+      "reason": "due date is not YYYY-MM-DD"
+    },
+    {
+      "schedulePublicId": "2f6d8c1a-4b3e-4d5f-9a7b-8c9d0e1f2a3b",
+      "dueDate": "2026-11-22",
+      "leg": "from",
+      "reason": "leg is not account or transfer"
+    }
+  ]
+}

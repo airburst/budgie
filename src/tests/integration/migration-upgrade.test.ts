@@ -24,22 +24,26 @@ function applyMigration(db: Database.Database, tag: string) {
  * a real one. Upgrade a database that already holds data to catch that.
  */
 describe("upgrading a populated database", () => {
-  it("applies every migration over existing envelope category rows", () => {
+  it("applies 0013 over existing envelope category rows", () => {
     const db = new Database(":memory:");
     db.pragma("foreign_keys = OFF");
-    const last = journal.entries.at(-1)!;
+    const upTo = journal.entries.findIndex(
+      (entry) => entry.tag === "0013_chilly_dorian_gray",
+    );
 
-    for (const entry of journal.entries.slice(0, -1)) {
+    for (const entry of journal.entries.slice(0, upTo)) {
       applyMigration(db, entry.tag);
     }
     db.exec(
       "INSERT INTO envelope_categories (envelope_id, category_id) VALUES (1, 1)",
     );
 
-    expect(() => applyMigration(db, last.tag)).not.toThrow();
+    expect(() => applyMigration(db, journal.entries[upTo].tag)).not.toThrow();
 
     const existing = db
-      .prepare("SELECT created_at, updated_at, public_id FROM envelope_categories")
+      .prepare(
+        "SELECT created_at, updated_at, public_id FROM envelope_categories",
+      )
       .get() as Record<string, string | null>;
     expect(existing.created_at).toBeTruthy();
     expect(existing.updated_at).toBeTruthy();
@@ -49,7 +53,9 @@ describe("upgrading a populated database", () => {
       "INSERT INTO envelope_categories (envelope_id, category_id) VALUES (2, 2)",
     );
     const inserted = db
-      .prepare("SELECT created_at FROM envelope_categories WHERE envelope_id = 2")
+      .prepare(
+        "SELECT created_at FROM envelope_categories WHERE envelope_id = 2",
+      )
       .get() as { created_at: string | null };
     expect(inserted.created_at).toBeTruthy();
     db.close();
