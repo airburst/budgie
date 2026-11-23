@@ -428,7 +428,9 @@ describe("portable import while synced: the tombstone store", () => {
     });
     const before = serverMaxHlc(h);
 
-    a.clock.now += 60_000;
+    // B wrote L a minute ahead of its own clock, which starts a few
+    // milliseconds after A's: go clearly past it.
+    a.clock.now += 120_000;
     await importPortableData(a.database, data, { now: () => a.clock.now });
     const payees = await a.rows("payees");
     expect(live(payees).map((row) => row.publicId)).toEqual([N]);
